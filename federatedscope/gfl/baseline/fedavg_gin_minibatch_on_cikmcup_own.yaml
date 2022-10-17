@@ -1,0 +1,46 @@
+use_gpu: True
+device: 0
+early_stop:
+  patience: 100000
+  improve_indicator_mode: mean
+  the_smaller_the_better: False
+federate:
+  mode: 'standalone'
+  make_global_eval: False
+  total_round_num: 100
+  share_local_model: False
+  client_num: 13
+  method: "test"
+data:
+  root: data/
+  type: cikmcup
+model:
+  task: graph
+  type: gin
+  hidden: 64
+  dropout: 0.5
+  out_channels: 2
+personalization:
+  #local_param: ['node_encoder', 'encoder_atom', 'encoder', 'clf', 'gnn', 'linear1', 'linear3']
+  local_param: ['private_gnns', 'private_bns', 'shared_bns', 'shared_net_alphas_s', 'shared_net_alphas_p',
+                'private_net_alphas_s', 'private_net_alphas_p', 'private_net', 'clf',
+                'node_encoder', 'encoder_atom', 'encoder', 'shared_net_alpha', 'private_net_alpha',
+                'layer_norm','linear3', 'layer_norm2', 'encoder2', 'bns', 'gnn.bns', 'private_net',
+                'linear_resize_private', 'gnn.convs.0.nn.norms', 'gnn.convs.1.nn.norms',
+                'gnn.convs.2.nn.norms','gnn.convs.3.nn.norms'
+  ]
+train:
+  batch_or_epoch: epoch
+  local_update_steps: 1
+  optimizer:
+    weight_decay: 0.0005
+    type: SGD
+trainer:
+  type: graphminibatch_trainer
+eval:
+  freq: 1
+  metrics: ['imp_ratio']
+  report: ['avg']
+  best_res_update_round_wise_key: val_imp_ratio
+  count_flops: False
+  base: 0.

@@ -305,8 +305,12 @@ class Server(Worker):
                         'recover_fun': self.recover_fun
                     }
                     result = aggregator.aggregate(agg_info)
-                    model.load_state_dict(result, strict=False)
-
+                    #model.load_state_dict(result, strict=False)
+                    for name, param in self.model.named_parameters():
+                        try:
+                            model.state_dict()[name].data.copy_(result[name])
+                        except:
+                            pass
                 self.state += 1
                 if self.state % self._cfg.eval.freq == 0 and self.state != \
                         self.total_round_num:

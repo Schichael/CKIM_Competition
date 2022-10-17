@@ -411,6 +411,7 @@ class Client(Worker):
                 role='Client #{}'.format(self.ID),
                 forms='raw',
                 return_raw=True)
+            logger.info(formatted_eval_res)
             self._monitor.update_best_result(
                 self.best_results,
                 formatted_eval_res['Results_raw'],

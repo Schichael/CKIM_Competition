@@ -84,7 +84,8 @@ def get_gnn(model_config, local_data):
                                   max_depth=model_config.layer,
                                   dropout=model_config.dropout,
                                   gnn=model_config.type,
-                                  pooling=model_config.graph_pooling)
+                                  pooling=model_config.graph_pooling,
+                                  )
     else:
         raise ValueError('not recognized data task {}'.format(
             model_config.task))

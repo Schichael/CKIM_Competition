@@ -29,7 +29,8 @@ train:
 trainer:
   type: graphminibatch_trainer
 eval:
-  freq: 5
+  metrics: ['imp_ratio']
+  freq: 1
   report: ['avg']
   best_res_update_round_wise_key: val_loss
   count_flops: False

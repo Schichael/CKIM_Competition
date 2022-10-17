@@ -1,12 +1,13 @@
 import torch
 import torch.nn.functional as F
-from torch.nn import Linear, Sequential
+from torch.nn import Linear, Sequential, BatchNorm1d
 from torch_geometric.data import Data
 from torch_geometric.data.batch import Batch
 from torch_geometric.nn.glob import global_add_pool, global_mean_pool, \
     global_max_pool
 
 from federatedscope.gfl.model.gcn import GCN_Net
+from federatedscope.gfl.model.gine import GINE_Net
 from federatedscope.gfl.model.sage import SAGE_Net
 from federatedscope.gfl.model.gat import GAT_Net
 from federatedscope.gfl.model.gin import GIN_Net
@@ -34,7 +35,6 @@ class AtomEncoder(torch.nn.Module):
 class GNN_Net_Graph(torch.nn.Module):
     r"""GNN model with pre-linear layer, pooling layer
         and output layer for graph classification tasks.
-
     Arguments:
         in_channels (int): input channels.
         out_channels (int): output channels.
@@ -44,6 +44,7 @@ class GNN_Net_Graph(torch.nn.Module):
         gnn (str): name of gnn type, use ("gcn" or "gin").
         pooling (str): pooling method, use ("add", "mean" or "max").
     """
+
     def __init__(self,
                  in_channels,
                  out_channels,
@@ -77,7 +78,7 @@ class GNN_Net_Graph(torch.nn.Module):
                                max_depth=max_depth,
                                dropout=dropout)
         elif gnn == 'gin':
-            self.gnn = GIN_Net(in_channels=hidden,
+            self.gnn = GINE_Net(in_channels=hidden,
                                out_channels=hidden,
                                hidden=hidden,
                                max_depth=max_depth,
@@ -101,25 +102,33 @@ class GNN_Net_Graph(torch.nn.Module):
         else:
             raise ValueError(f'Unsupported pooling type: {pooling}.')
         # Output layer
-        self.linear = Sequential(Linear(hidden, hidden), torch.nn.ReLU())
+        self.linear = Sequential(Linear(hidden, hidden))
+        self.bn_linear = BatchNorm1d(hidden)
         self.clf = Linear(hidden, out_channels)
+        self.emb = torch.nn.Embedding(3, hidden)
+        torch.nn.init.xavier_normal_(self.emb.weight.data)
 
     def forward(self, data):
-        if isinstance(data, Batch):
-            x, edge_index, batch = data.x, data.edge_index, data.batch
-        elif isinstance(data, tuple):
-            x, edge_index, batch = data
+        x, edge_index, batch = data.x, data.edge_index, data.batch
+        edge_attr = data.get('edge_attr')
+        if edge_attr is None:
+            edge_attr = edge_index.new_zeros(edge_index.size(1), 1)
         else:
-            raise TypeError('Unsupported data type!')
+            edge_attr = edge_attr.long() + 1
 
         if x.dtype == torch.int64:
             x = self.encoder_atom(x)
         else:
             x = self.encoder(x)
 
-        x = self.gnn((x, edge_index))
+        edge_attr = self.emb(edge_attr).mean(1)
+        x = self.gnn(x, edge_index, edge_attr)
         x = self.pooling(x, batch)
         x = self.linear(x)
+        if x.size(0) > 1:
+            x = self.bn_linear(x).relu()
+        else:
+            x = x.relu()
         x = F.dropout(x, self.dropout, training=self.training)
         x = self.clf(x)
         return x

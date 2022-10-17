@@ -360,9 +360,13 @@ class Monitor(object):
                     else:
                         all_res = np.array(copy.copy(results[key]))
                         if form == 'weighted_avg':
-                            new_results[key] = np.sum(
-                                np.array(new_results[key]) *
-                                dataset_num) / np.sum(dataset_num)
+                            if len(new_results) == len(dataset_num):
+                                new_results[key] = np.sum(
+                                    np.array(new_results[key]) *
+                                    dataset_num) / np.sum(dataset_num)
+                            else:
+                                new_results[key] = 0
+
                         if form == "avg":
                             new_results[key] = np.mean(new_results[key])
                         if form == "fairness" and all_res.size > 1:
