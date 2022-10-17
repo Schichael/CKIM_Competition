@@ -450,9 +450,15 @@ class Client(Worker):
         # Save final prediction result
         if self._cfg.data.type == 'cikmcup':
             # Evaluate
+            path = self._cfg.outdir + f'/model{self._ID}.pth'
+            self.trainer.load_model(path)
+            logger.info(f"Loaded best model at {path}.")
+            self.trainer.ctx.model.eval()
             self.trainer.evaluate(target_data_split_name='test')
-            self.trainer.save_prediction(self._cfg.outdir, self.ID, self._cfg.model.task)
-            logger.info(f"Client #{self.ID} finished saving prediction results in {os.path.abspath(os.path.join(self._cfg.outdir, 'prediction.csv'))}")
+            self.trainer.save_prediction(self._cfg.outdir, self.ID,
+                                         self._cfg.model.task)
+            logger.info(
+                f"Client #{self.ID} finished saving prediction results in {os.path.abspath(os.path.join(self._cfg.outdir, 'prediction.csv'))}")
 
         self._monitor.finish_fl()
 
