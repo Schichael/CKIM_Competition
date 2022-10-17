@@ -2,6 +2,7 @@ import logging
 import os
 
 import numpy as np
+import torch
 
 from federatedscope.core.monitors import Monitor
 from federatedscope.register import register_trainer
@@ -94,6 +95,22 @@ class GraphMiniBatchTrainer(GeneralTorchTrainer):
     def save_prediction(self, path, client_id, task_type):
         y_inds, y_probs = self.ctx.test_y_inds, self.ctx.test_y_prob
         os.makedirs(path, exist_ok=True)
+
+        ### save probs for ensemble##############################
+        pred_dir = "exp/predictions_all"
+        os.makedirs(pred_dir, exist_ok=True)
+
+        count = 0
+        file_name = f"client_{client_id}_{task_type}_{count}.pt"
+        pred_path = os.path.join(pred_dir, file_name)
+
+        while os.path.exists(pred_path):
+            count += 1
+            file_name = f"client_{client_id}_{task_type}_{count}.pt"
+            pred_path = os.path.join(pred_dir, file_name)
+
+        torch.save((y_inds, y_probs), pred_path)
+        ##########################################################
 
         # TODO: more feasible, for now we hard code it for cikmcup
         y_preds = np.argmax(y_probs, axis=-1) if 'classification' in task_type.lower() else y_probs
