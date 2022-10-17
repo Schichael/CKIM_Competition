@@ -426,6 +426,11 @@ class Client(Worker):
                     state=self.state,
                     content=metrics))
 
+        if self._monitor.should_save and self._cfg.federate.total_round_num != 2:
+            path = self._cfg.outdir + f'/model{self._ID}.pth'
+            logger.info(f"Client: #{self._ID}, val_imp_ratio: {self._monitor.current_best}. model saved at {path}")
+            self.trainer.save_model(path)
+
     def callback_funcs_for_finish(self, message: Message):
         """
         The handling function for receiving the signal of finishing the FL
