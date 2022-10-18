@@ -38,7 +38,7 @@ finetune:
   before_eval: True
   local_update_steps: 5
 eval:
-  freq: 5
+  freq: 1
   metrics: ['imp_ratio']
   report: ['avg']
   best_res_update_round_wise_key: val_imp_ratio
