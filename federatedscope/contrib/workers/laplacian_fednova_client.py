@@ -5,13 +5,15 @@ import copy
 import torch
 
 from federatedscope.contrib.trainer.laplacian_trainer import LaplacianTrainer
+from federatedscope.contrib.trainer.laplacian_trainer_with_fedNova import \
+    LaplacianFedNovaTrainer
 from federatedscope.contrib.workers.client import Client
 from federatedscope.core.message import Message
 
 logger = logging.getLogger(__name__)
 
 
-class LaplacianClient(Client):
+class LaplacianFedNovaClient(Client):
     def __init__(self,
                  ID=-1,
                  server_id=None,
@@ -26,7 +28,7 @@ class LaplacianClient(Client):
                  **kwargs):
         self.alpha = config.params.alpha
         self.omega_set = self._set_init_omega(model, device)
-        trainer = LaplacianTrainer(
+        trainer = LaplacianFedNovaTrainer(
             model=model,
             omega=self.omega_set,
             data=data,
@@ -49,9 +51,7 @@ class LaplacianClient(Client):
                  *args,
                  **kwargs)
 
-
         trainer.monitor = self._monitor
-
 
 
     def _set_init_omega(self, model, device):
@@ -91,7 +91,7 @@ class LaplacianClient(Client):
         if self.is_unseen_client or skip_train_isolated_or_global_mode:
             # for these cases (1) unseen client (2) isolated_global_mode,
             # we do not local train and upload local model
-            sample_size, model_para_all, results = \
+            alpha, model_para_all, results = \
                 0, self.trainer.get_model_para(), {}
             if skip_train_isolated_or_global_mode:
                 logger.info(
@@ -106,7 +106,8 @@ class LaplacianClient(Client):
                     f"early stopped. "
                     f"The next FL update may result in negative effect")
                 self._monitor.local_converged()
-            sample_size, model_para_all, omega_set, results = self.trainer.train(self.state)
+            alpha, model_para_all, omega_set, results, num_rounds = \
+                self.trainer.train(self.state)
             if self._cfg.federate.share_local_model and not \
                     self._cfg.federate.online_aggr:
                 model_para_all = copy.deepcopy(model_para_all)
@@ -126,5 +127,5 @@ class LaplacianClient(Client):
                     sender=self.ID,
                     receiver=[sender],
                     state=self.state,
-                    content=(sample_size, model_para_all, omega_set)))
+                    content=(alpha, model_para_all, omega_set, num_rounds)))
 
