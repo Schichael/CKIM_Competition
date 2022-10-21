@@ -237,9 +237,7 @@ class Trainer(object):
         self.ctx.check_data_split(target_data_split_name)
 
         self._run_routine(MODE.FINETUNE, hooks_set, target_data_split_name)
-        for i in range(2):
-            self._run_routine(MODE.FINETUNE, hooks_set, "val")
-            self._run_routine(MODE.FINETUNE, hooks_set, "test")
+
 
     def _run_routine(self, mode, hooks_set, dataset_name=None):
         """Run the hooks_set and maintain the mode
