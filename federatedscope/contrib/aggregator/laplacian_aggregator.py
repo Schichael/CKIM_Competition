@@ -3,7 +3,7 @@ import copy
 
 class LaplacianAggregator(Aggregator):
     def __init__(self, model=None, omega=None, device='cpu', config=None):
-        super(Aggregator, self).__init__()
+        super(LaplacianAggregator, self).__init__()
         self.model = copy.deepcopy(model)
         self.omega=copy.deepcopy(omega)
         self.device = device
