@@ -59,7 +59,7 @@ class LaplacianTrainer(GraphMiniBatchTrainer):
 
             #self.ctx.model.state_dict()[key].data.copy_(new_model_params[key])
             if key in self.ctx.omega:
-                #print(f"shared: {key}")
+                #print(f"sample_sizeshared: {key}")
                 old_val = self.ctx.model.state_dict()[key]
                 new_val = trainable_parameters[key]
 
@@ -174,7 +174,7 @@ class LaplacianTrainer(GraphMiniBatchTrainer):
 
         self._run_routine(MODE.TRAIN, hooks_set, target_data_split_name)
 
-        return self.ctx.cfg.params.alpha, self.get_model_para(
+        return self.ctx.num_samples_train, self.get_model_para(
         ), self.get_omega_para(), self.ctx.eval_metrics
 
     def get_omega_para(self):

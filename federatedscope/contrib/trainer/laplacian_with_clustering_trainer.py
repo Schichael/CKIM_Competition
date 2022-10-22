@@ -35,6 +35,7 @@ class LaplacianClusteringTrainer(GraphMiniBatchTrainer):
         self.device = device
         self.config=config
         self.first_round = True
+        self.round_num = 0
 
     def update(self, content, strict=False):
         """
@@ -88,6 +89,7 @@ class LaplacianClusteringTrainer(GraphMiniBatchTrainer):
     def _hook_on_fit_start_init(self, ctx):
         super()._hook_on_fit_start_init(ctx)
         setattr(ctx, "{}_y_inds".format(ctx.cur_data_split), [])
+        self.round_num += 1
         ctx.log_ce_loss = 0
         ctx.log_csd_loss = 0
         new_omega = dict()
@@ -140,7 +142,7 @@ class LaplacianClusteringTrainer(GraphMiniBatchTrainer):
                 # omega_dropout[omega_dropout>0.5] = 1.0
                 # omega_dropout[omega_dropout <= 0.5] = 0.0
 
-                loss_set.append((0.5 / round_num) * (omega[name] * ((theta - mu[name]) ** 2)).sum())
+                loss_set.append((0.5 / self.round_num) * (omega[name] * ((theta - mu[name]) ** 2)).sum())
 
         return sum(loss_set)
 
@@ -179,7 +181,7 @@ class LaplacianClusteringTrainer(GraphMiniBatchTrainer):
 
         self._run_routine(MODE.TRAIN, hooks_set, target_data_split_name)
 
-        return self.ctx.cfg.params.alpha, self.get_model_para(
+        return self.ctx.num_samples_train, self.get_model_para(
         ), self.get_omega_para(), self.ctx.eval_metrics
 
     def get_omega_para(self):
@@ -190,5 +192,5 @@ class LaplacianClusteringTrainer(GraphMiniBatchTrainer):
 
 def call_laplacian_trainer(trainer_type):
     if trainer_type == 'laplacian_trainer':
-        trainer_builder = LaplacianTrainer
+        trainer_builder = LaplacianClusteringTrainer
         return trainer_builder
