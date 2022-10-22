@@ -34,6 +34,7 @@ class LaplacianTrainer(GraphMiniBatchTrainer):
         self.device = device
         self.config=config
         self.first_round = True
+        self.round_num = 0
 
     def update(self, content, strict=False):
         """
@@ -77,8 +78,10 @@ class LaplacianTrainer(GraphMiniBatchTrainer):
         #    self.ctx.model.state_dict()[key].data.copy_(trainable_parameters[key])s
 
     def _hook_on_fit_start_init(self, ctx):
+
         super()._hook_on_fit_start_init(ctx)
         setattr(ctx, "{}_y_inds".format(ctx.cur_data_split), [])
+        self.round_num += 1
         ctx.log_ce_loss = 0
         ctx.log_csd_loss = 0
         new_omega = dict()
@@ -95,6 +98,7 @@ class LaplacianTrainer(GraphMiniBatchTrainer):
         ctx.new_mu = new_mu
 
     def _hook_on_batch_forward(self, ctx):
+
         batch = ctx.data_batch.to(ctx.device)
         pred = ctx.model(batch)
         # TODO: deal with the type of data within the dataloader or dataset
@@ -131,7 +135,7 @@ class LaplacianTrainer(GraphMiniBatchTrainer):
                 # omega_dropout[omega_dropout>0.5] = 1.0
                 # omega_dropout[omega_dropout <= 0.5] = 0.0
 
-                loss_set.append((0.5 / round_num) * (omega[name] * ((theta - mu[name]) ** 2)).sum())
+                loss_set.append((0.5 / self.round_num) * (omega[name] * ((theta - mu[name]) ** 2)).sum())
 
         return sum(loss_set)
 
