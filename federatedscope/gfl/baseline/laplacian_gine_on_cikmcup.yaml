@@ -9,7 +9,7 @@ federate:
   make_global_eval: False
   total_round_num: 200
   share_local_model: False
-  client_num: 13
+  client_num: 8
 data:
   root: data/
   type: cikmcup
@@ -36,7 +36,7 @@ grad:
   grad_clip: 2.0
 finetune:
   before_eval: True
-  local_update_steps: 5
+  local_update_steps: 5000
 eval:
   freq: 1
   metrics: ['imp_ratio']

@@ -147,9 +147,10 @@ class LaplacianServer(Server):
                         #    print(key)
                         #for name, param in self.model.named_parameters():
                         #    self.omega_set[name] = copy.deepcopy(new_omega[name])
-
+                        model.load_state_dict(new_param, strict=False)
                         for name, param in self.model.named_parameters():
-                            self.model.state_dict()[name].data.copy_(new_param[name])  # https://discuss.pytorch.org/t/how-can-i-modify-certain-layers-weight-and-bias/11638
+                            #model.state_dict()[name].data.copy_(new_param[name])  #
+                            # https://discuss.pytorch.org/t/how-can-i-modify-certain-layers-weight-and-bias/11638
                             self.omega_set[name] = copy.deepcopy(new_omega[name])
 
                 self.state += 1

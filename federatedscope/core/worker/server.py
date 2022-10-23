@@ -306,11 +306,16 @@ class Server(Worker):
                     }
                     result = aggregator.aggregate(agg_info)
                     #model.load_state_dict(result, strict=False)
-                    for name, param in self.model.named_parameters():
-                        try:
-                            model.state_dict()[name].data.copy_(result[name])
-                        except:
-                            pass
+                    #for name, param in self.model.named_parameters():
+                    #    print(name)
+                    #    try:
+                    #        model.state_dict()[name].data.copy_(result[name])
+                    #        print(name)
+                    #    except:
+                    #        pass
+
+                    model.load_state_dict(result, strict=False)
+
                 self.state += 1
                 if self.state % self._cfg.eval.freq == 0 and self.state != \
                         self.total_round_num:

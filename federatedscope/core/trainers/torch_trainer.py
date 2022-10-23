@@ -146,11 +146,13 @@ class GeneralTorchTrainer(Trainer):
 
     def _hook_on_fit_start_calculate_model_size(self, ctx):
         if not isinstance(self.ctx.monitor, Monitor):
+            """
             logger.warning(
                 f"The trainer {type(self)} does contain a valid monitor, "
                 f"this may be caused by initializing trainer subclasses "
                 f"without passing a valid monitor instance."
                 f"Plz check whether this is you want.")
+            """
             return
         if self.ctx.monitor.total_model_size == 0:
             self.ctx.monitor.track_model_size(ctx.models)
@@ -202,11 +204,13 @@ class GeneralTorchTrainer(Trainer):
         :return:
         """
         if not isinstance(self.ctx.monitor, Monitor):
+            """
             logger.warning(
                 f"The trainer {type(self)} does contain a valid monitor, "
                 f"this may be caused by initializing trainer subclasses "
                 f"without passing a valid monitor instance."
                 f"Plz check whether this is you want.")
+            """
             return
 
         if self.cfg.eval.count_flops and self.ctx.monitor.flops_per_sample \
@@ -218,11 +222,13 @@ class GeneralTorchTrainer(Trainer):
                 flops_one_batch = FlopCountAnalysis(ctx.model, x).total()
                 if self.model_nums > 1 and ctx.mirrored_models:
                     flops_one_batch *= self.model_nums
+                    """
                     logger.warning(
                         "the flops_per_batch is multiplied "
                         "by internal model nums as self.mirrored_models=True."
                         "if this is not the case you want, "
                         "please customize the count hook")
+                    """
                 self.ctx.monitor.track_avg_flops(flops_one_batch,
                                                  ctx.batch_size)
             except:

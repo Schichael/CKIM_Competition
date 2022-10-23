@@ -179,9 +179,10 @@ class LaplacianWithClusteringServer(Server):
                             #    print(key)
                             #for name, param in self.model.named_parameters():
                             #    self.omega_set[name] = copy.deepcopy(new_omega[name])
-
+                            cluster[1].load_state_dict(new_param, strict=False)
                             for name, param in self.model.named_parameters():
-                                cluster[1].state_dict()[name].data.copy_(new_param[name])  # https://discuss.pytorch.org/t/how-can-i-modify-certain-layers-weight-and-bias/11638
+                                #cluster[1].state_dict()[name].data.copy_(new_param[
+                                # name])  # https://discuss.pytorch.org/t/how-can-i-modify-certain-layers-weight-and-bias/11638
                                 cluster[2][name] = copy.deepcopy(new_omega[name])
 
                 self.state += 1
