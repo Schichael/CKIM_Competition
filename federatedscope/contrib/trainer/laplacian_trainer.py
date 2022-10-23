@@ -111,7 +111,6 @@ class LaplacianTrainer(GraphMiniBatchTrainer):
         ctx.loss_batch_ce = ctx.criterion(pred, label)
         ctx.loss_batch = ctx.loss_batch_ce
         ctx.loss_batch_csd = self.get_csd_loss(ctx.model.state_dict(), ctx.new_mu, ctx.new_omega, ctx.cur_epoch_i + 1)
-
         ctx.batch_size = len(label)
         ctx.y_true = label
         ctx.y_prob = pred

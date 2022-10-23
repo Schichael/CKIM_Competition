@@ -238,7 +238,6 @@ class Trainer(object):
 
         self._run_routine(MODE.FINETUNE, hooks_set, target_data_split_name)
 
-
     def _run_routine(self, mode, hooks_set, dataset_name=None):
         """Run the hooks_set and maintain the mode
 

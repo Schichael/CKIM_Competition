@@ -31,6 +31,7 @@ class Client(Worker):
         device: The device to run local training and evaluation
         strategy: redundant attribute
     """
+
     def __init__(self,
                  ID=-1,
                  server_id=None,
@@ -57,8 +58,8 @@ class Client(Worker):
         # Check if is a attacker; a client is a attacker if the
         # config.attack.attack_method is provided
         self.is_attacker = config.attack.attacker_id == ID and \
-            config.attack.attack_method != '' and \
-            config.federate.mode == 'standalone'
+                           config.attack.attack_method != '' and \
+                           config.federate.mode == 'standalone'
 
         # Build Trainer
         # trainer might need configurations other than those of trainer node
@@ -213,8 +214,8 @@ class Client(Worker):
                             receiver=[self.server_id],
                             state=self.state,
                             content=(sample_size, first_aggregate_model_para[0]
-                                     if single_model_case else
-                                     first_aggregate_model_para)))
+                            if single_model_case else
+                            first_aggregate_model_para)))
 
         else:
             round, sender, content = message.state, message.sender, \
@@ -384,7 +385,7 @@ class Client(Worker):
             self.trainer.update(message.content,
                                 strict=self._cfg.federate.share_local_model)
         if self.early_stopper.early_stopped and self._cfg.federate.method in [
-                "local", "global"
+            "local", "global"
         ]:
             metrics = list(self.best_results.values())[0]
         else:
@@ -411,7 +412,6 @@ class Client(Worker):
                 role='Client #{}'.format(self.ID),
                 forms='raw',
                 return_raw=True)
-            logger.info(formatted_eval_res)
             self._monitor.update_best_result(
                 self.best_results,
                 formatted_eval_res['Results_raw'],
@@ -421,7 +421,7 @@ class Client(Worker):
             self.history_results = merge_dict(
                 self.history_results, formatted_eval_res['Results_raw'])
             self.early_stopper.track_and_check(self.history_results[
-                self._cfg.eval.best_res_update_round_wise_key])
+                                                   self._cfg.eval.best_res_update_round_wise_key])
 
         self.comm_manager.send(
             Message(msg_type='metrics',
@@ -429,6 +429,12 @@ class Client(Worker):
                     receiver=[sender],
                     state=self.state,
                     content=metrics))
+
+        if self._monitor.should_save and self._cfg.federate.total_round_num != 2:
+            path = self._cfg.outdir + f'/model{self._ID}.pth'
+            logger.info(
+                f"Client: #{self._ID}, val_imp_ratio: {self._monitor.current_best}. model saved at {path}")
+            self.trainer.save_model(path)
 
     def callback_funcs_for_finish(self, message: Message):
         """
@@ -449,9 +455,15 @@ class Client(Worker):
         # Save final prediction result
         if self._cfg.data.type == 'cikmcup':
             # Evaluate
+            path = self._cfg.outdir + f'/model{self._ID}.pth'
+            self.trainer.load_model(path)
+            logger.info(f"Loaded best model at {path}.")
+            self.trainer.ctx.model.eval()
             self.trainer.evaluate(target_data_split_name='test')
-            self.trainer.save_prediction(self._cfg.outdir, self.ID, self._cfg.model.task)
-            logger.info(f"Client #{self.ID} finished saving prediction results in {os.path.abspath(os.path.join(self._cfg.outdir, 'prediction.csv'))}")
+            self.trainer.save_prediction(self._cfg.outdir, self.ID,
+                                         self._cfg.model.task)
+            logger.info(
+                f"Client #{self.ID} finished saving prediction results in {os.path.abspath(os.path.join(self._cfg.outdir, 'prediction.csv'))}")
 
         self._monitor.finish_fl()
 

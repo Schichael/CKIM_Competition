@@ -65,19 +65,12 @@ class GeneralTorchTrainer(Trainer):
         Arguments:
             model_parameters (dict): PyTorch Module object's state_dict.
         """
-
-        for key in model_parameters:
-            model_parameters[key] = param2tensor(model_parameters[key])
-
-        trainable_parameters = self._param_filter(model_parameters)
-        for key in trainable_parameters:
-            self.ctx.model.state_dict()[key].data.copy_(trainable_parameters[key])
-        """
         for key in model_parameters:
             model_parameters[key] = param2tensor(model_parameters[key])
         self.ctx.model.load_state_dict(self._param_filter(model_parameters),
                                        strict=strict)
-        """
+
+
     def evaluate(self, target_data_split_name="test"):
         with torch.no_grad():
             super(GeneralTorchTrainer, self).evaluate(target_data_split_name)
@@ -153,13 +146,11 @@ class GeneralTorchTrainer(Trainer):
 
     def _hook_on_fit_start_calculate_model_size(self, ctx):
         if not isinstance(self.ctx.monitor, Monitor):
-            """
             logger.warning(
                 f"The trainer {type(self)} does contain a valid monitor, "
                 f"this may be caused by initializing trainer subclasses "
                 f"without passing a valid monitor instance."
                 f"Plz check whether this is you want.")
-            """
             return
         if self.ctx.monitor.total_model_size == 0:
             self.ctx.monitor.track_model_size(ctx.models)
@@ -211,13 +202,11 @@ class GeneralTorchTrainer(Trainer):
         :return:
         """
         if not isinstance(self.ctx.monitor, Monitor):
-            """
             logger.warning(
                 f"The trainer {type(self)} does contain a valid monitor, "
                 f"this may be caused by initializing trainer subclasses "
                 f"without passing a valid monitor instance."
                 f"Plz check whether this is you want.")
-            """
             return
 
         if self.cfg.eval.count_flops and self.ctx.monitor.flops_per_sample \
@@ -229,17 +218,14 @@ class GeneralTorchTrainer(Trainer):
                 flops_one_batch = FlopCountAnalysis(ctx.model, x).total()
                 if self.model_nums > 1 and ctx.mirrored_models:
                     flops_one_batch *= self.model_nums
-                    """
                     logger.warning(
                         "the flops_per_batch is multiplied "
                         "by internal model nums as self.mirrored_models=True."
                         "if this is not the case you want, "
                         "please customize the count hook")
-                    """
                 self.ctx.monitor.track_avg_flops(flops_one_batch,
                                                  ctx.batch_size)
             except:
-                """
                 logger.warning(
                     "current flop count implementation is for general "
                     "trainer case: "
@@ -247,7 +233,6 @@ class GeneralTorchTrainer(Trainer):
                     "2) the ctx.model takes only x as input."
                     "Please check the forward format or implement your own "
                     "flop_count function")
-                """
                 self.ctx.monitor.flops_per_sample = -1  # warning at the
                 # first failure
 

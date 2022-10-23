@@ -1,8 +1,8 @@
 import logging
 import os
+import torch
 
 import numpy as np
-import torch
 
 from federatedscope.core.monitors import Monitor
 from federatedscope.register import register_trainer
@@ -26,7 +26,6 @@ class GraphMiniBatchTrainer(GeneralTorchTrainer):
             label = batch.y.squeeze(-1).long()
         if len(label.size()) == 0:
             label = label.unsqueeze(0)
-
         ctx.loss_batch = ctx.criterion(pred, label)
 
         ctx.batch_size = len(label)
@@ -38,18 +37,17 @@ class GraphMiniBatchTrainer(GeneralTorchTrainer):
             setattr(
                 ctx,
                 f'{ctx.cur_data_split}_y_inds',
-                ctx.get(f'{ctx.cur_data_split}_y_inds') + [batch[_].data_index.item() for _ in range(len(label))]
+                ctx.get(f'{ctx.cur_data_split}_y_inds') + [batch[_].data_index.item()
+                                                           for _ in range(len(label))]
             )
 
     def _hook_on_batch_forward_flop_count(self, ctx):
         if not isinstance(self.ctx.monitor, Monitor):
-            """
             logger.warning(
                 f"The trainer {type(self)} does contain a valid monitor, "
                 f"this may be caused by initializing trainer subclasses "
                 f"without passing a valid monitor instance."
                 f"Plz check whether this is you want.")
-            """
             return
 
         if self.cfg.eval.count_flops and self.ctx.monitor.flops_per_sample \
@@ -65,17 +63,14 @@ class GraphMiniBatchTrainer(GeneralTorchTrainer):
                                                     (x, edge_index)).total()
                 if self.model_nums > 1 and ctx.mirrored_models:
                     flops_one_batch *= self.model_nums
-                    """
                     logger.warning(
                         "the flops_per_batch is multiplied by "
                         "internal model nums as self.mirrored_models=True."
                         "if this is not the case you want, "
                         "please customize the count hook")
-                    """
                 self.ctx.monitor.track_avg_flops(flops_one_batch,
                                                  ctx.batch_size)
             except:
-                """
                 logger.warning(
                     "current flop count implementation is for general "
                     "NodeFullBatchTrainer case: "
@@ -83,14 +78,13 @@ class GraphMiniBatchTrainer(GeneralTorchTrainer):
                     "input."
                     "Please check the forward format or implement your own "
                     "flop_count function")
-                """
                 self.ctx.monitor.flops_per_sample = -1  # warning at the
                 # first failure
 
         # by default, we assume the data has the same input shape,
         # thus simply multiply the flops to avoid redundant forward
         self.ctx.monitor.total_flops += self.ctx.monitor.flops_per_sample * \
-            ctx.batch_size
+                                        ctx.batch_size
 
     def save_prediction(self, path, client_id, task_type):
         y_inds, y_probs = self.ctx.test_y_inds, self.ctx.test_y_prob
@@ -113,13 +107,15 @@ class GraphMiniBatchTrainer(GeneralTorchTrainer):
         ##########################################################
 
         # TODO: more feasible, for now we hard code it for cikmcup
-        y_preds = np.argmax(y_probs, axis=-1) if 'classification' in task_type.lower() else y_probs
+        y_preds = np.argmax(y_probs,
+                            axis=-1) if 'classification' in task_type.lower() else y_probs
 
         if len(y_inds) != len(y_preds):
-            raise ValueError(f'The length of the predictions {len(y_preds)} not equal to the samples {len(y_inds)}.')
+            raise ValueError(
+                f'The length of the predictions {len(y_preds)} not equal to the samples {len(y_inds)}.')
 
         with open(os.path.join(path, 'prediction.csv'), 'a') as file:
-            for y_ind, y_pred in zip(y_inds,  y_preds):
+            for y_ind, y_pred in zip(y_inds, y_preds):
                 if 'classification' in task_type.lower():
                     line = [client_id, y_ind] + [y_pred]
                 else:
