@@ -7,7 +7,7 @@ early_stop:
 federate:
   mode: 'standalone'
   make_global_eval: False
-  total_round_num: 200
+  total_round_num: 2000
   share_local_model: False
   client_num: 8
 data:
@@ -22,7 +22,7 @@ model:
   hidden: 512
   graph_pooling: add
 personalization:
-  local_param: ['encoder_atom', 'encoder', 'clf', 'bn_linear', 'jk_linear']
+  local_param: ['encoder_atom', 'encoder', 'clf', 'bn_linear', 'linear_out']
 train:
   batch_or_epoch: epoch
   local_update_steps: 10
