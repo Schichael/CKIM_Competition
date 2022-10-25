@@ -37,6 +37,7 @@ class LaplacianFedNovaTrainer(GraphMiniBatchTrainer):
         self.device = device
         self.config=config
         self.first_round = True
+        self.round_num = 0
 
     def update(self, content, strict=False):
         """
@@ -82,6 +83,7 @@ class LaplacianFedNovaTrainer(GraphMiniBatchTrainer):
     def _hook_on_fit_start_init(self, ctx):
         super()._hook_on_fit_start_init(ctx)
         setattr(ctx, "{}_y_inds".format(ctx.cur_data_split), [])
+        self.round_num += 1
         ctx.log_ce_loss = 0
         ctx.log_csd_loss = 0
         new_omega = dict()
@@ -102,6 +104,8 @@ class LaplacianFedNovaTrainer(GraphMiniBatchTrainer):
         ctx.num_rounds += 1
         batch = ctx.data_batch.to(ctx.device)
         pred = ctx.model(batch)
+        csd_loss = CSDLoss(self._param_filter, ctx)
+
         # TODO: deal with the type of data within the dataloader or dataset
         if 'regression' in ctx.cfg.model.task.lower():
             label = batch.y
@@ -111,7 +115,8 @@ class LaplacianFedNovaTrainer(GraphMiniBatchTrainer):
             label = label.unsqueeze(0)
         ctx.loss_batch_ce = ctx.criterion(pred, label)
         ctx.loss_batch = ctx.loss_batch_ce
-        ctx.loss_batch_csd = self.get_csd_loss(ctx.model.state_dict(), ctx.new_mu, ctx.new_omega, ctx.cur_epoch_i + 1)
+        ctx.loss_batch_csd = csd(ctx.model.state_dict(), ctx.new_mu,
+                                               ctx.new_omega, self.round_num)
 
         ctx.batch_size = len(label)
         ctx.y_true = label
@@ -168,7 +173,30 @@ class LaplacianFedNovaTrainer(GraphMiniBatchTrainer):
             self.ctx.omega)
 
 
+class CSDLoss(torch.nn.Module):
+    def __init__(self, param_filter, ctx):
+        super(CSDLoss, self).__init__()
+        self._param_filter = param_filter
+        self.ctx = ctx
 
+    def forward(self, model_params, mu, omega, round_num):
+        loss_set = []
+        loss = None
+        trainable_parameters = self._param_filter(model_params)
+        for name in trainable_parameters:
+            if name in omega:
+                theta = self.ctx.model.state_dict()[name]
+
+                # omega_dropout = torch.rand(omega[name].size()).cuda() if cuda else torch.rand(omega[name].size())
+                # omega_dropout[omega_dropout>0.5] = 1.0
+                # omega_dropout[omega_dropout <= 0.5] = 0.0
+                if loss is None:
+                    loss = (0.5 / round_num) * (omega[name] * ((theta - mu[name]) ** 2)).sum()
+                else:
+                    loss += (0.5 / round_num) * (omega[name] * ((theta - mu[name]) ** 2)).sum()
+                # loss_set.append((0.5 / round_num) * (omega[name] * ((theta - mu[name]) ** 2)).sum())
+
+        return loss  # return sum(loss_set)
 
 def call_laplacian_trainer(trainer_type):
     if trainer_type == 'laplacian_trainer':

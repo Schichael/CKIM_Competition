@@ -114,7 +114,8 @@ class LaplacianDomainSeparationTrainer(GraphMiniBatchTrainer):
         ctx.loss_batch_ce = ctx.criterion(pred, label)
         ctx.loss_batch = ctx.loss_batch_ce
         #ctx.loss_batch_csd = self.get_csd_loss(ctx.model.state_dict(), ctx.new_mu, ctx.new_omega, ctx.cur_epoch_i + 1)
-        ctx.loss_batch_csd = csd_loss(ctx.model.state_dict(), ctx.new_mu, ctx.new_omega, ctx.cur_epoch_i + 1)
+        ctx.loss_batch_csd = csd_loss(ctx.model.state_dict(), ctx.new_mu,
+                                      ctx.new_omega, self.round_num)
 
         ctx.batch_size = len(label)
         ctx.y_true = label
@@ -228,9 +229,9 @@ class CSDLoss(torch.nn.Module):
                 # omega_dropout[omega_dropout>0.5] = 1.0
                 # omega_dropout[omega_dropout <= 0.5] = 0.0
                 if loss is None:
-                    loss = (0.5 / self.round_num) * (omega[name] * ((theta - mu[name]) ** 2)).sum()
+                    loss = (0.5 / round_num) * (omega[name] * ((theta - mu[name]) ** 2)).sum()
                 else:
-                    loss += (0.5 / self.round_num) * (omega[name] * ((theta - mu[name]) ** 2)).sum()
+                    loss += (0.5 / round_num) * (omega[name] * ((theta - mu[name]) ** 2)).sum()
                 # loss_set.append((0.5 / round_num) * (omega[name] * ((theta - mu[name]) ** 2)).sum())
 
         return loss  # return sum(loss_set)
