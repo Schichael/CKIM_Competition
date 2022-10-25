@@ -125,21 +125,6 @@ class LaplacianFedNovaTrainer(GraphMiniBatchTrainer):
                 ctx.get(f'{ctx.cur_data_split}_y_inds') + [batch[_].data_index.item() for _ in range(len(label))]
             )
 
-    def get_csd_loss(self, model_params, mu, omega, round_num):
-        loss_set = []
-        trainable_parameters = self._param_filter(model_params)
-        for name in trainable_parameters:
-            if name in omega:
-                theta = self.ctx.model.state_dict()[name]
-
-                # omega_dropout = torch.rand(omega[name].size()).cuda() if cuda else torch.rand(omega[name].size())
-                # omega_dropout[omega_dropout>0.5] = 1.0
-                # omega_dropout[omega_dropout <= 0.5] = 0.0
-
-                loss_set.append((0.5 / round_num) * (omega[name] * ((theta - mu[name]) ** 2)).sum())
-
-        return sum(loss_set)
-
     def _hook_on_batch_backward(self, ctx):
         """
         ctx.optimizer.zero_grad()

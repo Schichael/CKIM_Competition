@@ -101,6 +101,7 @@ class LaplacianTrainer(GraphMiniBatchTrainer):
 
         batch = ctx.data_batch.to(ctx.device)
         pred = ctx.model(batch)
+        csd_loss = CSDLoss(self._param_filter, ctx)
         # TODO: deal with the type of data within the dataloader or dataset
         if 'regression' in ctx.cfg.model.task.lower():
             label = batch.y
@@ -110,7 +111,7 @@ class LaplacianTrainer(GraphMiniBatchTrainer):
             label = label.unsqueeze(0)
         ctx.loss_batch_ce = ctx.criterion(pred, label)
         ctx.loss_batch = ctx.loss_batch_ce
-        ctx.loss_batch_csd = self.get_csd_loss(ctx.model.state_dict(), ctx.new_mu, ctx.new_omega, ctx.cur_epoch_i + 1)
+        ctx.loss_batch_csd = csd_loss(ctx.model.state_dict(), ctx.new_mu, ctx.new_omega, ctx.cur_epoch_i + 1)
         ctx.batch_size = len(label)
         ctx.y_true = label
         ctx.y_prob = pred
@@ -123,20 +124,6 @@ class LaplacianTrainer(GraphMiniBatchTrainer):
                 ctx.get(f'{ctx.cur_data_split}_y_inds') + [batch[_].data_index.item() for _ in range(len(label))]
             )
 
-    def get_csd_loss(self, model_params, mu, omega, round_num):
-        loss_set = []
-        trainable_parameters = self._param_filter(model_params)
-        for name in trainable_parameters:
-            if name in omega:
-                theta = self.ctx.model.state_dict()[name]
-
-                # omega_dropout = torch.rand(omega[name].size()).cuda() if cuda else torch.rand(omega[name].size())
-                # omega_dropout[omega_dropout>0.5] = 1.0
-                # omega_dropout[omega_dropout <= 0.5] = 0.0
-
-                loss_set.append((0.5 / self.round_num) * (omega[name] * ((theta - mu[name]) ** 2)).sum())
-
-        return sum(loss_set)
 
     def _hook_on_batch_backward(self, ctx):
         """
@@ -180,7 +167,30 @@ class LaplacianTrainer(GraphMiniBatchTrainer):
         return self._param_filter(
             self.ctx.omega)
 
+class CSDLoss(torch.nn.Module):
+    def __init__(self, param_filter, ctx):
+        super(CSDLoss, self).__init__()
+        self._param_filter = param_filter
+        self.ctx = ctx
 
+    def forward(self, model_params, mu, omega, round_num):
+        loss_set = []
+        loss = None
+        trainable_parameters = self._param_filter(model_params)
+        for name in trainable_parameters:
+            if name in omega:
+                theta = self.ctx.model.state_dict()[name]
+
+                # omega_dropout = torch.rand(omega[name].size()).cuda() if cuda else torch.rand(omega[name].size())
+                # omega_dropout[omega_dropout>0.5] = 1.0
+                # omega_dropout[omega_dropout <= 0.5] = 0.0
+                if loss is None:
+                    loss = (0.5 / self.round_num) * (omega[name] * ((theta - mu[name]) ** 2)).sum()
+                else:
+                    loss += (0.5 / self.round_num) * (omega[name] * ((theta - mu[name]) ** 2)).sum()
+                # loss_set.append((0.5 / round_num) * (omega[name] * ((theta - mu[name]) ** 2)).sum())
+
+        return loss  # return sum(loss_set)
 
 def call_laplacian_trainer(trainer_type):
     if trainer_type == 'laplacian_trainer':

@@ -35,6 +35,7 @@ class LaplacianDomainSeparationTrainer(GraphMiniBatchTrainer):
         self.device = device
         self.config = config
         self.first_round = True
+        self.round_num=0
 
     def update(self, content, strict=False):
         """
@@ -80,6 +81,7 @@ class LaplacianDomainSeparationTrainer(GraphMiniBatchTrainer):
     def _hook_on_fit_start_init(self, ctx):
         super()._hook_on_fit_start_init(ctx)
         setattr(ctx, "{}_y_inds".format(ctx.cur_data_split), [])
+        self.round_num += 1
         ctx.log_ce_loss = 0
         ctx.log_csd_loss = 0
         new_omega = dict()
@@ -226,9 +228,9 @@ class CSDLoss(torch.nn.Module):
                 # omega_dropout[omega_dropout>0.5] = 1.0
                 # omega_dropout[omega_dropout <= 0.5] = 0.0
                 if loss is None:
-                    loss = (0.5 / round_num) * (omega[name] * ((theta - mu[name]) ** 2)).sum()
+                    loss = (0.5 / self.round_num) * (omega[name] * ((theta - mu[name]) ** 2)).sum()
                 else:
-                    loss += (0.5 / round_num) * (omega[name] * ((theta - mu[name]) ** 2)).sum()
+                    loss += (0.5 / self.round_num) * (omega[name] * ((theta - mu[name]) ** 2)).sum()
                 # loss_set.append((0.5 / round_num) * (omega[name] * ((theta - mu[name]) ** 2)).sum())
 
         return loss  # return sum(loss_set)
