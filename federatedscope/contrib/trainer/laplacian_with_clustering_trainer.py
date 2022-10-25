@@ -35,6 +35,7 @@ class LaplacianClusteringTrainer(GraphMiniBatchTrainer):
         self.device = device
         self.config=config
         self.first_round = True
+        self.in_finetune = False
         self.round_num = 0
 
     def update(self, content, strict=False):
@@ -89,7 +90,11 @@ class LaplacianClusteringTrainer(GraphMiniBatchTrainer):
     def _hook_on_fit_start_init(self, ctx):
         super()._hook_on_fit_start_init(ctx)
         setattr(ctx, "{}_y_inds".format(ctx.cur_data_split), [])
-        self.round_num += 1
+        if ctx.cur_data_split == "train" and not self.in_finetune:
+            self.round_num += 1
+            self.in_finetune = True
+        elif ctx.cur_data_split == "train" and self.in_finetune:
+            self.in_finetune = False
         ctx.log_ce_loss = 0
         ctx.log_csd_loss = 0
         new_omega = dict()
