@@ -5,6 +5,7 @@ early_stop:
   improve_indicator_mode: mean
   the_smaller_the_better: False
 federate:
+  method: 'FedAvg_gine_class_global_jk_linear_24_10_22'
   mode: 'standalone'
   make_global_eval: False
   total_round_num: 2000
