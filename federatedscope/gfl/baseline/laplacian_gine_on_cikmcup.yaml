@@ -23,7 +23,8 @@ model:
   hidden: 512
   graph_pooling: add
 personalization:
-  local_param: ['encoder_atom', 'encoder', 'clf', 'bn_linear', 'linear_out']
+  local_param: ['encoder_atom', 'encoder', 'clf', 'bn_linear', 'local_gnn',
+                'linear_out']
 train:
   batch_or_epoch: epoch
   local_update_steps: 10
