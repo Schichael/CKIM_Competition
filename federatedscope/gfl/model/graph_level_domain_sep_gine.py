@@ -115,6 +115,8 @@ class GNN_Net_Graph(torch.nn.Module):
         else:
             raise ValueError(f'Unsupported pooling type: {pooling}.')
         # Output layer
+        self.lin_dec1 = Sequential(Linear(hidden, hidden))
+        self.lin_dec2 = Sequential(Linear(hidden, hidden))
         self.linear_out = Sequential(Linear(hidden, hidden))
         self.bn_linear = BatchNorm1d(hidden)
         self.clf = Linear(hidden, out_channels)
@@ -137,24 +139,27 @@ class GNN_Net_Graph(torch.nn.Module):
         edge_attr = self.emb(edge_attr).mean(1)
         x_local = self.local_gnn(x, edge_index, edge_attr)
         x_global = self.global_gnn(x, edge_index, edge_attr)
+        x_dec = x_local + x_global
+        x_dec = self.lin_dec1(x_dec).relu()
+        x_dec = F.dropout(x_dec, self.dropout, training=self.training)
+        x_dec = self.lin_dec2(x_dec)
 
         sizes = degree(batch, dtype=torch.long).tolist()
 
-        unbatched_local = x_local.split(sizes, 0)
-        unbatched_global = x_global.split(sizes, 0)
+        unbatched_dec = x_dec.split(sizes, 0)
         unbatched_edge_index = unbatch_edge_index(edge_index, batch)
 
         rec_loss = None
-        for i in range(len(unbatched_local)):
+        for i in range(len(unbatched_dec)):
             # A_pred = dot_product_decode(unbatched_enc_pr[i] + unbatched_enc[i])
             if rec_loss is None:
-                rec_loss = self.recon_loss(unbatched_local[i] + unbatched_global[i], unbatched_local[i].size(dim=0),
+                rec_loss = self.recon_loss(unbatched_dec[i], unbatched_dec[i].size(dim=0),
                                            unbatched_edge_index[i], neg_edge_index=None, )
             else:
-                rec_loss += self.recon_loss(unbatched_local[i] + unbatched_global[i], unbatched_local[i].size(dim=0),
+                rec_loss += self.recon_loss(unbatched_dec[i], unbatched_dec[i].size(dim=0),
                                             unbatched_edge_index[i], neg_edge_index=None, )
 
-        rec_loss = rec_loss / len(unbatched_local)
+        rec_loss = rec_loss / len(unbatched_dec)
 
         x = self.pooling(x_global, batch)
         x = self.linear_out(x)
