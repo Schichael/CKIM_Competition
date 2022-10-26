@@ -125,6 +125,7 @@ class LaplacianDomainSeparationReconTrainer(GraphMiniBatchTrainer):
         #ctx.loss_batch_csd = self.get_csd_loss(ctx.model.state_dict(), ctx.new_mu, ctx.new_omega, ctx.cur_epoch_i + 1)
         ctx.loss_batch_csd = csd_loss(ctx.model.state_dict(), ctx.new_mu,
                                       ctx.new_omega, self.round_num)
+
         #print(f"recon loss: {recon_loss}")
         #print(f"diff loss: {ctx.diff_loss}")
         #print(f"task loss: {ctx.loss_batch_ce}")
@@ -163,7 +164,6 @@ class LaplacianDomainSeparationReconTrainer(GraphMiniBatchTrainer):
         #print(f"diff loss: {ctx.diff_loss}")
         loss = ctx.loss_batch_ce + self.config.params.csd_importance * ctx.loss_batch_csd + \
                self.config.params.diff_importance * ctx.diff_loss + self.config.params.recon_importance * ctx.recon_loss
-        #print(f"loss: {loss}")
         loss.backward(loss)
 
         if ctx.grad_clip > 0:
@@ -219,15 +219,20 @@ class CSDLoss(torch.nn.Module):
         trainable_parameters = self._param_filter(model_params)
         for name in trainable_parameters:
             if name in omega:
-                theta = self.ctx.model.state_dict()[name]
-
+                theta = None
+                for param in self.ctx.model.named_parameters():
+                    if param[0] == name:
+                        theta = param[1]
                 # omega_dropout = torch.rand(omega[name].size()).cuda() if cuda else torch.rand(omega[name].size())
                 # omega_dropout[omega_dropout>0.5] = 1.0
                 # omega_dropout[omega_dropout <= 0.5] = 0.0
                 if loss is None:
-                    loss = (0.5 / round_num) * (omega[name] * ((theta - mu[name]) ** 2)).sum()
+                    loss = (0.5 / round_num) * (omega[name] * ((theta - mu[name]) **
+                                                               2)).sum()
                 else:
                     loss += (0.5 / round_num) * (omega[name] * ((theta - mu[name]) ** 2)).sum()
+                if theta is None:
+                    print('theta is None')
                 # loss_set.append((0.5 / round_num) * (omega[name] * ((theta - mu[name]) ** 2)).sum())
 
         return loss  # return sum(loss_set)

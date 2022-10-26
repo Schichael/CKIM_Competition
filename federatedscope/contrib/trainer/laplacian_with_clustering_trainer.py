@@ -193,15 +193,20 @@ class CSDLoss(torch.nn.Module):
         trainable_parameters = self._param_filter(model_params)
         for name in trainable_parameters:
             if name in omega:
-                theta = self.ctx.model.state_dict()[name]
-
+                theta = None
+                for param in self.ctx.model.named_parameters():
+                    if param[0] == name:
+                        theta = param[1]
                 # omega_dropout = torch.rand(omega[name].size()).cuda() if cuda else torch.rand(omega[name].size())
                 # omega_dropout[omega_dropout>0.5] = 1.0
                 # omega_dropout[omega_dropout <= 0.5] = 0.0
                 if loss is None:
-                    loss = (0.5 / round_num) * (omega[name] * ((theta - mu[name]) ** 2)).sum()
+                    loss = (0.5 / round_num) * (omega[name] * ((theta - mu[name]) **
+                                                               2)).sum()
                 else:
                     loss += (0.5 / round_num) * (omega[name] * ((theta - mu[name]) ** 2)).sum()
+                if theta is None:
+                    print('theta is None')
                 # loss_set.append((0.5 / round_num) * (omega[name] * ((theta - mu[name]) ** 2)).sum())
 
         return loss  # return sum(loss_set)

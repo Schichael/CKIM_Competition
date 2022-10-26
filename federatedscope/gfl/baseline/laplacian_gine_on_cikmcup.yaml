@@ -24,10 +24,10 @@ model:
   graph_pooling: add
 personalization:
   local_param: ['encoder_atom', 'encoder', 'clf', 'bn_linear', 'local_gnn',
-                'linear_out']
+                'linear_out', 'bn_dec']
 train:
   batch_or_epoch: epoch
-  local_update_steps: 10
+  local_update_steps: 1
   optimizer:
     weight_decay: 0.0001
     lr: 0.1
