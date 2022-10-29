@@ -78,6 +78,10 @@ def get_gnn(model_config, local_data):
                             num_nn=data.num_edge_features,
                             hidden=model_config.hidden)
         else:
+            if data.edge_attr is not None:
+                edge_dim = data.edge_attr.size(1)
+            else:
+                edge_dim = None
             model = GNN_Net_Graph(data.x.shape[-1],
                                   max(model_config.out_channels, num_label),
                                   hidden=model_config.hidden,
@@ -85,6 +89,7 @@ def get_gnn(model_config, local_data):
                                   dropout=model_config.dropout,
                                   gnn=model_config.type,
                                   pooling=model_config.graph_pooling,
+                                  edge_dim=edge_dim
                                   )
     else:
         raise ValueError('not recognized data task {}'.format(

@@ -52,7 +52,10 @@ class GNN_Net_Graph(torch.nn.Module):
                  max_depth=2,
                  dropout=.0,
                  gnn='gcn',
-                 pooling='add'):
+                 pooling='add',
+                 edge_dim = None):
+        if edge_dim is None or edge_dim == 0:
+            edge_dim = 1
         super(GNN_Net_Graph, self).__init__()
         self.dropout = dropout
         # Embedding (pre) layer
@@ -82,7 +85,8 @@ class GNN_Net_Graph(torch.nn.Module):
                                out_channels=hidden,
                                hidden=hidden,
                                max_depth=max_depth,
-                               dropout=dropout)
+                               dropout=dropout,
+                                edge_dim=hidden)
         elif gnn == 'gpr':
             self.gnn = GPR_Net(in_channels=hidden,
                                out_channels=hidden,
@@ -102,26 +106,25 @@ class GNN_Net_Graph(torch.nn.Module):
         else:
             raise ValueError(f'Unsupported pooling type: {pooling}.')
         # Output layer
-        self.linear_out = Sequential(Linear(hidden, hidden))
-        self.bn_linear = BatchNorm1d(hidden)
-        self.clf = Linear(hidden, out_channels)
-        self.emb = torch.nn.Embedding(3, hidden)
+        self.linear_out = Sequential(Linear(hidden, 64))
+        self.bn_linear = BatchNorm1d(64)
+        self.clf = Linear(64, out_channels)
+        self.emb = Linear(edge_dim, hidden)
         torch.nn.init.xavier_normal_(self.emb.weight.data)
 
     def forward(self, data):
         x, edge_index, batch = data.x, data.edge_index, data.batch
         edge_attr = data.get('edge_attr')
         if edge_attr is None:
-            edge_attr = edge_index.new_zeros(edge_index.size(1), 1)
-        else:
-            edge_attr = edge_attr.long() + 1
+            edge_attr = edge_index.new_zeros(edge_index.size(1), 1).float()
+        #else:
+            #edge_attr = edge_attr.long() + 1
 
-        if x.dtype == torch.int64:
-            x = self.encoder_atom(x)
-        else:
-            x = self.encoder(x)
-        asda=self.emb(edge_attr)
-        edge_attr = self.emb(edge_attr).mean(1)
+        #if x.dtype == torch.int64:
+        #    x = self.encoder_atom(x)
+        #else:
+        x = self.encoder(x)
+        edge_attr = self.emb(edge_attr)
         x = self.gnn(x, edge_index, edge_attr)
         x = self.pooling(x, batch)
         x = self.linear_out(x)

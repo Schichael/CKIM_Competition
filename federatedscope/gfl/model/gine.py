@@ -60,20 +60,22 @@ class GINE_Net(torch.nn.Module):
                  out_channels,
                  hidden=64,
                  max_depth=2,
-                 dropout=.0):
+                 dropout=.0,
+                 edge_dim=None):
         super(GINE_Net, self).__init__()
         self.convs = ModuleList()
         for i in range(max_depth):
             first_channel = in_channels if i == 0 else hidden
             second_channel = out_channels if i == max_depth - 1 else hidden
-            self.convs.append(GINConv(MLP([first_channel, hidden, second_channel], batch_norm=True)))
+            self.convs.append(GINConv(MLP([first_channel, hidden, second_channel],
+                                          batch_norm=True), edge_dim=edge_dim))
 
         self.dropout = dropout
-        self.jk_linear = Linear(hidden * (max_depth + 1), hidden)
+        self.jk_linear = Linear(hidden * max_depth, hidden)
 
     def forward(self, x, edge_index, edge_attr):
 
-        xs = [x]
+        xs = []
         for i, conv in enumerate(self.convs):
             x = conv(x, edge_index, edge_attr=edge_attr)
             x = F.relu(F.dropout(x, p=self.dropout, training=self.training))

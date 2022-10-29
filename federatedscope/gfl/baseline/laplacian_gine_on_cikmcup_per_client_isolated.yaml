@@ -5,11 +5,11 @@ client_1:
   criterion:
     type: CrossEntropyLoss
   train:
-    local_update_steps: 1
+    local_update_steps: 10
     optimizer:
-      lr: 0.1
+      lr: 0.001
   eval:
-    base: 0.263789
+    base: 0.289617
 client_2:
   model:
     out_channels: 2
@@ -17,6 +17,7 @@ client_2:
   criterion:
     type: CrossEntropyLoss
   train:
+    local_update_steps: 2
     optimizer:
       lr: 0.001
   eval:
@@ -28,7 +29,7 @@ client_3:
   criterion:
     type: CrossEntropyLoss
   train:
-    local_update_steps: 10
+    local_update_steps: 1
     optimizer:
       lr: 0.001
   eval:
@@ -51,7 +52,7 @@ client_5:
   criterion:
     type: CrossEntropyLoss
   train:
-    local_update_steps: 10
+    local_update_steps: 2
     optimizer:
       lr: 0.001
   eval:

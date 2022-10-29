@@ -94,8 +94,15 @@ class GraphMiniBatchTrainer(GeneralTorchTrainer):
 
     def save_prediction(self, path, client_id, task_type):
         y_inds, y_probs = self.ctx.test_y_inds, self.ctx.test_y_prob
+        y_inds_val, y_probs_val, y_true_val = self.ctx.val_y_inds, \
+                                              self.ctx.val_y_prob, self.ctx.val_y_true
         os.makedirs(path, exist_ok=True)
-
+        loss = torch.nn.CrossEntropyLoss()
+        val_loss = []
+        for proba, gt in zip(y_probs_val.tolist(), y_true_val.tolist()):
+            p = torch.from_numpy(np.array(proba))
+            t = torch.from_numpy(np.array(gt))
+            val_loss.append(loss(p, t).item())
         ### save probs for ensemble##############################
         pred_dir = "exp/predictions_all"
         os.makedirs(pred_dir, exist_ok=True)
@@ -115,10 +122,23 @@ class GraphMiniBatchTrainer(GeneralTorchTrainer):
         # TODO: more feasible, for now we hard code it for cikmcup
         y_preds = np.argmax(y_probs,
                             axis=-1) if 'classification' in task_type.lower() else y_probs
+        y_preds_val = np.argmax(y_probs_val,
+                            axis=-1) if 'classification' in task_type.lower() else y_probs_val
 
         if len(y_inds) != len(y_preds):
             raise ValueError(
                 f'The length of the predictions {len(y_preds)} not equal to the samples {len(y_inds)}.')
+
+        with open(os.path.join(path, 'val_preds.csv'), 'a') as file:
+            print(f"writing probas in: {os.path.join(path, 'probas.csv')}")
+            for y_ind, y_pred, y_true, y_loss in zip(y_inds_val, y_preds_val,
+                                                     y_true_val,
+                                                     val_loss):
+                if 'classification' in task_type.lower():
+                    line = [client_id, y_ind] + [y_pred] + [y_true] + [y_loss]
+                #else:
+                #    line = [client_id, y_inds] + list(y_prob)
+                file.write(','.join([str(_) for _ in line]) + '\n')
 
         with open(os.path.join(path, 'prediction.csv'), 'a') as file:
             for y_ind, y_pred in zip(y_inds, y_preds):

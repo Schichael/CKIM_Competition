@@ -17,17 +17,17 @@ data:
   batch_size: 64
 model:
   task: graph
-  dropout: 0.
+  dropout: 0.5
   layer: 2
   type: gin
   hidden: 512
   graph_pooling: add
 personalization:
-  local_param: ['encoder_atom', 'encoder', 'clf', 'bn_linear', 'local_gnn',
-                'linear_out', 'bn_dec']
+  local_param: ['encoder_atom', 'encoder', 'clf', 'bn_linear', 'local_gnn', 'emb',
+                'bn_dec']
 train:
   batch_or_epoch: epoch
-  local_update_steps: 1
+  local_update_steps: 10
   optimizer:
     weight_decay: 0.0001
     lr: 0.1

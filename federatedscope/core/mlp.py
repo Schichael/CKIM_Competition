@@ -18,6 +18,7 @@ class MLP(torch.nn.Module):
         self.channel_list = channel_list
         self.dropout = dropout
         self.relu_first = relu_first
+        self.in_channels = channel_list[0]
 
         self.linears = ModuleList()
         self.norms = ModuleList()
