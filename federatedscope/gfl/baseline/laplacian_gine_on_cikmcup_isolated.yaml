@@ -10,14 +10,14 @@ federate:
   make_global_eval: False
   total_round_num: 2000
   share_local_model: False
-  client_num: 1
+  client_num: 13
 data:
   root: data/
   type: cikmcup
   batch_size: 64
 model:
   task: graph
-  dropout: 0.5
+  dropout: 0.
   layer: 2
   type: gin
   hidden: 512
@@ -27,7 +27,7 @@ personalization:
                 'bn_dec']
 train:
   batch_or_epoch: epoch
-  local_update_steps: 10
+  local_update_steps: 1
   optimizer:
     weight_decay: 0.0001
     lr: 0.1

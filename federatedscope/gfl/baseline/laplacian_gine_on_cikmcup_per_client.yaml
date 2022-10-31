@@ -7,9 +7,10 @@ client_1:
   train:
     local_update_steps: 10
     optimizer:
-      lr: 0.1
+      lr: 0.01
   eval:
     base: 0.263789
+    metrics: ['imp_ratio', 'accuracy']
 client_2:
   model:
     out_channels: 2
@@ -22,6 +23,7 @@ client_2:
       lr: 0.001
   eval:
     base: 0.289617
+    metrics: ['imp_ratio', 'accuracy']
 client_3:
   model:
     out_channels: 2
@@ -34,6 +36,7 @@ client_3:
       lr: 0.001
   eval:
     base: 0.355404
+    metrics: ['imp_ratio', 'accuracy']
 client_4:
   model:
     out_channels: 2
@@ -41,10 +44,12 @@ client_4:
   criterion:
     type: CrossEntropyLoss
   train:
+    local_update_steps: 10
     optimizer:
       lr: 0.001
   eval:
     base: 0.176471
+    metrics: ['imp_ratio', 'accuracy']
 client_5:
   model:
     out_channels: 2
@@ -57,6 +62,7 @@ client_5:
       lr: 0.001
   eval:
     base: 0.396825
+    metrics: ['imp_ratio', 'accuracy']
 client_6:
   model:
     out_channels: 2
@@ -64,10 +70,12 @@ client_6:
   criterion:
     type: CrossEntropyLoss
   train:
+    local_update_steps: 10
     optimizer:
       lr: 0.0005
   eval:
     base: 0.261580
+    metrics: ['imp_ratio', 'accuracy']
 client_7:
   model:
     out_channels: 2
@@ -75,10 +83,12 @@ client_7:
   criterion:
     type: CrossEntropyLoss
   train:
+    local_update_steps: 10
     optimizer:
       lr: 0.01
   eval:
     base: 0.302378
+    metrics: ['imp_ratio', 'accuracy']
 client_8:
   model:
     out_channels: 2
@@ -86,10 +96,12 @@ client_8:
   criterion:
     type: CrossEntropyLoss
   train:
+    local_update_steps: 10
     optimizer:
       lr: 0.05
   eval:
     base: 0.211538
+    metrics: ['imp_ratio', 'accuracy']
 client_9:
   model:
     out_channels: 1
@@ -135,6 +147,7 @@ client_12:
   criterion:
     type: MSELoss
   train:
+    local_update_steps: 10
     optimizer:
       lr: 0.01
   eval:
