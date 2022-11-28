@@ -8,6 +8,7 @@ from torch_geometric.nn.glob import global_add_pool, global_mean_pool, \
 
 from federatedscope.gfl.model.gcn import GCN_Net
 from federatedscope.gfl.model.gine import GINE_Net
+from federatedscope.gfl.model.gine_no_jk import GINE_NO_JK_Net
 from federatedscope.gfl.model.sage import SAGE_Net
 from federatedscope.gfl.model.gat import GAT_Net
 from federatedscope.gfl.model.gin import GIN_Net
@@ -81,7 +82,7 @@ class GNN_Net_Graph(torch.nn.Module):
                                max_depth=max_depth,
                                dropout=dropout)
         elif gnn == 'gin':
-            self.gnn = GINE_Net(in_channels=hidden,
+            self.gnn = GINE_NO_JK_Net(in_channels=hidden,
                                out_channels=hidden,
                                hidden=hidden,
                                max_depth=max_depth,
@@ -106,8 +107,13 @@ class GNN_Net_Graph(torch.nn.Module):
         else:
             raise ValueError(f'Unsupported pooling type: {pooling}.')
         # Output layer
-        self.linear_out = Sequential(Linear(hidden, 64))
-        self.bn_linear = BatchNorm1d(64)
+        self.bn_edge = BatchNorm1d(hidden)
+        self.bn_node = BatchNorm1d(hidden)
+        self.linear_out1 = Sequential(Linear(hidden*max_depth, hidden))
+        self.linear_out2 = Sequential(Linear(hidden, 64))
+        self.bn_linear0 = BatchNorm1d(hidden*max_depth)
+        self.bn_linear1 = BatchNorm1d(hidden)
+        self.bn_linear2 = BatchNorm1d(64)
         self.clf = Linear(64, out_channels)
         self.emb = Linear(edge_dim, hidden)
         torch.nn.init.xavier_normal_(self.emb.weight.data)
@@ -117,21 +123,22 @@ class GNN_Net_Graph(torch.nn.Module):
         edge_attr = data.get('edge_attr')
         if edge_attr is None:
             edge_attr = edge_index.new_zeros(edge_index.size(1), 1).float()
-        #else:
-            #edge_attr = edge_attr.long() + 1
+        else:
+            edge_attr = edge_attr + 1
 
-        #if x.dtype == torch.int64:
-        #    x = self.encoder_atom(x)
-        #else:
         x = self.encoder(x)
+        x = self.bn_node(x)
         edge_attr = self.emb(edge_attr)
+        edge_attr = self.bn_edge(edge_attr)
+
         x = self.gnn(x, edge_index, edge_attr)
         x = self.pooling(x, batch)
-        x = self.linear_out(x)
-        if x.size(0) > 1:
-            x = self.bn_linear(x).relu()
-        else:
-            x = x.relu()
-        x = F.dropout(x, self.dropout, training=self.training)
+        x = self.bn_linear0(x)
+        x = self.linear_out1(x).relu()
+        x = self.bn_linear1(x)
+        x = self.linear_out2(x).relu()
+        x = self.bn_linear2(x)
+
+        #x = F.dropout(x, self.dropout, training=self.training)
         x = self.clf(x)
         return x
