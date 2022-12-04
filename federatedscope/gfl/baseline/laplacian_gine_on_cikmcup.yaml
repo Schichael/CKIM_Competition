@@ -24,7 +24,7 @@ model:
   graph_pooling: add
 personalization:
   local_param: ['encoder_atom', 'encoder', 'clf', 'bn_linear', 'local_gnn', 'emb',
-                'bn_dec', 'norms', 'norm','bn']
+                'bn_dec', 'norms', 'norm','bn','linear_out1_loc','bn_linear2_loc', 'local', 'linear_out2']
 train:
   batch_or_epoch: epoch
   local_update_steps: 10

@@ -162,7 +162,5 @@ client_13:
     local_update_steps: 1
     optimizer:
       lr: 0.05
-  grad:
-    grad_clip: 1.0
   eval:
     base: 0.004389
