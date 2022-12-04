@@ -1,6 +1,7 @@
 import copy
 import logging
 from copy import deepcopy
+from typing import Callable
 
 import torch
 from torch_geometric.graphgym import optim
@@ -13,7 +14,7 @@ from federatedscope.gfl.trainer import GraphMiniBatchTrainer
 logger = logging.getLogger(__name__)
 
 
-class LaplacianDomainSeparationTrainer(GraphMiniBatchTrainer):
+class LaplacianDomainSeparationWithSummationTrainer(GraphMiniBatchTrainer):
     def __init__(self,
                  model,
                  omega,
@@ -38,6 +39,13 @@ class LaplacianDomainSeparationTrainer(GraphMiniBatchTrainer):
         self.round_num=0
         self.in_finetune = False
 
+
+    def _align_global_local_parameters(self, model):
+        for name, param in deepcopy(model).named_parameters():
+            if name.startswith('local'):
+                stripped_name = name[len('local'):]
+                global_name = 'global' + stripped_name
+                model.state_dict()[name].data.copy_(copy.deepcopy(model.state_dict()[global_name].data))
     def update(self, content, strict=False):
         """
             Called by the FL client to update the model parameters
@@ -75,6 +83,8 @@ class LaplacianDomainSeparationTrainer(GraphMiniBatchTrainer):
                 self.ctx.model.state_dict()[key].data.copy_(updated_val)
                 self.ctx.omega[key] = copy.deepcopy(updated_omega)
 
+        if self.first_round:
+            self._align_global_local_parameters(self.ctx.model)
         # trainable_parameters = self._param_filter(model_parameters)
         # for key in trainable_parameters:
         #    self.ctx.model.state_dict()[key].data.copy_(trainable_parameters[key])s
@@ -82,6 +92,10 @@ class LaplacianDomainSeparationTrainer(GraphMiniBatchTrainer):
     def _hook_on_fit_start_init(self, ctx):
         super()._hook_on_fit_start_init(ctx)
         setattr(ctx, "{}_y_inds".format(ctx.cur_data_split), [])
+        #if not self.first_round:
+        #    print(f"last round mean difference loss: {ctx.aggr_diff_loss/ctx.batchnumbers}")
+        ctx.aggr_diff_loss = 0
+        ctx.batchnumbers = 0
         if ctx.cur_data_split == "train" and not self.in_finetune:
             self.round_num += 1
             self.in_finetune = True
@@ -105,7 +119,7 @@ class LaplacianDomainSeparationTrainer(GraphMiniBatchTrainer):
 
     def _hook_on_batch_forward(self, ctx):
         batch = ctx.data_batch.to(ctx.device)
-        pred, out_enc_shared, out_enc_private = ctx.model(batch)
+        pred, out_enc_private, out_enc_shared = ctx.model(batch)
         diffloss = DiffLoss()
         csd_loss = CSDLoss(self._param_filter, ctx)
         # TODO: deal with the type of data within the dataloader or dataset
@@ -116,6 +130,8 @@ class LaplacianDomainSeparationTrainer(GraphMiniBatchTrainer):
         if len(label.size()) == 0:
             label = label.unsqueeze(0)
         ctx.diff_loss = diffloss(out_enc_shared, out_enc_private)
+        ctx.aggr_diff_loss += ctx.diff_loss.item()
+        ctx.batchnumbers += 1
         ctx.loss_batch_ce = ctx.criterion(pred, label)
         ctx.loss_batch = ctx.loss_batch_ce
         #ctx.loss_batch_csd = self.get_csd_loss(ctx.model.state_dict(), ctx.new_mu, ctx.new_omega, ctx.cur_epoch_i + 1)
@@ -166,17 +182,25 @@ class LaplacianDomainSeparationTrainer(GraphMiniBatchTrainer):
                     ctx.data['train'].dataset)) * param.grad.data.clone() ** 2
 
         ctx.optimizer.zero_grad()
-        print(f"csd loss: {self.config.params.csd_importance * ctx.loss_batch_csd}")
-        print(f"diff loss: {self.config.params.diff_importance * ctx.diff_loss}")
+        #print(f"csd loss: {self.config.params.csd_importance * ctx.loss_batch_csd}")
+        #print(f"diff loss: {self.config.params.diff_importance * ctx.diff_loss}")
         loss = ctx.loss_batch_ce + self.config.params.csd_importance * ctx.loss_batch_csd + \
                self.config.params.diff_importance * ctx.diff_loss
-        print(f"loss: {loss}")
-        loss.backward(loss)
+        #print(f"loss: {loss}")
+        loss.backward(retain_graph=False)
 
         if ctx.grad_clip > 0:
             torch.nn.utils.clip_grad_norm_(ctx.model.parameters(),
                                            ctx.grad_clip)
+        prox_loss_change = self.get_prox_loss_change()
         ctx.optimizer.step()
+        for key, param in prox_loss_change.items():
+            curr_val = self.ctx.model.state_dict()[key]
+            updated_val = curr_val + param
+            self.ctx.model.state_dict()[key].data.copy_(updated_val)
+        #self.prox_loss_model_update()
+
+
 
     @use_diff_laplacian
     def train(self, state: int, target_data_split_name="train", hooks_set=None):
@@ -187,6 +211,7 @@ class LaplacianDomainSeparationTrainer(GraphMiniBatchTrainer):
         self.ctx.check_data_split(target_data_split_name)
 
         self._run_routine(MODE.TRAIN, hooks_set, target_data_split_name)
+        self.first_round = False
 
         return self.ctx.cfg.params.alpha, self.get_model_para(
         ), self.get_omega_para(), self.ctx.eval_metrics
@@ -195,6 +220,42 @@ class LaplacianDomainSeparationTrainer(GraphMiniBatchTrainer):
         return self._param_filter(
             self.ctx.omega)
 
+    def get_prox_loss_change(self):
+        """Add the model update for the proximate loss term.
+
+        Args:
+            ctx:
+            lam:
+
+        Returns:
+
+        """
+        lam = self.config.params.lam
+        lr = self.config.train.optimizer.lr
+        model_params = copy.deepcopy(self.ctx.new_mu)
+        # print("model params: ")
+        for key in model_params:
+            # print(key)
+            model_params[key] = param2tensor(model_params[key])
+        # self.ctx.model.load_state_dict(self._param_filter(model_params),
+        #                               strict=strict)
+
+        trainable_parameters = self._param_filter(model_params)
+        # print(f"trainable_parameters: \n{trainable_parameters.keys()}")
+        # print(f"omega keys: \n{self.ctx.omega.keys()}")
+        prox_loss_change = {}
+        for key in trainable_parameters:
+
+            # self.ctx.model.state_dict()[key].data.copy_(new_model_params[key])
+            if key.startswith('global'):
+                stripped_key = key[len('global'):]
+                local_key = 'local' + stripped_key
+                local_val = self.ctx.model.state_dict()[local_key]
+                server_val = model_params[key]
+                prox_loss_change[local_key] = - lr * lam * (local_val - server_val)
+                #updated_val = local_val - lr * lam * (local_val - server_val)
+                #self.ctx.model.state_dict()[key].data.copy_(updated_val)
+        return prox_loss_change
 
 class DiffLoss(torch.nn.Module):
     def __init__(self):
@@ -214,6 +275,9 @@ class DiffLoss(torch.nn.Module):
         diff_loss = torch.mean((input1_l2.t().mm(input2_l2)).pow(2))
 
         return diff_loss
+
+
+
 
 
 class CSDLoss(torch.nn.Module):
@@ -249,5 +313,5 @@ class CSDLoss(torch.nn.Module):
 
 def call_laplacian_trainer(trainer_type):
     if trainer_type == 'laplacian_trainer':
-        trainer_builder = LaplacianDomainSeparationTrainer
+        trainer_builder = LaplacianDomainSeparationWithSummationTrainer
         return trainer_builder
