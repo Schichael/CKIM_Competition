@@ -429,7 +429,9 @@ class Client(Worker):
         if self._monitor.should_save and self._cfg.federate.total_round_num != 2:
             path = self._cfg.outdir + f'/model{self._ID}.pth'
             logger.info(f"Client: #{self._ID}, val_imp_ratio: {self._monitor.current_best}. model saved at {path}")
-            #self.trainer.save_model(path)
+            #print("Before saving")
+            self.trainer.save_model(path)
+            #print("after saving")
 
     def callback_funcs_for_finish(self, message: Message):
         """
