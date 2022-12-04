@@ -112,7 +112,7 @@ class GNN_Net_Graph(torch.nn.Module):
 
         # Output layer
 
-        self.linear_out1 = Sequential(Linear(hidden*max_depth, hidden))
+        self.linear_out1_loc = Sequential(Linear(hidden * max_depth, hidden))
         self.linear_out2 = Sequential(Linear(hidden, 64))
         self.bn_linear0 = BatchNorm1d(hidden*max_depth)
         self.bn_linear1 = BatchNorm1d(hidden)
@@ -137,7 +137,7 @@ class GNN_Net_Graph(torch.nn.Module):
         x = self.gnn(x, edge_index, edge_attr)
         x = self.pooling(x, batch)
         x = self.bn_linear0(x)
-        x = self.linear_out1(x).relu()
+        x = self.linear_out1_loc(x).relu()
         x = self.bn_linear1(x)
         x = self.linear_out2(x).relu()
         x = self.bn_linear2(x)
