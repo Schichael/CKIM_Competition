@@ -2,6 +2,7 @@ client_1:
   model:
     out_channels: 2
     task: graphClassification
+    dropout: 0.9
   criterion:
     type: CrossEntropyLoss
   train:
@@ -13,6 +14,7 @@ client_2:
   model:
     out_channels: 2
     task: graphClassification
+    dropout: 0.99
   criterion:
     type: CrossEntropyLoss
   train:
@@ -24,6 +26,7 @@ client_3:
   model:
     out_channels: 2
     task: graphClassification
+    dropout: 0.5
   criterion:
     type: CrossEntropyLoss
   train:
@@ -35,6 +38,7 @@ client_4:
   model:
     out_channels: 2
     task: graphClassification
+    dropout: 0.99999
   criterion:
     type: CrossEntropyLoss
   train:

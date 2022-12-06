@@ -1,15 +1,16 @@
 client_1:
   model:
-    out_channels: 1
-    task: graphRegression
+    out_channels: 2
+    task: graphClassification
   criterion:
-    type: MSELoss
+    type: CrossEntropyLoss
   train:
     local_update_steps: 10
     optimizer:
-      lr: 0.0002
+      lr: 0.01
   eval:
-    base: 1.361326
+    base: 0.263789
+    metrics: ['imp_ratio', 'accuracy']
 client_2:
   model:
     out_channels: 2
@@ -161,7 +162,5 @@ client_13:
     local_update_steps: 1
     optimizer:
       lr: 0.05
-  grad:
-    grad_clip: 1.0
   eval:
     base: 0.004389
