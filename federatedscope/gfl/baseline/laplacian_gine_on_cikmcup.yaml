@@ -29,7 +29,7 @@ train:
   batch_or_epoch: epoch
   local_update_steps: 10
   optimizer:
-    weight_decay: 0.  #0.0001
+    weight_decay: 0.0001
     lr: 0.1
     type: SGD
 trainer:
@@ -37,7 +37,7 @@ trainer:
 grad:
   grad_clip: 2.0
 finetune:
-  before_eval: True
+  before_eval: False
   local_update_steps: 5000
 eval:
   freq: 1

@@ -2,21 +2,19 @@ client_1:
   model:
     out_channels: 2
     task: graphClassification
-    dropout: 0.99999
   criterion:
     type: CrossEntropyLoss
   train:
-    local_update_steps: 1000
+    local_update_steps: 10
     optimizer:
-      lr: 0.01
+      lr: 0.1
   eval:
+    metrics: [ 'acc', 'imp_ratio' ]
     base: 0.263789
-    metrics: ['imp_ratio', 'accuracy']
 client_2:
   model:
     out_channels: 2
     task: graphClassification
-    dropout: 0.99
   criterion:
     type: CrossEntropyLoss
   train:
@@ -30,7 +28,6 @@ client_3:
   model:
     out_channels: 2
     task: graphClassification
-    dropout: 0.9
   criterion:
     type: CrossEntropyLoss
   train:
@@ -44,7 +41,6 @@ client_4:
   model:
     out_channels: 2
     task: graphClassification
-    dropout: 0.3
   criterion:
     type: CrossEntropyLoss
   train:

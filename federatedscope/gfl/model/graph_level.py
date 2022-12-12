@@ -115,7 +115,7 @@ class GNN_Net_Graph(torch.nn.Module):
 
         #self.mine = Mine(mi_model, loss='mine')
 
-        self.mine = MutualInformationEstimator(1, 1, loss='mine')
+        self.mine = MutualInformationEstimator(hidden, hidden, loss='mine')
 
         # Pooling layer
         if pooling == 'add':
@@ -140,6 +140,7 @@ class GNN_Net_Graph(torch.nn.Module):
         #self.linear_out2_loc = Sequential(Linear(hidden, 64))
         self.bn_linear0_loc = BatchNorm1d(hidden * max_depth)
         self.bn_linear1_loc = BatchNorm1d(hidden)
+        self.bn_after_summation = BatchNorm1d(hidden)
         #self.bn_linear2_loc = BatchNorm1d(64)
 
 
@@ -172,7 +173,7 @@ class GNN_Net_Graph(torch.nn.Module):
         x_global = self.bn_linear0_glob(x_global)
         x_global = F.dropout(x_global, self.dropout, training=self.training)
         x_global = self.global_linear_out1(x_global).relu()
-        x_global = self.bn_linear1_glob(x_global)
+
 
         #if(edge_attr.size(0)==3952):
         #    print(f"global: {x_global}")
@@ -184,7 +185,7 @@ class GNN_Net_Graph(torch.nn.Module):
         x_local = self.bn_linear0_loc(x_local)
         x_local = F.dropout(x_local, self.dropout, training=self.training)
         x_local = self.local_linear_out1(x_local).relu()
-        x_local = self.bn_linear1_loc(x_local)
+
         #a = edge_attr.size(0)
         #b = edge_attr.size()
         #if (edge_attr.size(0) == 3952):
@@ -193,17 +194,16 @@ class GNN_Net_Graph(torch.nn.Module):
         #x_local = self.bn_linear2_loc(x_local)
         #x_local = F.dropout(x_local, self.dropout, training=self.training)
 
-        d_test = np.random.multivariate_normal(mean=[0, 0],
-                                          cov=[[1, self.rho], [self.rho, 1]],
-                                          size=(64, 1))
-        x_test = d_test[:,:,0]
-        y_test = d_test[:,:,1]
-        x_test = torch.from_numpy(x_test).to('cuda:0').float()
-        y_test = torch.from_numpy(y_test).to('cuda:0').float()
 
-        mi = self.mine(x_test, y_test)
+        mi = self.mine(x_local, x_global)
+
+
+        #x_global = self.bn_linear1_glob(x_global)
+        #x_local = self.bn_linear1_loc(x_local)
 
         x = x_local + x_global
+
+        x = self.bn_after_summation(x)
 
         x = F.dropout(x, self.dropout, training=self.training)
         x = self.linear_out2(x).relu()

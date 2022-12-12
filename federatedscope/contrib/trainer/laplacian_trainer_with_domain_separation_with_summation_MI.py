@@ -39,6 +39,9 @@ class LaplacianDomainSeparationWithSummationMITrainer(GraphMiniBatchTrainer):
         self.round_num=0
         self.in_finetune = False
         self.tmp = 0
+        # Get all model parameters with reuqires_grad = True
+        self.grad_params = [param[0] for param in self.ctx.model.named_parameters() if param[1].requires_grad]
+        self.mine_grad_params = [el for el in self.grad_params if el.startswith('mine')]
 
 
     def _align_global_local_parameters(self, model):
@@ -124,7 +127,7 @@ class LaplacianDomainSeparationWithSummationMITrainer(GraphMiniBatchTrainer):
         batch = ctx.data_batch.to(ctx.device)
         pred, mi = ctx.model(batch)
         ctx.mi = mi
-        print(f"negative mi: {-ctx.mi}")
+        # print(f"negative mi: {-ctx.mi}")
         csd_loss = CSDLoss(self._param_filter, ctx)
         # TODO: deal with the type of data within the dataloader or dataset
         if 'regression' in ctx.cfg.model.task.lower():
@@ -169,84 +172,66 @@ class LaplacianDomainSeparationWithSummationMITrainer(GraphMiniBatchTrainer):
         return sum(loss_set)
 
     def _hook_on_batch_backward(self, ctx):
-        """
-        ctx.optimizer.zero_grad()
-        ctx.loss_task.backward()
-        if ctx.grad_clip > 0:
-            torch.nn.utils.clip_grad_norm_(ctx.model.parameters(),
-                                           ctx.grad_clip)
-        ctx.optimizer.step()
-        """
         # Get all model parameters with reuqires_grad = True
-        grad_params = [param[0] for param in ctx.model.named_parameters() if param[1].requires_grad]
-
+        # grad_params = [param[0] for param in ctx.model.named_parameters() if param[1].requires_grad]
 
         ctx.optimizer.zero_grad()
-        """
+        # compute omega
         ctx.loss_batch_ce.backward(retain_graph=True)
-
-        for param in ctx.model.named_parameters():
-            if param[0].startswith("mine"):
-                param[1].requires_grad = True
-            else:
-                param[1].requires_grad = False
-        grads_before = {}
-        for param in ctx.model.named_parameters():
-            grads_before[param[0]]=param[1].grad
-        ctx.mi.backward(retain_graph=True)
-        grads_after = {}
-        for param in ctx.model.named_parameters():
-            grads_after[param[0]] = param[1].grad
         for name, param in ctx.model.named_parameters():
             if param.grad is not None:
                 ctx.omega[name] += (len(ctx.data_batch.y) / len(
                     ctx.data['train'].dataset)) * param.grad.data.clone() ** 2
 
         ctx.optimizer.zero_grad()
-        """
-        #print(f"csd loss: {self.config.params.csd_importance * ctx.loss_batch_csd}")
-        #print(f"diff loss: {self.config.params.diff_importance * ctx.diff_loss}")
-        """
-        loss = ctx.loss_batch_ce + self.config.params.csd_importance * ctx.loss_batch_csd - \
-               self.config.params.diff_importance * ctx.mi
-        """
-        prox_loss_change = self.get_prox_loss_change()
-        """
-        loss = self.config.params.diff_importance * ctx.mi
-        print(f"pos. diff loss: {loss}")
-        # freeze mi-model parameters
-        
+        # print(f"csd loss: {self.config.params.csd_importance * ctx.loss_batch_csd}")
+        # print(f"diff loss: {self.config.params.diff_importance * ctx.diff_loss}")
 
+        # compute loss for network without MINE network
         for param in ctx.model.named_parameters():
             if param[0].startswith("mine"):
                 param[1].requires_grad = False
+
+        # Use negative mi to minimize it (mi is naturally negative for some reason and the true mi is -ctx.mi)
+        loss = ctx.loss_batch_ce + self.config.params.csd_importance * ctx.loss_batch_csd - \
+               self.config.params.diff_importance * ctx.mi
+        # print(f"loss: {loss}")
+
         loss.backward(retain_graph=True)
 
-        if ctx.grad_clip > 0:
-            torch.nn.utils.clip_grad_norm_(ctx.model.parameters(),
-                                           ctx.grad_clip)
 
-        """
-
-
-        # train MI net
-
-        loss = self.config.params.diff_importance * ctx.mi
-        print(f"negative mi: {-ctx.mi}")
+        #Train MINE
         for param in ctx.model.named_parameters():
-            if param[0].startswith("mine"):
+            if param[0] in self.mine_grad_params:
                 param[1].requires_grad = True
             else:
                 param[1].requires_grad = False
-        loss.backward(retain_graph=False)
+
+        mine_loss = (self.config.params.mine_lr / self.config.train.optimizer.lr) * ctx.mi
+        mine_loss.backward(retain_graph=False)
+
+
+        # Perform training step
         if ctx.grad_clip > 0:
             torch.nn.utils.clip_grad_norm_(ctx.model.parameters(),
                                            ctx.grad_clip)
-        # Unfreeze all layers
-        for param in ctx.model.named_parameters():
-            if param[0] in grad_params:
-                param[1].requires_grad = True
+        prox_loss_change = self.get_prox_loss_change()
         ctx.optimizer.step()
+
+
+
+        for key, param in prox_loss_change.items():
+            curr_val = self.ctx.model.state_dict()[key]
+            updated_val = curr_val + param
+            self.ctx.model.state_dict()[key].data.copy_(updated_val)
+
+        # Reset requires_grad
+        for param in ctx.model.named_parameters():
+            if param[0] in self.grad_params:
+                param[1].requires_grad = True
+
+
+
 
 
 

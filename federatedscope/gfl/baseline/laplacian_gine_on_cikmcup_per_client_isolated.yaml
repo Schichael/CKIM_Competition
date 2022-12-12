@@ -9,7 +9,7 @@ client_1:
     optimizer:
       lr: 0.01
   eval:
-    base: 0.263789
+    base: 0.302378
     metrics: ['imp_ratio', 'accuracy']
 client_2:
   model:

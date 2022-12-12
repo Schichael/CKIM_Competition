@@ -86,11 +86,10 @@ def get_gnn(model_config, local_data):
                                   max(model_config.out_channels, num_label),
                                   hidden=model_config.hidden,
                                   max_depth=model_config.layer,
-                                  dropout=0., # model_config.dropout,
+                                  dropout= model_config.dropout,
                                   gnn=model_config.type,
                                   pooling=model_config.graph_pooling,
                                   edge_dim=edge_dim,
-                                  rho=model_config.dropout
                                   )
     else:
         raise ValueError('not recognized data task {}'.format(
