@@ -37,6 +37,7 @@ client_3:
 client_4:
   eval:
     base: 0.579
+    metrics: ['imp_ratio', 'acc']
   model:
     out_channels: 2
     task: graphClassification
@@ -46,10 +47,11 @@ client_4:
     optimizer:
       lr: 0.01
     local_update_steps: 21
-  metrics: ['accuracy']
+
 client_5:
   eval:
     base: 0.766
+    metrics: ['imp_ratio', 'acc']
   model:
     out_channels: 2
     task: graphClassification
@@ -59,10 +61,10 @@ client_5:
     optimizer:
       lr: 0.05
     local_update_steps: 21
-  metrics: ['accuracy']
 client_6:
   eval:
     base: 0.579
+    metrics: ['imp_ratio', 'acc']
   model:
     out_channels: 2
     task: graphClassification
@@ -72,10 +74,10 @@ client_6:
     optimizer:
       lr: 0.05
     local_update_steps: 21
-  metrics: ['accuracy']
 client_7:
   eval:
     base: 0.632
+    metrics: ['imp_ratio', 'acc']
   model:
     out_channels: 2
     task: graphClassification
@@ -85,10 +87,10 @@ client_7:
     optimizer:
       lr: 0.1
     local_update_steps: 21
-  metrics: ['accuracy']
 client_8:
   eval:
     base: 0.581
+    metrics: ['imp_ratio', 'acc']
   model:
     out_channels: 2
     task: graphClassification
@@ -98,10 +100,10 @@ client_8:
     optimizer:
       lr: 0.0001
     local_update_steps: 21
-  metrics: ['accuracy']
 client_9:
   eval:
     base: 0.676
+    metrics: ['imp_ratio', 'acc']
   model:
     out_channels: 2
     task: graphClassification
@@ -111,10 +113,10 @@ client_9:
     optimizer:
       lr: 0.05
     local_update_steps: 21
-  metrics: ['accuracy']
 client_10:
   eval:
     base: 0.457
+    metrics: ['imp_ratio', 'acc']
   model:
     out_channels: 2
     task: graphClassification
@@ -124,10 +126,10 @@ client_10:
     optimizer:
       lr: 0.05
     local_update_steps: 21
-  metrics: ['accuracy']
 client_11:
   eval:
     base: 0.889
+    metrics: ['imp_ratio', 'acc']
   model:
     out_channels: 2
     task: graphClassification
@@ -137,10 +139,10 @@ client_11:
     optimizer:
       lr: 0.1
     local_update_steps: 21
-  metrics: ['accuracy']
 client_12:
   eval:
     base: 0.624
+    metrics: ['imp_ratio', 'acc']
   model:
     out_channels: 2
     task: graphClassification
@@ -150,10 +152,10 @@ client_12:
     optimizer:
       lr: 0.05
     local_update_steps: 21
-  metrics: ['accuracy']
 client_13:
   eval:
     base: 0.589
+    metrics: ['imp_ratio', 'acc']
   model:
     out_channels: 2
     task: graphClassification

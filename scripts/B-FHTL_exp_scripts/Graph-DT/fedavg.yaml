@@ -35,7 +35,7 @@ criterion:
 trainer:
   type: graphminibatch_trainer
 eval:
-  freq: 5
+  freq: 1
   metrics: ['imp_ratio']
   report: ['avg']
   best_res_update_round_wise_key: val_imp_ratio
