@@ -500,6 +500,7 @@ class Monitor(object):
             by default, the update is based on validation loss with
             `round_wise_update_key="val_loss" `
         """
+
         if not isinstance(new_results['val_imp_ratio'], list):
             results = new_results['val_imp_ratio']
             if results >= self.current_best:

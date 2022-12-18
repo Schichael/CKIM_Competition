@@ -210,7 +210,7 @@ def eval_total(ctx, **kwargs):
 def eval_regular(ctx, **kwargs):
     return ctx.get("loss_regular_total_{}".format(ctx.cur_data_split))
 
-
+"""
 def eval_imp_ratio(ctx, y_true, y_prob, y_pred, **kwargs):
     if not hasattr(ctx.cfg.eval, 'base') or ctx.cfg.eval.base <= 0:
         logger.info(f"To use the metric `imp_rato`, please set `eval.base` as the basic performance and it must be greater than zero")
@@ -223,6 +223,22 @@ def eval_imp_ratio(ctx, y_true, y_prob, y_pred, **kwargs):
     elif 'classification' in task:
         perform = 1 - eval_acc(y_true, y_pred)
     return (base - perform) / base * 100.
+"""
+
+def eval_imp_ratio(ctx, y_true, y_prob, y_pred, **kwargs):
+    if not hasattr(ctx.cfg.eval, 'base') or ctx.cfg.eval.base <= 0:
+        logger.info(f"To use the metric `imp_rato`, please set `eval.base` as the basic performance and it must be greater than zero")
+        return 0.
+
+    base = ctx.cfg.eval.base
+    task = ctx.cfg.model.task.lower()
+    if 'regression' in task:
+        perform = eval_mse(y_true, y_prob)
+        return -(perform - base) / base * 100.
+    elif 'classification' in task:
+        perform = eval_acc(y_true, y_pred)
+        return (perform - base) / base * 100.
+
 
 
 SUPPORT_METRICS = {
