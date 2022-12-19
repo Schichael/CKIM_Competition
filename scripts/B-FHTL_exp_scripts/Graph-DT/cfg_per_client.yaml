@@ -191,7 +191,7 @@ client_15:
     local_update_steps: 21
 client_16:
   eval:
-    base: 0.954
+    base: 0.005
   model:
     out_channels: 19
     task: graphRegression
