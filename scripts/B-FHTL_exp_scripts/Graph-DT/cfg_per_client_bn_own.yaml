@@ -1,0 +1,203 @@
+client_1:
+  eval:
+    base: 1.451
+  model:
+    out_channels: 1
+    task: graphRegression
+  criterion:
+    type: MSELoss
+  train:
+    optimizer:
+      lr: 0.01
+    local_update_steps: 21
+client_2:
+  eval:
+    base: 0.099
+  model:
+    out_channels: 1
+    task: graphRegression
+  criterion:
+    type: MSELoss
+  train:
+    optimizer:
+      lr: 0.1
+    local_update_steps: 21
+client_3:
+  eval:
+    base: 0.954
+  model:
+    out_channels: 1
+    task: graphRegression
+  criterion:
+    type: MSELoss
+  train:
+    optimizer:
+      lr: 0.05
+    local_update_steps: 21
+client_4:
+  eval:
+    base: 0.579
+    metrics: ['imp_ratio', 'acc']
+  model:
+    out_channels: 2
+    task: graphClassification
+  criterion:
+    type: CrossEntropyLoss
+  train:
+    optimizer:
+      lr: 0.01
+    local_update_steps: 21
+
+client_5:
+  eval:
+    base: 0.766
+    metrics: ['imp_ratio', 'acc']
+  model:
+    out_channels: 2
+    task: graphClassification
+  criterion:
+    type: CrossEntropyLoss
+  train:
+    optimizer:
+      lr: 0.025
+    local_update_steps: 21
+client_6:
+  eval:
+    base: 0.579
+    metrics: ['imp_ratio', 'acc']
+  model:
+    out_channels: 2
+    task: graphClassification
+  criterion:
+    type: CrossEntropyLoss
+  train:
+    optimizer:
+      lr: 0.025
+    local_update_steps: 21
+client_7:
+  eval:
+    base: 0.632
+    metrics: ['imp_ratio', 'acc']
+  model:
+    out_channels: 2
+    task: graphClassification
+  criterion:
+    type: CrossEntropyLoss
+  train:
+    optimizer:
+      lr: 0.1
+    local_update_steps: 21
+client_8:
+  eval:
+    base: 0.581
+    metrics: ['imp_ratio', 'acc']
+  model:
+    out_channels: 2
+    task: graphClassification
+  criterion:
+    type: CrossEntropyLoss
+  train:
+    optimizer:
+      lr: 0.0001
+    local_update_steps: 21
+client_9:
+  eval:
+    base: 0.676
+    metrics: ['imp_ratio', 'acc']
+  model:
+    out_channels: 2
+    task: graphClassification
+  criterion:
+    type: CrossEntropyLoss
+  train:
+    optimizer:
+      lr: 0.05
+    local_update_steps: 21
+client_10:
+  eval:
+    base: 0.457
+    metrics: ['imp_ratio', 'acc']
+  model:
+    out_channels: 2
+    task: graphClassification
+  criterion:
+    type: CrossEntropyLoss
+  train:
+    optimizer:
+      lr: 0.05
+    local_update_steps: 21
+client_11:
+  eval:
+    base: 0.889
+    metrics: ['imp_ratio', 'acc']
+  model:
+    out_channels: 2
+    task: graphClassification
+  criterion:
+    type: CrossEntropyLoss
+  train:
+    optimizer:
+      lr: 0.1
+    local_update_steps: 21
+client_12:
+  eval:
+    base: 0.624
+    metrics: ['imp_ratio', 'acc']
+  model:
+    out_channels: 2
+    task: graphClassification
+  criterion:
+    type: CrossEntropyLoss
+  train:
+    optimizer:
+      lr: 0.05
+    local_update_steps: 21
+client_13:
+  eval:
+    base: 0.589
+    metrics: ['imp_ratio', 'acc']
+  model:
+    out_channels: 2
+    task: graphClassification
+  criterion:
+    type: CrossEntropyLoss
+  train:
+    optimizer:
+      lr: 0.05
+    local_update_steps: 21
+client_14:
+  eval:
+    base: 0.008
+  model:
+    out_channels: 12
+    task: graphRegression
+  criterion:
+    type: MSELoss
+  train:
+    optimizer:
+      lr: 0.05
+    local_update_steps: 21
+client_15:
+  eval:
+    base: 0.058
+  model:
+    out_channels: 1
+    task: graphRegression
+  criterion:
+    type: MSELoss
+  train:
+    optimizer:
+      lr: 0.1
+    local_update_steps: 21
+client_16:
+  eval:
+    base: 0.005
+  model:
+    out_channels: 19
+    task: graphRegression
+  criterion:
+    type: MSELoss
+  train:
+    optimizer:
+      lr: 0.05
+    local_update_steps: 21
