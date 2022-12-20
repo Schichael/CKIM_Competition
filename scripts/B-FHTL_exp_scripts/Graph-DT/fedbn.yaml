@@ -1,7 +1,7 @@
 use_gpu: True
 device: 0
 early_stop:
-  patience: 80
+  patience: 300
   improve_indicator_mode: mean
   the_smaller_the_better: False
 federate:
@@ -11,7 +11,7 @@ federate:
   total_round_num: 400
   share_local_model: False
 train:
-  local_update_steps: 21
+  local_update_steps: 1
   batch_or_epoch: 'epoch'
   optimizer:
     lr: 0.5
