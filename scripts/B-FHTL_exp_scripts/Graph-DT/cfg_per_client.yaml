@@ -9,7 +9,7 @@ client_1:
   train:
     optimizer:
       lr: 0.01
-    local_update_steps: 21
+    local_update_steps: 1
 client_2:
   eval:
     base: 0.099
@@ -21,7 +21,7 @@ client_2:
   train:
     optimizer:
       lr: 0.1
-    local_update_steps: 21
+    local_update_steps: 1
 client_3:
   eval:
     base: 0.954
@@ -33,7 +33,7 @@ client_3:
   train:
     optimizer:
       lr: 0.1
-    local_update_steps: 21
+    local_update_steps: 1
 client_4:
   eval:
     base: 0.579
@@ -46,7 +46,7 @@ client_4:
   train:
     optimizer:
       lr: 0.01
-    local_update_steps: 21
+    local_update_steps: 1
 
 client_5:
   eval:
@@ -60,7 +60,7 @@ client_5:
   train:
     optimizer:
       lr: 0.05
-    local_update_steps: 21
+    local_update_steps: 1
 client_6:
   eval:
     base: 0.579
@@ -73,7 +73,7 @@ client_6:
   train:
     optimizer:
       lr: 0.05
-    local_update_steps: 21
+    local_update_steps: 1
 client_7:
   eval:
     base: 0.632
@@ -86,7 +86,7 @@ client_7:
   train:
     optimizer:
       lr: 0.1
-    local_update_steps: 21
+    local_update_steps: 1
 client_8:
   eval:
     base: 0.581
@@ -99,7 +99,7 @@ client_8:
   train:
     optimizer:
       lr: 0.0001
-    local_update_steps: 21
+    local_update_steps: 1
 client_9:
   eval:
     base: 0.676
@@ -112,7 +112,7 @@ client_9:
   train:
     optimizer:
       lr: 0.05
-    local_update_steps: 21
+    local_update_steps: 1
 client_10:
   eval:
     base: 0.457
@@ -125,7 +125,7 @@ client_10:
   train:
     optimizer:
       lr: 0.05
-    local_update_steps: 21
+    local_update_steps: 1
 client_11:
   eval:
     base: 0.889
@@ -138,7 +138,7 @@ client_11:
   train:
     optimizer:
       lr: 0.1
-    local_update_steps: 21
+    local_update_steps: 1
 client_12:
   eval:
     base: 0.624
@@ -151,7 +151,7 @@ client_12:
   train:
     optimizer:
       lr: 0.05
-    local_update_steps: 21
+    local_update_steps: 1
 client_13:
   eval:
     base: 0.589
@@ -164,7 +164,7 @@ client_13:
   train:
     optimizer:
       lr: 0.05
-    local_update_steps: 21
+    local_update_steps: 1
 client_14:
   eval:
     base: 0.008
@@ -176,7 +176,7 @@ client_14:
   train:
     optimizer:
       lr: 0.05
-    local_update_steps: 21
+    local_update_steps: 1
 client_15:
   eval:
     base: 0.058
@@ -188,7 +188,7 @@ client_15:
   train:
     optimizer:
       lr: 0.1
-    local_update_steps: 21
+    local_update_steps: 1
 client_16:
   eval:
     base: 0.005
@@ -200,4 +200,4 @@ client_16:
   train:
     optimizer:
       lr: 0.05
-    local_update_steps: 21
+    local_update_steps: 1
