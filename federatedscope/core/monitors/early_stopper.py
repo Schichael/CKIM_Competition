@@ -64,15 +64,11 @@ class EarlyStopper(object):
                 new_result):
             # typical case: add(eval_score, delta) > new_result
             self.counter_no_improve += 1
-
         else:
             self.best_metric = new_result
             self.counter_no_improve = 0
 
         self.early_stopped = self.counter_no_improve >= self.patience
-        print(f"no improve counter: {self.counter_no_improve}")
-        print(f"self.best_metric: {self.best_metric}")
-
         return self.early_stopped
 
     def __track_and_check_mean(self, history_result):
