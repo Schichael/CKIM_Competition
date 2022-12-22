@@ -69,6 +69,8 @@ class EarlyStopper(object):
             self.counter_no_improve = 0
 
         self.early_stopped = self.counter_no_improve >= self.patience
+        if np.isnan(new_result):
+            self.early_stopped = True
         return self.early_stopped
 
     def __track_and_check_mean(self, history_result):
