@@ -91,7 +91,8 @@ def update_logger(cfg, clear_before_add=False):
                       f"_{cfg.data.type}_lr{cfg.train.optimizer.lr}_lste" \
                       f"p{cfg.train.local_update_steps}"
     cfg.expname = f"{cfg.expname}_{cfg.expname_tag}"
-    cfg.outdir = os.path.join(cfg.outdir, cfg.expname)
+    client_str = 'CLIENT_' + str(cfg.data.client)
+    cfg.outdir = os.path.join(cfg.outdir, client_str, cfg.expname)
 
     # if exist, make directory with given name and time
     if os.path.isdir(cfg.outdir) and os.path.exists(cfg.outdir):

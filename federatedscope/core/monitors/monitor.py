@@ -70,7 +70,7 @@ class Monitor(object):
         self.local_convergence_round = 0  # total fl rounds to convergence
         self.local_convergence_wall_time = 0
 
-        self.current_best = -10000
+        self.current_best = 10000
         self.should_save = False
 
         if self.wandb_online_track:
@@ -490,16 +490,12 @@ class Monitor(object):
     def track_download_bytes(self, bytes):
         self.total_download_bytes += bytes
 
+    """
     def update_best_result(self,
                            best_results,
                            new_results,
                            results_type,
                            round_wise_update_key="val_loss"):
-        """
-            update best evaluation results.
-            by default, the update is based on validation loss with
-            `round_wise_update_key="val_loss" `
-        """
 
         if not isinstance(new_results['val_imp_ratio'], list):
             results = new_results['val_imp_ratio']
@@ -647,6 +643,7 @@ class Monitor(object):
                     exit()
 
     """
+    """
     def update_best_result(self,
                            best_results,
                            new_results,
@@ -661,6 +658,7 @@ class Monitor(object):
         else:
             if results_type not in best_results:
                 best_results[results_type] = dict()
+
             best_result = best_results[results_type]
             # update different keys separately: the best values can be in
             # different rounds
@@ -769,6 +767,7 @@ class Monitor(object):
                         pass
 
         if update_best_this_round:
+            self.current_best = new_results
             line = f"Find new best result: {best_results}"
             logging.info(line)
             if self.use_wandb and self.wandb_online_track:
@@ -787,4 +786,151 @@ class Monitor(object):
                     logger.error(
                         "cfg.wandb.use=True but not install the wandb package")
                     exit()
+        logger.info(f"Current best: {self.current_best}")
+
     """
+
+    def update_best_result(self,
+                           best_results,
+                           new_results,
+                           results_type,
+                           round_wise_update_key="val_loss"):
+
+        update_best_this_round = False
+        if not isinstance(new_results, dict):
+            raise ValueError(
+                f"update best results require `results` a dict, but got"
+                f" {type(new_results)}")
+        else:
+            if results_type not in best_results:
+                best_results[results_type] = dict()
+
+            best_result = best_results[results_type]
+            # update different keys separately: the best values can be in
+            # different rounds
+            if round_wise_update_key is None:
+                for key in new_results:
+                    cur_result = new_results[key]
+                    if 'loss' in key or 'std' in key:  # the smaller,
+                        # the better
+                        if results_type in [
+                                "client_best_individual",
+                                "unseen_client_best_individual"
+                        ]:
+                            cur_result = min(cur_result)
+                        if key not in best_result or cur_result < best_result[
+                                key]:
+                            best_result[key] = cur_result
+                            update_best_this_round = True
+
+                    elif 'acc' in key:  # the larger, the better
+                        if results_type in [
+                                "client_best_individual",
+                                "unseen_client_best_individual"
+                        ]:
+                            cur_result = max(cur_result)
+                        if key not in best_result or cur_result > best_result[
+                                key]:
+                            best_result[key] = cur_result
+                            update_best_this_round = True
+                    else:
+                        # unconcerned metric
+                        pass
+            # update different keys round-wise: if find better
+            # round_wise_update_key, update others at the same time
+            else:
+                if round_wise_update_key not in [
+                        "val_loss",
+                        "test_loss",
+                        "loss",
+                        "val_avg_loss",
+                        "test_avg_loss",
+                        "avg_loss",
+                        "test_acc",
+                        "test_std",
+                        "val_acc",
+                        "val_std",
+                        "val_imp_ratio"
+                ]:
+                    raise NotImplementedError(
+                        f"We currently support round_wise_update_key as one "
+                        f"of ['val_loss', 'test_loss', 'loss', "
+                        f"'val_avg_loss', 'test_avg_loss', 'avg_loss,"
+                        f"''val_acc', 'val_std', 'test_acc', 'test_std', "
+                        f"'val_imp_ratio'] for round-wise best results "
+                        f" update, but got {round_wise_update_key}.")
+
+                found_round_wise_update_key = False
+                sorted_keys = []
+                for key in new_results:
+                    if round_wise_update_key in key:
+                        sorted_keys.insert(0, key)
+                        found_round_wise_update_key = True
+                    else:
+                        sorted_keys.append(key)
+                if not found_round_wise_update_key:
+                    raise ValueError(
+                        "Your specified eval.best_res_update_round_wise_key "
+                        "is not in target results, "
+                        "use another key or check the name. \n"
+                        f"Got eval.best_res_update_round_wise_key"
+                        f"={round_wise_update_key}, "
+                        f"the keys of results are {list(new_results.keys())}")
+
+                cur_result = new_results[round_wise_update_key]
+                if update_best_this_round or \
+                        ('loss' in round_wise_update_key and 'loss' in
+                         round_wise_update_key) or \
+                        ('std' in round_wise_update_key and 'std' in round_wise_update_key):
+                    # The smaller the better
+                    if results_type in [
+                        "client_best_individual",
+                        "unseen_client_best_individual"
+                    ]:
+                        cur_result = min(cur_result)
+                    if update_best_this_round or \
+                            round_wise_update_key not in best_result or cur_result < \
+                            best_result[round_wise_update_key]:
+                        best_result[round_wise_update_key] = cur_result
+                        update_best_this_round = True
+                elif update_best_this_round or \
+                        ('acc' in round_wise_update_key and 'acc' in round_wise_update_key) or \
+                        ('imp_ratio' in round_wise_update_key and 'imp_ratio' in round_wise_update_key):
+                    # The larger the better
+                    if results_type in [
+                        "client_best_individual",
+                        "unseen_client_best_individual"
+                    ]:
+                        cur_result = max(cur_result)
+                    if update_best_this_round or \
+                            round_wise_update_key not in best_result or cur_result > \
+                            best_result[round_wise_update_key]:
+                        best_result[round_wise_update_key] = cur_result
+                        update_best_this_round = True
+                else:
+                    # unconcerned metric
+                    pass
+
+
+
+        if update_best_this_round:
+            self.current_best = new_results
+            line = f"Find new best result: {best_results}"
+            logging.info(line)
+            if self.use_wandb and self.wandb_online_track:
+                try:
+                    import wandb
+                    exp_stop_normal = False
+                    exp_stop_normal, log_res = logline_2_wandb_dict(
+                        exp_stop_normal,
+                        line,
+                        self.log_res_best,
+                        raw_out=False)
+                    # wandb.log(self.log_res_best)
+                    for k, v in self.log_res_best.items():
+                        wandb.summary[k] = v
+                except ImportError:
+                    logger.error(
+                        "cfg.wandb.use=True but not install the wandb package")
+                    exit()
+        logger.info(f"Current best: {self.current_best}")

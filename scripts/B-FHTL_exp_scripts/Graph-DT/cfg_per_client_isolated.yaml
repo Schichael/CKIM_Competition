@@ -1,0 +1,175 @@
+client_1:
+  eval:
+    base: 1.451
+    metrics: [ 'loss' ]
+    best_res_update_round_wise_key: 'val_avg_loss'
+  model:
+    out_channels: 1
+    task: graphRegression
+  criterion:
+    type: MSELoss
+client_2:
+  eval:
+    base: 0.099
+    metrics: [ 'loss' ]
+    best_res_update_round_wise_key: 'val_avg_loss'
+  model:
+    out_channels: 1
+    task: graphRegression
+  criterion:
+    type: MSELoss
+client_3:
+  eval:
+    base: 0.954
+    metrics: [ 'loss' ]
+    best_res_update_round_wise_key: 'val_avg_loss'
+  model:
+    out_channels: 1
+    task: graphRegression
+  criterion:
+    type: MSELoss
+client_4:
+  eval:
+    base: 0.579
+    metrics: [ 'loss', 'acc' ]
+    best_res_update_round_wise_key: 'val_avg_loss'
+  model:
+    out_channels: 2
+    task: graphClassification
+  criterion:
+    type: CrossEntropyLoss
+
+client_5:
+  eval:
+    base: 0.766
+    metrics: [ 'loss', 'acc' ]
+    best_res_update_round_wise_key: 'val_avg_loss'
+  model:
+    out_channels: 2
+    task: graphClassification
+  criterion:
+    type: CrossEntropyLoss
+
+client_6:
+  eval:
+    base: 0.579
+    metrics: [ 'loss', 'acc' ]
+    best_res_update_round_wise_key: 'val_avg_loss'
+  model:
+    out_channels: 2
+    task: graphClassification
+  criterion:
+    type: CrossEntropyLoss
+  train:
+    optimizer:
+      lr: 0.05
+    local_update_steps: 1
+client_7:
+  eval:
+    base: 0.632
+    metrics: [ 'loss', 'acc' ]
+    best_res_update_round_wise_key: 'val_avg_loss'
+  model:
+    out_channels: 2
+    task: graphClassification
+  criterion:
+    type: CrossEntropyLoss
+
+client_8:
+  eval:
+    base: 0.581
+    metrics: [ 'loss', 'acc' ]
+    best_res_update_round_wise_key: 'val_avg_loss'
+  model:
+    out_channels: 2
+    task: graphClassification
+  criterion:
+    type: CrossEntropyLoss
+
+client_9:
+  eval:
+    base: 0.676
+    metrics: [ 'loss', 'acc' ]
+    best_res_update_round_wise_key: 'val_avg_loss'
+  model:
+    out_channels: 2
+    task: graphClassification
+  criterion:
+    type: CrossEntropyLoss
+
+client_10:
+  eval:
+    base: 0.457
+    metrics: [ 'loss', 'acc' ]
+    best_res_update_round_wise_key: 'val_avg_loss'
+  model:
+    out_channels: 2
+    task: graphClassification
+  criterion:
+    type: CrossEntropyLoss
+
+client_11:
+  eval:
+    base: 0.889
+    metrics: [ 'loss', 'acc' ]
+    best_res_update_round_wise_key: 'val_avg_loss'
+  model:
+    out_channels: 2
+    task: graphClassification
+  criterion:
+    type: CrossEntropyLoss
+
+client_12:
+  eval:
+    base: 0.624
+    metrics: [ 'loss', 'acc' ]
+    best_res_update_round_wise_key: 'val_avg_loss'
+  model:
+    out_channels: 2
+    task: graphClassification
+  criterion:
+    type: CrossEntropyLoss
+
+client_13:
+  eval:
+    base: 0.589
+    metrics: [ 'loss', 'acc' ]
+    best_res_update_round_wise_key: 'val_avg_loss'
+  model:
+    out_channels: 2
+    task: graphClassification
+  criterion:
+    type: CrossEntropyLoss
+
+client_14:
+  eval:
+    base: 0.008
+    metrics: [ 'loss' ]
+    best_res_update_round_wise_key: 'val_avg_loss'
+  model:
+    out_channels: 12
+    task: graphRegression
+  criterion:
+    type: MSELoss
+
+client_15:
+  eval:
+    base: 0.058
+    metrics: [ 'loss' ]
+    best_res_update_round_wise_key: 'val_avg_loss'
+  model:
+    out_channels: 1
+    task: graphRegression
+  criterion:
+    type: MSELoss
+
+client_16:
+  eval:
+    base: 0.005
+    metrics: [ 'loss' ]
+    best_res_update_round_wise_key: 'val_avg_loss'
+  model:
+    out_channels: 19
+    task: graphRegression
+  criterion:
+    type: MSELoss

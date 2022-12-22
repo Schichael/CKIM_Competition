@@ -89,7 +89,8 @@ class GraphDTDataset(InMemoryDataset):
 
     @property
     def processed_dir(self):
-        return os.path.join(self.root, 'graph_dt', 'processed')
+        return os.path.join(self.root, 'graph_dt',
+                            'processed')
 
     @property
     def processed_file_names(self):
@@ -110,6 +111,7 @@ class GraphDTDataset(InMemoryDataset):
         return data
 
     def process(self):
+        return
         np.random.seed(0)
         splits = [0.8, 0.1, 0.1]
         data_name_list = ['ESOL', 'FREESOLV', 'LIPO', 'BACE', 'BBBP', 'CLINTOX',
@@ -272,11 +274,13 @@ def load_graph_dt_data(config):
 
     # Build data
     dataset = GraphDTDataset(config.data.root)
-    config.merge_from_list(['federate.client_num', len(dataset)])
+    # config.merge_from_list(['federate.client_num', len(dataset)])
 
     data_dict = {}
     # Build DataLoader dict
-    for client_idx in range(1, config.federate.client_num + 1):
+    # TODO: only the selected dataset
+    i = 1
+    for client_idx in range(config.data.client, config.data.client + 1):
         dataloader_dict = {}
         tmp_dataset = []
         if 'train' in dataset[client_idx - 1]:
@@ -299,8 +303,8 @@ def load_graph_dt_data(config):
         if tmp_dataset:
             dataloader_dict['num_label'] = 0 # todo: set to 0, used in gfl/model_builder.py line74
             # dataloader_dict['num_label'] = get_numGraphLabels(tmp_dataset)
-        data_dict[client_idx] = dataloader_dict
-
+        data_dict[i] = dataloader_dict
+    i += 1
     return data_dict, config
 
 
