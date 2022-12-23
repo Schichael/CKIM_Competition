@@ -136,6 +136,6 @@ class GNN_Net_Graph(torch.nn.Module):
         x = self.linear_out1_loc(x).relu()
         x = F.dropout(x, self.dropout, training=self.training)
         x = self.linear_out2(x).relu()
-        x = F.dropout(x, self.dropout, training=self.training)
+        # x = F.dropout(x, self.dropout, training=self.training)
         x = self.clf(x)
         return x
