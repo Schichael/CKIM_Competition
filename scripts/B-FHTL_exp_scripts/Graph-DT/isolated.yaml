@@ -30,6 +30,7 @@ model:
   hidden: 64
   out_channels: 0
   task: graph
+  graph_pooling: add
 personalization:
   local_param: ['encoder_atom', 'encoder', 'clf']   # to handle size-different pre & post layers
 
