@@ -1,7 +1,7 @@
 use_gpu: True
 device: 0
 early_stop:
-  patience: 50
+  patience: 200
   # improve_indicator_mode: mean
   the_smaller_the_better: True
 
@@ -30,7 +30,7 @@ model:
   hidden: 64
   out_channels: 0
   task: graph
-  graph_pooling: add
+  graph_pooling: mean
 personalization:
   local_param: ['encoder_atom', 'encoder', 'clf']   # to handle size-different pre & post layers
 
