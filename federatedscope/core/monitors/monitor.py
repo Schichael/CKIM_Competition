@@ -242,6 +242,9 @@ class Monitor(object):
                 exit()
 
     def finish_fed_runner(self, fl_mode=None):
+        with open(os.path.join(self.outdir, "best_result.log"),
+                  "w") as best_result_log:
+            best_result_log.write(str(self.current_best))
         self.compress_raw_res_file()
         if fl_mode == "standalone":
             self.merge_system_metrics_simulation_mode()
@@ -256,6 +259,7 @@ class Monitor(object):
 
             from federatedscope.core.auxiliaries.utils import \
                 logfile_2_wandb_dict
+
             with open(os.path.join(self.outdir, "eval_results.log"),
                       "r") as exp_log_f:
                 # track the prediction related performance
