@@ -55,7 +55,6 @@ class GNN_Net_Graph(torch.nn.Module):
                  gnn='gcn',
                  pooling='add',
                  edge_dim = None):
-        self.hidden = hidden
         if edge_dim is None or edge_dim == 0:
             edge_dim = 1
         super(GNN_Net_Graph, self).__init__()
@@ -113,21 +112,13 @@ class GNN_Net_Graph(torch.nn.Module):
 
         # Output layer
 
-        self.linear_out1_glob = Sequential(Linear(hidden * max_depth, hidden*2))
-        self.linear_out2 = Sequential(Linear(hidden, hidden))
+        self.linear_out1_loc = Sequential(Linear(hidden * max_depth, hidden))
+        self.linear_out2 = Sequential(Linear(hidden, 64))
         self.bn_linear0 = BatchNorm1d(hidden*max_depth)
         self.bn_linear1 = BatchNorm1d(hidden)
-        self.bn_linear2 = BatchNorm1d(hidden)
-        self.clf = Linear(hidden, out_channels)
+        self.bn_linear2 = BatchNorm1d(64)
+        self.clf = Linear(64, out_channels)
         self.emb = Linear(edge_dim, hidden)
-
-    def reparameterise(self, mu, logvar):
-        if self.training:
-            std = logvar.mul(0.5).exp_()
-            eps = std.data.new(std.size()).normal_()
-            return eps.mul(std).add_(mu)
-        else:
-            return mu
 
     def forward(self, data):
         x, edge_index, batch = data.x, data.edge_index, data.batch
@@ -142,13 +133,7 @@ class GNN_Net_Graph(torch.nn.Module):
 
         x = self.gnn(x, edge_index, edge_attr)
         x = self.pooling(x, batch)
-        mu_logvar = self.linear_out1_glob(x).view(-1, 2, self.hidden)
-
-        # reparametrization trick
-        mu = mu_logvar[:, 0, :]
-        logvar = mu_logvar[:, 1, :]
-        x = self.reparameterise(mu, logvar)
-        x = x.relu()
+        x = self.linear_out1_loc(x).relu()
         x = F.dropout(x, self.dropout, training=self.training)
         x = self.linear_out2(x).relu()
         x = F.dropout(x, self.dropout, training=self.training)
