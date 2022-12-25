@@ -1,14 +1,11 @@
 import torch
 import torch.nn.functional as F
-from torch.nn import Linear, Sequential, BatchNorm1d
+from torch.nn import Linear, Sequential
 from torch_geometric.data import Data
 from torch_geometric.data.batch import Batch
-from torch_geometric.nn.glob import global_add_pool, global_mean_pool, \
-    global_max_pool
+from torch_geometric.nn.glob import global_add_pool, global_mean_pool, global_max_pool
 
 from federatedscope.gfl.model.gcn import GCN_Net
-from federatedscope.gfl.model.gine import GINE_Net
-from federatedscope.gfl.model.gine_no_jk import GINE_NO_JK_Net
 from federatedscope.gfl.model.sage import SAGE_Net
 from federatedscope.gfl.model.gat import GAT_Net
 from federatedscope.gfl.model.gin import GIN_Net
@@ -34,8 +31,9 @@ class AtomEncoder(torch.nn.Module):
 
 
 class GNN_Net_Graph(torch.nn.Module):
-    r"""GNN model with pre-linear layer, pooling layer
+    r"""GNN model with pre-linear layer, pooling layer 
         and output layer for graph classification tasks.
+        
     Arguments:
         in_channels (int): input channels.
         out_channels (int): output channels.
@@ -45,7 +43,6 @@ class GNN_Net_Graph(torch.nn.Module):
         gnn (str): name of gnn type, use ("gcn" or "gin").
         pooling (str): pooling method, use ("add", "mean" or "max").
     """
-
     def __init__(self,
                  in_channels,
                  out_channels,
@@ -53,10 +50,7 @@ class GNN_Net_Graph(torch.nn.Module):
                  max_depth=2,
                  dropout=.0,
                  gnn='gcn',
-                 pooling='add',
-                 edge_dim = None):
-        if edge_dim is None or edge_dim == 0:
-            edge_dim = 1
+                 pooling='add'):
         super(GNN_Net_Graph, self).__init__()
         self.dropout = dropout
         # Embedding (pre) layer
@@ -82,12 +76,11 @@ class GNN_Net_Graph(torch.nn.Module):
                                max_depth=max_depth,
                                dropout=dropout)
         elif gnn == 'gin':
-            self.gnn = GINE_NO_JK_Net(in_channels=hidden,
+            self.gnn = GIN_Net(in_channels=hidden,
                                out_channels=hidden,
                                hidden=hidden,
                                max_depth=max_depth,
-                               dropout=dropout,
-                                edge_dim=hidden)
+                               dropout=dropout)
         elif gnn == 'gpr':
             self.gnn = GPR_Net(in_channels=hidden,
                                out_channels=hidden,
@@ -106,36 +99,26 @@ class GNN_Net_Graph(torch.nn.Module):
             self.pooling = global_max_pool
         else:
             raise ValueError(f'Unsupported pooling type: {pooling}.')
-
-        self.bn_edge = BatchNorm1d(hidden)
-        self.bn_node = BatchNorm1d(hidden)
-
         # Output layer
-
-        self.linear_out1_loc = Sequential(Linear(hidden * max_depth, hidden))
-        self.linear_out2 = Sequential(Linear(hidden, 64))
-        self.bn_linear0 = BatchNorm1d(hidden*max_depth)
-        self.bn_linear1 = BatchNorm1d(hidden)
-        self.bn_linear2 = BatchNorm1d(64)
-        self.clf = Linear(64, out_channels)
-        self.emb = Linear(edge_dim, hidden)
+        self.linear = Sequential(Linear(hidden, hidden), torch.nn.ReLU())
+        self.clf = Linear(hidden, out_channels)
 
     def forward(self, data):
-        x, edge_index, batch = data.x, data.edge_index, data.batch
-        edge_attr = data.get('edge_attr')
-        if edge_attr is None:
-            edge_attr = edge_index.new_zeros(edge_index.size(1), 1).float()
+        if isinstance(data, Batch):
+            x, edge_index, batch = data.x, data.edge_index, data.batch
+        elif isinstance(data, tuple):
+            x, edge_index, batch = data
         else:
-            edge_attr = edge_attr + 1
+            raise TypeError('Unsupported data type!')
 
-        x = self.encoder(x)
-        edge_attr = self.emb(edge_attr)
+        if x.dtype == torch.int64:
+            x = self.encoder_atom(x)
+        else:
+            x = self.encoder(x)
 
-        x = self.gnn(x, edge_index, edge_attr)
+        x = self.gnn((x, edge_index))
         x = self.pooling(x, batch)
-        x = self.linear_out1_loc(x).relu()
-        x = F.dropout(x, self.dropout, training=self.training)
-        x = self.linear_out2(x).relu()
+        x = self.linear(x)
         x = F.dropout(x, self.dropout, training=self.training)
         x = self.clf(x)
         return x

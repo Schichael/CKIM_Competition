@@ -89,7 +89,7 @@ def get_gnn(model_config, local_data):
                                   dropout= model_config.dropout,
                                   gnn=model_config.type,
                                   pooling=model_config.graph_pooling,
-                                  # edge_dim=edge_dim,
+                                  edge_dim=edge_dim,
                                   )
     else:
         raise ValueError('not recognized data task {}'.format(
