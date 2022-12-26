@@ -28,7 +28,7 @@ def train(client, lr):
 
     # init_cfg.data.subdirectory = 'graph_dt_backup/processed'
     # init_cfg.merge_from_list(args.opts)
-    init_cfg.data.save_dir = 'isolated_ours_reparametrization'
+    init_cfg.data.save_dir = 'isolated_ours_reparametrization_without_last_lin_layer'
     init_cfg.data.client = client
     init_cfg.train.optimizer.lr = lr
     update_logger(init_cfg)
