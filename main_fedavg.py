@@ -19,7 +19,7 @@ if os.environ.get('http_proxy'):
 
 
 def train():
-    cfg_file = 'scripts/B-FHTL_exp_scripts/Graph-DT/fedavg.yaml'
+    cfg_file = 'scripts/B-FHTL_exp_scripts/Graph-DT/fedbn_own.yaml'
     cfg_client = 'scripts/B-FHTL_exp_scripts/Graph-DT/cfg_per_client_theirs.yaml'
     # cfg_per_Client_ours_lr
     # cfg_per_client_ours_lr_local_steps
@@ -31,7 +31,7 @@ def train():
 
     # init_cfg.data.subdirectory = 'graph_dt_backup/processed'
     # init_cfg.merge_from_list(args.opts)
-    init_cfg.data.save_dir = 'FedAvg_our_baseline_their_lrs'
+    init_cfg.data.save_dir = 'FedBN_our_baseline_their_lrs'
     update_logger(init_cfg)
     setup_seed(init_cfg.seed)
 
