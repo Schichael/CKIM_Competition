@@ -21,6 +21,9 @@ if os.environ.get('http_proxy'):
 def train():
     cfg_file = 'scripts/B-FHTL_exp_scripts/Graph-DT/fedavg.yaml'
     cfg_client = 'scripts/B-FHTL_exp_scripts/Graph-DT/cfg_per_client_theirs.yaml'
+    # cfg_per_Client_ours_lr
+    # cfg_per_client_ours_lr_local_steps
+
     #'scripts/B-FHTL_exp_scripts/Graph-DT/cfg_per_client.yaml'
 
     init_cfg = global_cfg.clone()
