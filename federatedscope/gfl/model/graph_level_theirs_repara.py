@@ -100,8 +100,16 @@ class GNN_Net_Graph(torch.nn.Module):
         else:
             raise ValueError(f'Unsupported pooling type: {pooling}.')
         # Output layer
-        self.linear = Sequential(Linear(hidden, hidden), torch.nn.ReLU())
+        self.linear = Linear(hidden, hidden*2)
         self.clf = Linear(hidden, out_channels)
+
+    def reparameterise(self, mu, logvar):
+        if self.training:
+            std = logvar.mul(0.5).exp_()
+            eps = std.data.new(std.size()).normal_()
+            return eps.mul(std).add_(mu)
+        else:
+            return mu
 
     def forward(self, data):
         if isinstance(data, Batch):
@@ -118,7 +126,12 @@ class GNN_Net_Graph(torch.nn.Module):
 
         x = self.gnn((x, edge_index))
         x = self.pooling(x, batch)
-        x = self.linear(x)
+
+        mu_logvar = self.linear(x).view(-1, 2, self.hidden)
+        mu = mu_logvar[:, 0, :]
+        logvar = mu_logvar[:, 1, :]
+        x = self.reparameterise(mu, logvar)
+        x = x.relu()
         x = F.dropout(x, self.dropout, training=self.training)
         x = self.clf(x)
         return x
