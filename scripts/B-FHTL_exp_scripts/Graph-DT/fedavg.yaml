@@ -1,20 +1,19 @@
 use_gpu: True
 device: 0
 early_stop:
-  patience: 80
-  improve_indicator_mode: mean
+  patience: 200
+  improve_indicator_mode: best
   the_smaller_the_better: False
 federate:
   method: 'Graph-DC-FedAvg'
   mode: 'standalone'
   make_global_eval: False
-  total_round_num: 400
+  total_round_num: 10
   share_local_model: False
 train:
-  local_update_steps: 21
+  # local_update_steps: 1
   batch_or_epoch: 'epoch'
   optimizer:
-    lr: 0.5
     weight_decay: 0.0005
     type: SGD
 
