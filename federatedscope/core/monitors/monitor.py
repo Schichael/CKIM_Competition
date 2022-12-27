@@ -70,7 +70,7 @@ class Monitor(object):
         self.local_convergence_round = 0  # total fl rounds to convergence
         self.local_convergence_wall_time = 0
 
-        self.current_best = 10000
+        self.current_best = -10000
         self.should_save = False
 
         if self.wandb_online_track:
@@ -494,7 +494,7 @@ class Monitor(object):
     def track_download_bytes(self, bytes):
         self.total_download_bytes += bytes
 
-    """
+
     def update_best_result(self,
                            best_results,
                            new_results,
@@ -646,7 +646,7 @@ class Monitor(object):
                         "cfg.wandb.use=True but not install the wandb package")
                     exit()
 
-    """
+
     """
     def update_best_result(self,
                            best_results,
@@ -794,6 +794,7 @@ class Monitor(object):
 
     """
 
+    """
     def update_best_result(self,
                            best_results,
                            new_results,
@@ -938,3 +939,4 @@ class Monitor(object):
                         "cfg.wandb.use=True but not install the wandb package")
                     exit()
         logger.info(f"Current best: {self.current_best}")
+    """

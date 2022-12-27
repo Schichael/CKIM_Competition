@@ -3,7 +3,6 @@ import sys
 
 
 def parse_args():
-    print('in parse_args')
     parser = argparse.ArgumentParser(description='FederatedScope')
     parser.add_argument('--cfg',
                         dest='cfg_file',
@@ -16,18 +15,6 @@ def parse_args():
                         required=False,
                         default=None,
                         type=str)
-    parser.add_argument('--lr',
-                        dest='lr',
-                        help='learning rate',
-                        required=True,
-                        default=None,
-                        type=float)
-    parser.add_argument('--client',
-                        dest='client',
-                        help='client',
-                        required=True,
-                        default=None,
-                        type=int)
     parser.add_argument('opts',
                         help='See federatedscope/core/configs for all options',
                         default=None,

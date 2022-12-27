@@ -275,10 +275,8 @@ class FedRunner(object):
             client_specific_config = self.cfg.clone()
             if self.client_cfg:
                 client_specific_config.defrost()
-                # for isolated training
-                curr_client = self.cfg.data.client
                 client_specific_config.merge_from_other_cfg(
-                    self.client_cfg.get('client_{}'.format(curr_client)))
+                    self.client_cfg.get('client_{}'.format(client_id)))
                 client_specific_config.freeze()
             client_device = self._server_device if \
                 self.cfg.federate.share_local_model else \
