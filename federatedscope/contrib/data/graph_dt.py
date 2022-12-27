@@ -279,8 +279,8 @@ def load_graph_dt_data(config):
     data_dict = {}
     # Build DataLoader dict
     # TODO: only the selected dataset
-    i = 1
-    for client_idx in range(config.data.client, config.data.client + 1):
+
+    for client_idx in range(1, config.federate.client_num + 1):
         dataloader_dict = {}
         tmp_dataset = []
         if 'train' in dataset[client_idx - 1]:
@@ -303,8 +303,7 @@ def load_graph_dt_data(config):
         if tmp_dataset:
             dataloader_dict['num_label'] = 0 # todo: set to 0, used in gfl/model_builder.py line74
             # dataloader_dict['num_label'] = get_numGraphLabels(tmp_dataset)
-        data_dict[i] = dataloader_dict
-    i += 1
+        data_dict[client_idx] = dataloader_dict
     return data_dict, config
 
 
