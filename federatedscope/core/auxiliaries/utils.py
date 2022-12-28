@@ -91,7 +91,7 @@ def update_logger(cfg, clear_before_add=False):
                       f"_{cfg.data.type}_lr{cfg.train.optimizer.lr}_lste" \
                       f"p{cfg.train.local_update_steps}"
     cfg.expname = f"{cfg.expname}_{cfg.expname_tag}"
-    cfg.outdir = os.path.join(cfg.outdir, cfg.expname)
+    cfg.outdir = os.path.join(cfg.outdir, cfg.data.save_dir, cfg.expname)
 
     # if exist, make directory with given name and time
     if os.path.isdir(cfg.outdir) and os.path.exists(cfg.outdir):
