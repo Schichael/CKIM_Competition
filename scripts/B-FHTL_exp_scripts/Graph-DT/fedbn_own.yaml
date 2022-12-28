@@ -29,7 +29,7 @@ model:
   task: graph
   dropout: 0.5
 personalization:
-  local_param: ['encoder_atom', 'encoder', 'clf', 'norm']   # to handle size-different pre & post layers
+  local_param: ['encoder_atom', 'encoder', 'clf', 'norm', 'bn_linear', 'bn_linear1', 'bn_linear2']   # to handle size-different pre & post layers
 
 criterion:
   type: CrossEntropyLoss
