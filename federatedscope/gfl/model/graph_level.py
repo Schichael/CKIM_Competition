@@ -1,6 +1,6 @@
 import torch
 import torch.nn.functional as F
-from torch.nn import Linear, Sequential
+from torch.nn import Linear, Sequential, BatchNorm1d
 from torch_geometric.data import Data
 from torch_geometric.data.batch import Batch
 from torch_geometric.nn.glob import global_add_pool, global_mean_pool, global_max_pool
@@ -102,6 +102,8 @@ class GNN_Net_Graph(torch.nn.Module):
         # Output layer
         self.linear = Sequential(Linear(hidden, hidden), torch.nn.ReLU())
         self.clf = Linear(hidden, out_channels)
+        self.bn_linear1 = BatchNorm1d(hidden)
+        self.bn_linear2 = BatchNorm1d(hidden)
 
     def forward(self, data):
         if isinstance(data, Batch):
@@ -115,9 +117,10 @@ class GNN_Net_Graph(torch.nn.Module):
             x = self.encoder_atom(x)
         else:
             x = self.encoder(x)
-
+        x = self.bn_linear1(x)
         x = self.gnn((x, edge_index))
         x = self.pooling(x, batch)
+        x = self.bn_linear2(x)
         x = self.linear(x)
         x = F.dropout(x, self.dropout, training=self.training)
         x = self.clf(x)

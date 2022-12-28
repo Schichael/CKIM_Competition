@@ -1,7 +1,7 @@
 use_gpu: True
 device: 0
 early_stop:
-  patience: 200
+  patience: 50
   improve_indicator_mode: best
   the_smaller_the_better: False
 federate:
@@ -27,6 +27,7 @@ model:
   hidden: 64
   out_channels: 0
   task: graph
+  dropout: 0.5
 personalization:
   local_param: ['encoder_atom', 'encoder', 'clf', 'norm']   # to handle size-different pre & post layers
 

@@ -31,7 +31,8 @@ def train():
 
     # init_cfg.data.subdirectory = 'graph_dt_backup/processed'
     # init_cfg.merge_from_list(args.opts)
-    init_cfg.data.save_dir = 'FedBN_our_baseline_their_lrs'
+    init_cfg.data.save_dir = 'FedBN_ALL_LAYERS_our_baseline_their_lrs_dropout_0_5'
+    init_cfg.model.dropout = 0.5
     update_logger(init_cfg)
     setup_seed(init_cfg.seed)
 
