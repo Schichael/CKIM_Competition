@@ -19,7 +19,8 @@ train:
   optimizer:
     weight_decay: 0.0005
     type: SGD
-
+grad:
+  grad_clip: 5
 data:
   root: data/
   type: graph-dt
