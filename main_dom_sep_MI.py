@@ -50,7 +50,7 @@ def train():
     init_cfg.params.diff_importance = 1
     init_cfg.params.csd_importance = 1e2
     init_cfg.params.mine_lr = 0.02
-    init_cfg.params.lam = 0.1
+    init_cfg.params.lam = 0.01
     init_cfg.params.eps = 1e-15
     init_cfg.params.p = 0.
     update_logger(init_cfg)
