@@ -32,7 +32,7 @@ if os.environ.get('http_proxy'):
 
 def train():
     cfg_file = 'scripts/B-FHTL_exp_scripts/Graph-DT/fed_dom_sep_MI.yaml'
-    cfg_client = 'scripts/B-FHTL_exp_scripts/Graph-DT/cfg_per_client_ours_lr_local_steps.yaml'
+    cfg_client = 'scripts/B-FHTL_exp_scripts/Graph-DT/cfg_per_client_theirs.yaml'
     # cfg_per_Client_ours_lr
     # cfg_per_client_ours_lr_local_steps
 
@@ -43,7 +43,7 @@ def train():
 
     # init_cfg.data.subdirectory = 'graph_dt_backup/processed'
     # init_cfg.merge_from_list(args.opts)
-    init_cfg.data.save_dir = 'FedDomSep_our_baseline_our_lrs_adapted_update_steps_dropout_0_5'
+    init_cfg.data.save_dir = 'FedDomSep_our_baseline_their_lrs_lam_0_01'
     init_cfg.model.dropout = 0.5
     init_cfg.params = CN()
     init_cfg.params.alpha = 0.1
