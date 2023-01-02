@@ -1,7 +1,7 @@
 import os
 import sys
 
-sys.path = ['/home/michael/Master-Thesis/CKIM_Competition/federatedscope', '/home/michael/Master-Thesis/CKIM_Competition',] + sys.path
+sys.path = ['/home/ms234795/Master Thesis/CKIM_Competition/federatedscope', '/home/ms234795/Master Thesis/CKIM_Competition',] + sys.path
 
 print(sys.path)
 from federatedscope.core.cmd_args import parse_args
@@ -39,7 +39,7 @@ def train():
     # init_cfg.merge_from_list(args.opts)
     # init_cfg.data.client = 5
     # init_cfg.train.optgraph_level_defaultimizer.lr = 0.01
-    init_cfg.data.save_dir = 'test_dir'
+    init_cfg.data.save_dir = 'FedAvg_with_encoder_KLD_their_lrs'
     update_logger(init_cfg)
     setup_seed(init_cfg.seed)
 
@@ -65,7 +65,7 @@ def train():
 
 
 if __name__ == '__main__':
-    num_trainings = 3
+    num_trainings = 1
     for i in range(num_trainings):
         print(f"training run: {i + 1}")
         train()
