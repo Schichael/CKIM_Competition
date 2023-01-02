@@ -13,7 +13,7 @@ from federatedscope.gfl.model.gpr import GPR_Net
 
 EMD_DIM = 200
 
-
+# default_with_encoder_KLD
 class AtomEncoder(torch.nn.Module):
     def __init__(self, in_channels, hidden):
         super(AtomEncoder, self).__init__()
@@ -142,8 +142,8 @@ class GNN_Net_Graph(torch.nn.Module):
 
     def vae_loss(self, mu, log_var, x_orig, x_decoded):
         kld_loss = self.kld_loss(mu, log_var)
-        # recon_loss = F.mse_loss(x_decoded, x_orig)
-        loss = kld_loss
+        recon_loss = F.mse_loss(x_decoded, x_orig)
+        loss = recon_loss + kld_loss
         return loss
 
     def forward(self, data):
@@ -164,12 +164,13 @@ class GNN_Net_Graph(torch.nn.Module):
         log_var = mu_logvar[:, 1, :]
 
         x = self.reparametrize(mu, log_var)
+        vae_decoded = self.vae_decoder(x)
 
-        kld_loss = self.kld_loss(mu, log_var)
+        vae_loss = self.vae_loss(mu, log_var, x_in, vae_decoded)
 
         x = self.gnn((x, edge_index))
         x = self.pooling(x, batch)
         x = self.linear(x)
         x = F.dropout(x, self.dropout, training=self.training)
         x = self.clf(x)
-        return x, kld_loss
+        return x, vae_loss

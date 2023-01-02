@@ -29,7 +29,7 @@ model:
   out_channels: 0
   task: graph
 personalization:
-  local_param: ['encoder_atom', 'encoder', 'clf', 'vae_decoder', 'norm']   # to handle size-different pre & post layers
+  local_param: ['encoder_atom', 'encoder', 'clf', 'vae_decoder']   # to handle size-different pre & post layers
 
 criterion:
   type: CrossEntropyLoss

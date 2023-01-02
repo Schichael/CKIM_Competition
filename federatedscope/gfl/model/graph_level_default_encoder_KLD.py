@@ -133,14 +133,17 @@ class GNN_Net_Graph(torch.nn.Module):
         return kld_loss
 
     def reparametrize(self, mu, log_var):
-        std = torch.exp(0.5 * log_var)
-        eps = torch.randn_like(std)
-        return eps * std + mu
+        if self.training:
+            std = torch.exp(0.5 * log_var)
+            eps = torch.randn_like(std)
+            return eps * std + mu
+        else:
+            return mu
 
     def vae_loss(self, mu, log_var, x_orig, x_decoded):
         kld_loss = self.kld_loss(mu, log_var)
-        recon_loss = F.mse_loss(x_decoded, x_orig)
-        loss = recon_loss + kld_loss
+        # recon_loss = F.mse_loss(x_decoded, x_orig)
+        loss = kld_loss
         return loss
 
     def forward(self, data):
@@ -161,13 +164,12 @@ class GNN_Net_Graph(torch.nn.Module):
         log_var = mu_logvar[:, 1, :]
 
         x = self.reparametrize(mu, log_var)
-        vae_decoded = self.vae_decoder(x)
 
-        vae_loss = self.vae_loss(mu, log_var, x_in, vae_decoded)
+        kld_loss = self.kld_loss(mu, log_var)
 
         x = self.gnn((x, edge_index))
         x = self.pooling(x, batch)
         x = self.linear(x)
         x = F.dropout(x, self.dropout, training=self.training)
         x = self.clf(x)
-        return x, vae_loss
+        return x, kld_loss

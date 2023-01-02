@@ -39,7 +39,7 @@ def train():
     # init_cfg.merge_from_list(args.opts)
     # init_cfg.data.client = 5
     # init_cfg.train.optgraph_level_defaultimizer.lr = 0.01
-    init_cfg.data.save_dir = 'FedBN_with_encoder_KLD_their_lrs'
+    init_cfg.data.save_dir = 'FedAvg_with_encoder_KLD_their_lrs'
     update_logger(init_cfg)
     setup_seed(init_cfg.seed)
 
