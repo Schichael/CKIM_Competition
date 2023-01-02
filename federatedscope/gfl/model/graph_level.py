@@ -1,27 +1,16 @@
-from typing import List
-
 import torch
 import torch.nn.functional as F
-from torch import Tensor
 from torch.nn import Linear, Sequential, BatchNorm1d
 from torch_geometric.data import Data
 from torch_geometric.data.batch import Batch
-from torch_geometric.utils import degree
-from torch_geometric.utils import negative_sampling
-from torch_geometric.nn.glob import global_add_pool, global_mean_pool, \
-    global_max_pool
-from wandb.util import np
+from torch_geometric.nn.glob import global_add_pool, global_mean_pool, global_max_pool
 
-from federatedscope.gfl.model.MI_Network import Mine, T, MutualInformationEstimator
 from federatedscope.gfl.model.gcn import GCN_Net
-from federatedscope.gfl.model.gine import GINE_Net
-from federatedscope.gfl.model.gine_no_jk import GINE_NO_JK_Net
 from federatedscope.gfl.model.sage import SAGE_Net
 from federatedscope.gfl.model.gat import GAT_Net
 from federatedscope.gfl.model.gin import GIN_Net
 from federatedscope.gfl.model.gpr import GPR_Net
-# graph_level_dom_sep_summation_MI_Loss
-EPS = 1e-15
+
 EMD_DIM = 200
 
 
@@ -40,10 +29,32 @@ class AtomEncoder(torch.nn.Module):
             x_embedding += self.atom_embedding_list[i](x[:, i])
         return x_embedding
 
+class VAE_Decoder(torch.nn.Module):
+    def __init__(self,
+                 in_channels,
+                 out_channels,
+                 hidden=64,):
+        super(VAE_Decoder, self).__init__()
+        self.lin1 = Sequential(Linear(hidden, hidden), torch.nn.ReLU())
+        self.bn1 = BatchNorm1d(hidden)
+        self.lin2 = Sequential(Linear(hidden, hidden), torch.nn.ReLU())
+        self.bn2 = BatchNorm1d(hidden)
+        self.clf = Linear(hidden, out_channels)
+
+    def forward(self, h):
+        out = self.lin1(h)
+        out = self.bn1(out)
+        out = self.lin2(out)
+        out = self.bn2(out)
+        out = self.clf(out)
+        return out
+
+
 
 class GNN_Net_Graph(torch.nn.Module):
     r"""GNN model with pre-linear layer, pooling layer
         and output layer for graph classification tasks.
+
     Arguments:
         in_channels (int): input channels.
         out_channels (int): output channels.
@@ -53,7 +64,6 @@ class GNN_Net_Graph(torch.nn.Module):
         gnn (str): name of gnn type, use ("gcn" or "gin").
         pooling (str): pooling method, use ("add", "mean" or "max").
     """
-
     def __init__(self,
                  in_channels,
                  out_channels,
@@ -61,18 +71,13 @@ class GNN_Net_Graph(torch.nn.Module):
                  max_depth=2,
                  dropout=.0,
                  gnn='gcn',
-                 pooling='add',
-                 edge_dim = None,
-                 rho = 0.0):
-        self.rho=rho
-        print(f"rho: {rho}")
-        if edge_dim is None or edge_dim == 0:
-            edge_dim = 1
+                 pooling='add'):
         super(GNN_Net_Graph, self).__init__()
         self.dropout = dropout
+        self.hidden= hidden
         # Embedding (pre) layer
-        self.encoder_atom = AtomEncoder(in_channels, hidden)
-        self.encoder = Linear(in_channels, hidden)
+        self.encoder_atom = AtomEncoder(in_channels, hidden*2)
+        self.encoder = Linear(in_channels, hidden*2)
         # GNN layer
         if gnn == 'gcn':
             self.gnn = GCN_Net(in_channels=hidden,
@@ -93,16 +98,11 @@ class GNN_Net_Graph(torch.nn.Module):
                                max_depth=max_depth,
                                dropout=dropout)
         elif gnn == 'gin':
-            self.local_gnn = GIN_Net(in_channels=hidden,
+            self.gnn = GIN_Net(in_channels=hidden,
                                out_channels=hidden,
                                hidden=hidden,
                                max_depth=max_depth,
                                dropout=dropout)
-            self.global_gnn = GIN_Net(in_channels=hidden,
-                                out_channels=hidden,
-                                hidden=hidden,
-                                max_depth=max_depth,
-                                dropout=dropout)
         elif gnn == 'gpr':
             self.gnn = GPR_Net(in_channels=hidden,
                                out_channels=hidden,
@@ -111,11 +111,6 @@ class GNN_Net_Graph(torch.nn.Module):
                                dropout=dropout)
         else:
             raise ValueError(f'Unsupported gnn type: {gnn}.')
-        #mi_model = T(hidden, hidden)
-
-        #self.mine = Mine(mi_model, loss='mine')
-
-        self.mine = MutualInformationEstimator(hidden, hidden, loss='mine')
 
         # Pooling layer
         if pooling == 'add':
@@ -126,82 +121,53 @@ class GNN_Net_Graph(torch.nn.Module):
             self.pooling = global_max_pool
         else:
             raise ValueError(f'Unsupported pooling type: {pooling}.')
-
-        self.bn_edge = BatchNorm1d(hidden)
-        self.bn_node = BatchNorm1d(hidden)
-
         # Output layer
-        self.global_linear_out1 = Linear(hidden, hidden)
-        #self.linear_out2_glob = Sequential(Linear(hidden, 64))
-        #self.bn_linear0_glob = BatchNorm1d(hidden * max_depth)
-        #self.bn_linear1_glob = BatchNorm1d(hidden)
-        #self.bn_linear2_glob = BatchNorm1d(64)
-        self.local_linear_out1 = Linear(hidden, hidden)
-        #self.linear_out2_loc = Sequential(Linear(hidden, 64))
-        self.bn_linear0_loc = BatchNorm1d(hidden * max_depth)
-        self.bn_linear1_loc = BatchNorm1d(hidden)
-        self.bn_after_summation = BatchNorm1d(hidden)
-        #self.bn_linear2_loc = BatchNorm1d(64)
-
-
-        # local
-        self.linear_out2 = Sequential(Linear(hidden, hidden))
-        self.bn_linear2 = BatchNorm1d(hidden)
+        self.linear = Sequential(Linear(hidden, hidden), torch.nn.ReLU())
         self.clf = Linear(hidden, out_channels)
-        self.emb = Linear(edge_dim, hidden)
-        #torch.nn.init.xavier_normal_(self.emb.weight.data)
+        self.vae_decoder = VAE_Decoder(out_channels, in_channels, hidden)
+
+    def kld_loss(self, mu, log_var):
+        kld_loss = torch.mean(-0.5 * torch.sum(1 + log_var - mu ** 2 - log_var.exp(), dim=1), dim=0)
+        # In https://github.com/AntixK/PyTorch-VAE/blob/master/models/vanilla_vae.py
+        # the number of minibatch samples is multiplied with the loss
+        return kld_loss
+
+    def reparametrize(self, mu, log_var):
+        std = torch.exp(0.5 * log_var)
+        eps = torch.randn_like(std)
+        return eps * std + mu
+
+    def vae_loss(self, mu, log_var, x_orig, x_decoded):
+        kld_loss = self.kld_loss(mu, log_var)
+        recon_loss = F.mse_loss(x_decoded, x_orig)
+        loss = recon_loss + kld_loss
+        return loss
 
     def forward(self, data):
+        if isinstance(data, Batch):
+            x_in, edge_index, batch = data.x, data.edge_index, data.batch
+        elif isinstance(data, tuple):
+            x_in, edge_index, batch = data
+        else:
+            raise TypeError('Unsupported data type!')
 
-        x, edge_index, batch = data.x, data.edge_index, data.batch
+        if x_in.dtype == torch.int64:
+            x = self.encoder_atom(x_in)
+        else:
+            x = self.encoder(x_in)
 
-        x = self.encoder(x)
+        mu_logvar = x.view(-1, 2, self.hidden)
+        mu = mu_logvar[:, 0, :]
+        log_var = mu_logvar[:, 1, :]
 
-        x_local = self.local_gnn((x, edge_index))
+        x = self.reparametrize(mu, log_var)
+        vae_decoded = self.vae_decoder(x)
 
-        x_global = self.global_gnn((x, edge_index))
+        vae_loss = self.vae_loss(mu, log_var, x_in, vae_decoded)
 
-        x_global = self.pooling(x_global, batch)
-        # x_global = self.bn_linear0_glob(x_global)
-        # x_global = F.dropout(x_global, self.dropout, training=self.training)
-        x_global = self.global_linear_out1(x_global).relu()
-
-
-        #if(edge_attr.size(0)==3952):
-        #    print(f"global: {x_global}")
-        #x_global = self.linear_out2_glob(x_global).relu()
-        #x_global = self.bn_linear2_glob(x_global)
-        #x_global = F.dropout(x_global, self.dropout, training=self.training)
-
-        x_local = self.pooling(x_local, batch)
-        #x_local = self.bn_linear0_loc(x_local)
-        #x_local = F.dropout(x_local, self.dropout, training=self.training)
-        x_local = self.local_linear_out1(x_local).relu()
-
-        #a = edge_attr.size(0)
-        #b = edge_attr.size()
-        #if (edge_attr.size(0) == 3952):
-        #    print(f"local: {x_local}")
-        #x_local = self.linear_out2_loc(x_local).relu()
-        #x_local = self.bn_linear2_loc(x_local)
-        #x_local = F.dropout(x_local, self.dropout, training=self.training)
-
-
-        mi = self.mine(x_local, x_global)
-
-
-        #x_global = self.bn_linear1_glob(x_global)
-        #x_local = self.bn_linear1_loc(x_local)
-
-        x = x_local + x_global
-
-        #x = self.bn_after_summation(x)
-
+        x = self.gnn((x, edge_index))
+        x = self.pooling(x, batch)
+        x = self.linear(x)
         x = F.dropout(x, self.dropout, training=self.training)
-        #x = self.linear_out2(x).relu()
-        #x = self.bn_linear2(x)
         x = self.clf(x)
-
-        #return x, mi
-        return x, mi
-
+        return x, vae_loss

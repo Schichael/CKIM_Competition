@@ -111,7 +111,7 @@ class GraphDTDataset(InMemoryDataset):
         return data
 
     def process(self):
-        return
+        print("2hi from process")
         np.random.seed(0)
         splits = [0.8, 0.1, 0.1]
         data_name_list = ['ESOL', 'FREESOLV', 'LIPO', 'BACE', 'BBBP', 'CLINTOX',
