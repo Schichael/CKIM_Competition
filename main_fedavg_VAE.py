@@ -23,7 +23,7 @@ from federatedscope.contrib.trainer.FedAvg_VAE_trainer import call_fedavg_VAE_tr
 register_trainer('FedAvg_VAE_trainer', call_fedavg_VAE_trainer)
 
 def train():
-    cfg_file = 'scripts/B-FHTL_exp_scripts/Graph-DT/fedavg_VAE.yaml'
+    cfg_file = 'scripts/B-FHTL_exp_scripts/Graph-DT/fedbn_VAE.yaml'
     cfg_client = 'scripts/B-FHTL_exp_scripts/Graph-DT/cfg_per_client_theirs.yaml'
     # cfg_per_Client_ours_lr
     # cfg_per_client_ours_lr_local_steps
@@ -39,7 +39,7 @@ def train():
     # init_cfg.merge_from_list(args.opts)
     # init_cfg.data.client = 5
     # init_cfg.train.optgraph_level_defaultimizer.lr = 0.01
-    init_cfg.data.save_dir = 'FedAvg_with_encoder_KLD_their_lrs'
+    init_cfg.data.save_dir = 'FedBN_with_encoder_KLD_their_lrs'
     update_logger(init_cfg)
     setup_seed(init_cfg.seed)
 
