@@ -1,8 +1,8 @@
 import os
 import sys
 
-#sys.path = ['/home/ms234795/Master Thesis/CKIM_Competition/federatedscope', '/home/ms234795/Master Thesis/CKIM_Competition',] + sys.path
-sys.path = ['/home/michael/Master-Thesis/CKIM_Competition/federatedscope', '/home/michael/Master-Thesis/CKIM_Competition',] + sys.path
+sys.path = ['/home/ms234795/Master Thesis/CKIM_Competition/federatedscope', '/home/ms234795/Master Thesis/CKIM_Competition',] + sys.path
+#sys.path = ['/home/michael/Master-Thesis/CKIM_Competition/federatedscope', '/home/michael/Master-Thesis/CKIM_Competition',] + sys.path
 
 print(sys.path)
 from federatedscope.core.cmd_args import parse_args
