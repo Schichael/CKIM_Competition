@@ -1,3 +1,5 @@
+import time
+
 from federatedscope.core.aggregator import Aggregator
 import copy
 
@@ -11,6 +13,7 @@ class LaplacianAggregator(Aggregator):
 
     def aggregate(self, agg_info):
         # alpha, model_params, omega
+        st = time.time()
         client_feedback = agg_info["client_feedback"]
         server_omega = agg_info["server_omega"]
         eps = agg_info['eps']
@@ -47,10 +50,13 @@ class LaplacianAggregator(Aggregator):
         # Pruning
         if p>0:
             self.pruning_server(p, new_param, new_omega)
-
+        et1 = time.time()
         for key in new_param.keys():
             self.model.state_dict()[key].data.copy_(new_param[key])
             self.omega[key] = copy.deepcopy(new_omega[key])
+        et2 = time.time()
+        print(f"Time for aggregation 1: {(et1 - st) * 1000}")
+        print(f"Time for aggregation 2: {(et2 - st) * 1000}")
         return new_param, new_omega
 
     def pruning_server(self, p, new_param, new_omega):

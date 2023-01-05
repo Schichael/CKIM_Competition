@@ -13,7 +13,7 @@ from federatedscope.gfl.model.gpr import GPR_Net
 
 EMD_DIM = 200
 
-# default_with_encoder_VAE
+# graph_level_default_with_encoder_VAE
 class AtomEncoder(torch.nn.Module):
     def __init__(self, in_channels, hidden):
         super(AtomEncoder, self).__init__()

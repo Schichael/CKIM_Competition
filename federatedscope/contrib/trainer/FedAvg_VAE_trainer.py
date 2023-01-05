@@ -22,7 +22,7 @@ class FedAvg_VAE_trainer(GraphMiniBatchTrainer):
         batch = ctx.data_batch.to(ctx.device)
 
         pred, vae_loss = ctx.model(batch)
-        print(f"vae_loss: {vae_loss}")
+        # print(f"vae_loss: {vae_loss}")
         # TODO: deal with the type of data within the dataloader or dataset
         if 'regression' in ctx.cfg.model.task.lower():
             label = batch.y
