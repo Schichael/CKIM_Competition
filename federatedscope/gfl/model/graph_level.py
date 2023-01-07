@@ -20,7 +20,9 @@ from federatedscope.gfl.model.sage import SAGE_Net
 from federatedscope.gfl.model.gat import GAT_Net
 from federatedscope.gfl.model.gin import GIN_Net
 from federatedscope.gfl.model.gpr import GPR_Net
+
 # graph_level_Dom_Sep_VAE_one_MINE_no_Adj_loss
+
 EPS = 1e-15
 EMD_DIM = 200
 
