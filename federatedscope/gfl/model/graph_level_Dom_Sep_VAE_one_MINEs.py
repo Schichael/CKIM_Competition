@@ -20,7 +20,7 @@ from federatedscope.gfl.model.sage import SAGE_Net
 from federatedscope.gfl.model.gat import GAT_Net
 from federatedscope.gfl.model.gin import GIN_Net
 from federatedscope.gfl.model.gpr import GPR_Net
-# graph_level_dom_sep_summation_MI_Loss
+# graph_level_Dom_Sep_VAE_two_MINE
 EPS = 1e-15
 EMD_DIM = 200
 
@@ -141,8 +141,7 @@ class GNN_Net_Graph(torch.nn.Module):
 
         #self.mine = Mine(mi_model, loss='mine')
 
-        self.mine_max = MutualInformationEstimator(hidden, hidden, loss='mine')
-        self.mine_min = MutualInformationEstimator(hidden, hidden, loss='mine')
+        self.mine = MutualInformationEstimator(hidden, hidden, loss='mine')
 
         # Pooling layer
         if pooling == 'add':
@@ -260,8 +259,8 @@ class GNN_Net_Graph(torch.nn.Module):
 
 
 
-        mi_local_global = self.mine_min(x_local_enc, x_global_enc)
-        mi_global_fixed = self.mine_max(x_global_enc, x_fixed_enc)
+        mi_local_global = self.mine(x_local_enc, x_global_enc)
+        mi_global_fixed = self.mine(x_global_enc, x_fixed_enc)
 
         x = x_local + x_global
 

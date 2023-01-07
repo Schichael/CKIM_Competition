@@ -174,7 +174,6 @@ class GNN_Net_Graph(torch.nn.Module):
         self.clf = Linear(hidden, out_channels)
         self.emb = Linear(edge_dim, hidden)
         self.vae_decoder = VAE_Decoder(hidden, hidden)
-        self.adj_decoder = InnerProductDecoder()
         #torch.nn.init.xavier_normal_(self.emb.weight.data)
 
     def kld_loss(self, mu, log_var):
@@ -211,7 +210,7 @@ class GNN_Net_Graph(torch.nn.Module):
         """
 
         pos_loss = -torch.log(
-            self.adj_decoder(z, pos_edge_index, sigmoid=True) + EPS).mean()
+            self.decoder(z, pos_edge_index, sigmoid=True) + EPS).mean()
 
         if neg_edge_index is None:
             try:
@@ -221,7 +220,7 @@ class GNN_Net_Graph(torch.nn.Module):
         if neg_edge_index is not None:
 
             neg_loss = -torch.log(1 -
-                                  self.adj_decoder(z, neg_edge_index, sigmoid=True) +
+                                  self.decoder(z, neg_edge_index, sigmoid=True) +
                                   EPS).mean()
         else:
             neg_loss = 0
@@ -276,25 +275,8 @@ class GNN_Net_Graph(torch.nn.Module):
         recon_loss_node_features = self.node_recon_loss(decoder_out, h_encoder)
 
         # recon loss adjacency matrix
-        # Adjacency loss
-        sizes = degree(batch, dtype=torch.long).tolist()
 
-        unbatched_vae_decoded = decoder_out.split(sizes, 0)
-
-        unbatched_edge_index = unbatch_edge_index(edge_index, batch)
-
-        rec_loss_adj = None
-        for i in range(len(unbatched_vae_decoded)):
-            # A_pred = dot_product_decode(unbatched_enc_pr[i] + unbatched_enc[i])
-            if rec_loss_adj is None:
-                rec_loss_adj = self.recon_loss_adj(unbatched_vae_decoded[i], unbatched_vae_decoded[i].size(dim=0),
-                                           unbatched_edge_index[i], neg_edge_index=None, )
-            else:
-                rec_loss_adj += self.recon_loss_adj(unbatched_edge_index[i], unbatched_edge_index[i].size(dim=0),
-                                            unbatched_edge_index[i], neg_edge_index=None, )
-
-        rec_loss_adj = rec_loss_adj / len(unbatched_edge_index)
-        rec_loss = rec_loss_adj + recon_loss_node_features
+        rec_loss = recon_loss_node_features
         #return x, mi
 
         return x, kld_loss, rec_loss, mi_local_global, mi_global_fixed

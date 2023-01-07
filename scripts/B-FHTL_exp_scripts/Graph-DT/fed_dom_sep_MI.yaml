@@ -8,7 +8,7 @@ federate:
   method: 'Graph-DT-FedDomSep_MI'
   mode: 'standalone'
   make_global_eval: False
-  total_round_num: 10000
+  total_round_num: 300
   share_local_model: False
   client_num: 16
 train:
@@ -29,7 +29,7 @@ model:
   out_channels: 0
   task: graph
 personalization:
-  local_param: ['encoder_atom', 'encoder', 'clf', 'local', 'mine']   # to handle size-different pre & post layers
+  local_param: ['encoder_atom', 'encoder', 'clf', 'local', 'fixed']   # to handle size-different pre & post layers
 
 criterion:
   type: CrossEntropyLoss
