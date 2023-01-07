@@ -129,6 +129,10 @@ class GNN_Net_Graph(torch.nn.Module):
                                 hidden=hidden,
                                 max_depth=max_depth,
                                 dropout=dropout)
+
+            for param in self.fixed_gnn.named_parameters():
+                param[1].requires_grad = False
+
         elif gnn == 'gpr':
             self.gnn = GPR_Net(in_channels=hidden,
                                out_channels=hidden,

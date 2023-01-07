@@ -40,6 +40,10 @@ class LaplacianDomainSeparation1MINEVAETrainer(GraphMiniBatchTrainer):
         self.in_finetune = False
         self.tmp = 0
         # Get all model parameters with reuqires_grad = True
+        #for param in self.ctx.model.named_parameters():
+        #    if param[0].startswith('fixed'):
+        #        param[1].requires_grad = False
+
         self.grad_params = [param[0] for param in self.ctx.model.named_parameters() if param[1].requires_grad]
         self.mine_grad_params = [el for el in self.grad_params if el.startswith('mine')]
 
