@@ -48,14 +48,14 @@ def train():
 
     # init_cfg.data.subdirectory = 'graph_dt_backup/processed'
     # init_cfg.merge_from_list(args.opts)
-    init_cfg.data.save_dir = 'FedDomSep_1_global_MINE_VAE_no_adj_loss_csd_1e2_diff_importance_1_lam_0_0_concat'
+    init_cfg.data.save_dir = 'FedDomSep_1_global_MINE_VAE_no_adj_loss_csd_1e2_diff_importance_1_lam_0_01_concat'
     init_cfg.model.dropout = 0.5
     init_cfg.params = CN()
     init_cfg.params.alpha = 0.1
     init_cfg.params.diff_importance = 1
     init_cfg.params.csd_importance = 1e2
     init_cfg.params.mine_lr = 0.01
-    init_cfg.params.lam = 0.0
+    init_cfg.params.lam = 0.01
     init_cfg.params.eps = 1e-20
     init_cfg.params.p = 0.
     update_logger(init_cfg)
