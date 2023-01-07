@@ -21,7 +21,7 @@ from federatedscope.gfl.model.gat import GAT_Net
 from federatedscope.gfl.model.gin import GIN_Net
 from federatedscope.gfl.model.gpr import GPR_Net
 
-# graph_level_Dom_Sep_VAE_one_MINE_no_Adj_loss_Concats
+# graph_level_Dom_Sep_VAE_one_MINE_no_Adj_loss
 
 EPS = 1e-15
 EMD_DIM = 200
@@ -47,7 +47,7 @@ class VAE_Decoder(torch.nn.Module):
                  out_channels,
                  hidden=64,):
         super(VAE_Decoder, self).__init__()
-        self.lin1 = Sequential(Linear(hidden*2, hidden), torch.nn.ReLU())
+        self.lin1 = Sequential(Linear(hidden, hidden), torch.nn.ReLU())
         self.bn1 = BatchNorm1d(hidden)
         self.lin2 = Sequential(Linear(hidden, hidden), torch.nn.ReLU())
         self.bn2 = BatchNorm1d(hidden)
@@ -176,7 +176,7 @@ class GNN_Net_Graph(torch.nn.Module):
         # local
         self.linear_out2 = Sequential(Linear(hidden, hidden))
         self.bn_linear2 = BatchNorm1d(hidden)
-        self.clf = Linear(hidden*2, out_channels)
+        self.clf = Linear(hidden, out_channels)
         self.emb = Linear(edge_dim, hidden)
         self.vae_decoder = VAE_Decoder(hidden, hidden)
         #torch.nn.init.xavier_normal_(self.emb.weight.data)
@@ -266,7 +266,7 @@ class GNN_Net_Graph(torch.nn.Module):
         mi_local_global = self.mine(x_local_enc, x_global_enc)
         mi_global_fixed = self.mine(x_global_enc, x_fixed_enc)
 
-        x = torch.concat([x_local, x_global], dim=-1)
+        x = x_local + x_global
 
 
         x = F.dropout(x, self.dropout, training=self.training)
@@ -274,7 +274,7 @@ class GNN_Net_Graph(torch.nn.Module):
         x = self.clf(x)
 
 
-        decoder_input = torch.concat([x_global_enc, x_local_enc], dim=-1)
+        decoder_input = x_global_enc + x_local_enc
         decoder_out = self.vae_decoder(decoder_input)
         recon_loss_node_features = self.node_recon_loss(decoder_out, h_encoder)
 
