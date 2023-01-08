@@ -33,15 +33,15 @@ def train():
 
     init_cfg = global_cfg.clone()
     init_cfg.merge_from_file(cfg_file)
-    init_cfg.federate.client_num = 2
+    init_cfg.federate.client_num = 16
     init_cfg.params = CN()
     init_cfg.params.alpha = 0.1
-    init_cfg.params.vae_importance = 0.1
+    init_cfg.params.vae_importance = 1.0
     # init_cfg.data.subdirectory = 'graph_dt_backup/processed'
     # init_cfg.merge_from_list(args.opts)
     # init_cfg.data.client = 5
     # init_cfg.train.optgraph_level_defaultimizer.lr = 0.01
-    init_cfg.data.save_dir = 'FedAvg_with_encoder_KLD_their_lrs_vae_importance_0_1'
+    init_cfg.data.save_dir = 'FedAvg_with_encoder_KLD_without_repara_their_lrs_vae_importance_1_0'
     update_logger(init_cfg)
     setup_seed(init_cfg.seed)
 

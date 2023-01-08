@@ -12,7 +12,7 @@ from federatedscope.gfl.model.gin import GIN_Net
 from federatedscope.gfl.model.gpr import GPR_Net
 
 EMD_DIM = 200
-# graph_level_default_node_encoder_KLD_no_repara
+# graph_level_nodeencoder_KLD
 
 class AtomEncoder(torch.nn.Module):
     def __init__(self, in_channels, hidden):
@@ -76,8 +76,8 @@ class GNN_Net_Graph(torch.nn.Module):
         self.dropout = dropout
         self.hidden= hidden
         # Embedding (pre) layer
-        self.encoder_atom = AtomEncoder(in_channels, hidden)
-        self.encoder = Linear(in_channels, hidden)
+        self.encoder_atom = AtomEncoder(in_channels, hidden*2)
+        self.encoder = Linear(in_channels, hidden*2)
         # GNN layer
         if gnn == 'gcn':
             self.gnn = GCN_Net(in_channels=hidden,
@@ -126,17 +126,8 @@ class GNN_Net_Graph(torch.nn.Module):
         self.clf = Linear(hidden, out_channels)
         self.vae_decoder = VAE_Decoder(out_channels, in_channels, hidden)
 
-    #def kld_loss(self, mu, log_var):
-    #    kld_loss = torch.mean(-0.5 * torch.sum(1 + log_var - mu ** 2 - log_var.exp(), dim=1), dim=0)
-        # In https://github.com/AntixK/PyTorch-VAE/blob/master/models/vanilla_vae.py
-        # the number of minibatch samples is multiplied with the loss
-    #    return kld_loss
-
-    def kld_loss(self, x):
-        mu = torch.mean(x, dim=-2)
-        std = torch.std(x, dim=-2)
-        log_var = torch.log(std) * 2
-        kld_loss = -0.5 * torch.mean(1 + log_var - mu ** 2 - log_var.exp(), dim=0)
+    def kld_loss(self, mu, log_var):
+        kld_loss = torch.mean(-0.5 * torch.sum(1 + log_var - mu ** 2 - log_var.exp(), dim=1), dim=0)
         # In https://github.com/AntixK/PyTorch-VAE/blob/master/models/vanilla_vae.py
         # the number of minibatch samples is multiplied with the loss
         return kld_loss
@@ -171,7 +162,14 @@ class GNN_Net_Graph(torch.nn.Module):
         else:
             x = self.encoder(x_in)
 
-        kld_loss = self.kld_loss(x)
+        mu_logvar = x.view(-1, 2, self.hidden)
+        mu = mu_logvar[:, 0, :]
+        log_var = mu_logvar[:, 1, :]
+
+        x = self.reparametrize(mu, log_var)
+
+        kld_loss = self.kld_loss(mu, log_var)
+
         x = self.gnn((x, edge_index))
         x = self.pooling(x, batch)
         x = self.linear(x)
