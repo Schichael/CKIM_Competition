@@ -1,8 +1,8 @@
 import os
 import sys
 
-#sys.path = ['/home/ms234795/Master Thesis/CKIM_Competition/federatedscope', '/home/ms234795/Master Thesis/CKIM_Competition',] + sys.path
-sys.path = ['/home/michael/Master-Thesis/CKIM_Competition/federatedscope', '/home/michael/Master-Thesis/CKIM_Competition',] + sys.path
+sys.path = ['/home/ms234795/Master Thesis/CKIM_Competition/federatedscope', '/home/ms234795/Master Thesis/CKIM_Competition',] + sys.path
+#sys.path = ['/home/michael/Master-Thesis/CKIM_Competition/federatedscope', '/home/michael/Master-Thesis/CKIM_Competition',] + sys.path
 
 print(sys.path)
 from federatedscope.core.cmd_args import parse_args
@@ -24,7 +24,7 @@ from federatedscope.contrib.trainer.FedAvg_VAE_trainer import call_fedavg_VAE_tr
 register_trainer('FedAvg_VAE_trainer', call_fedavg_VAE_trainer)
 
 def train():
-    cfg_file = 'scripts/B-FHTL_exp_scripts/Graph-DT/fedbn_VAE.yaml'
+    cfg_file = 'scripts/B-FHTL_exp_scripts/Graph-DT/fedavg_VAE.yaml'
     cfg_client = 'scripts/B-FHTL_exp_scripts/Graph-DT/cfg_per_client_theirs.yaml'
     # cfg_per_Client_ours_lr
     # cfg_per_client_ours_lr_local_steps
@@ -33,14 +33,15 @@ def train():
 
     init_cfg = global_cfg.clone()
     init_cfg.merge_from_file(cfg_file)
-    init_cfg.federate.client_num = 16
+    init_cfg.federate.client_num = 2
     init_cfg.params = CN()
     init_cfg.params.alpha = 0.1
+    init_cfg.params.vae_importance = 0.1
     # init_cfg.data.subdirectory = 'graph_dt_backup/processed'
     # init_cfg.merge_from_list(args.opts)
     # init_cfg.data.client = 5
     # init_cfg.train.optgraph_level_defaultimizer.lr = 0.01
-    init_cfg.data.save_dir = 'FedBN_with_encoder_VAE_their_lrs'
+    init_cfg.data.save_dir = 'FedAvg_with_encoder_KLD_their_lrs_vae_importance_0_1'
     update_logger(init_cfg)
     setup_seed(init_cfg.seed)
 

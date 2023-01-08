@@ -1,6 +1,7 @@
+import numpy as np
 import torch
 import torch.nn.functional as F
-from torch.nn import Linear, Sequential, BatchNorm1d
+from torch.nn import Linear, Sequential
 from torch_geometric.data import Data
 from torch_geometric.data.batch import Batch
 from torch_geometric.nn.glob import global_add_pool, global_mean_pool, global_max_pool
@@ -13,7 +14,7 @@ from federatedscope.gfl.model.gpr import GPR_Net
 
 EMD_DIM = 200
 
-
+# graph_level_default_KLD
 class AtomEncoder(torch.nn.Module):
     def __init__(self, in_channels, hidden):
         super(AtomEncoder, self).__init__()
@@ -29,32 +30,11 @@ class AtomEncoder(torch.nn.Module):
             x_embedding += self.atom_embedding_list[i](x[:, i])
         return x_embedding
 
-class VAE_Decoder(torch.nn.Module):
-    def __init__(self,
-                 in_channels,
-                 out_channels,
-                 hidden=64,):
-        super(VAE_Decoder, self).__init__()
-        self.lin1 = Sequential(Linear(hidden, hidden), torch.nn.ReLU())
-        self.bn1 = BatchNorm1d(hidden)
-        self.lin2 = Sequential(Linear(hidden, hidden), torch.nn.ReLU())
-        self.bn2 = BatchNorm1d(hidden)
-        self.clf = Linear(hidden, out_channels)
-
-    def forward(self, h):
-        out = self.lin1(h)
-        out = self.bn1(out)
-        out = self.lin2(out)
-        out = self.bn2(out)
-        out = self.clf(out)
-        return out
-
-
 
 class GNN_Net_Graph(torch.nn.Module):
-    r"""GNN model with pre-linear layer, pooling layer
+    r"""GNN model with pre-linear layer, pooling layer 
         and output layer for graph classification tasks.
-
+        
     Arguments:
         in_channels (int): input channels.
         out_channels (int): output channels.
@@ -73,11 +53,11 @@ class GNN_Net_Graph(torch.nn.Module):
                  gnn='gcn',
                  pooling='add'):
         super(GNN_Net_Graph, self).__init__()
+        self.hidden = hidden
         self.dropout = dropout
-        self.hidden= hidden
         # Embedding (pre) layer
-        self.encoder_atom = AtomEncoder(in_channels, hidden*2)
-        self.encoder = Linear(in_channels, hidden*2)
+        self.encoder_atom = AtomEncoder(in_channels, hidden)
+        self.encoder = Linear(in_channels, hidden)
         # GNN layer
         if gnn == 'gcn':
             self.gnn = GCN_Net(in_channels=hidden,
@@ -98,11 +78,17 @@ class GNN_Net_Graph(torch.nn.Module):
                                max_depth=max_depth,
                                dropout=dropout)
         elif gnn == 'gin':
-            self.gnn = GIN_Net(in_channels=hidden,
-                               out_channels=hidden,
-                               hidden=hidden,
-                               max_depth=max_depth,
-                               dropout=dropout)
+            self.local_gnn = GIN_Net(in_channels=hidden,
+                                     out_channels=hidden,
+                                     hidden=hidden,
+                                     max_depth=max_depth,
+                                     dropout=dropout)
+            self.global_gnn = GIN_Net(in_channels=hidden,
+                                      out_channels=hidden,
+                                      hidden=hidden,
+                                      max_depth=max_depth,
+                                      dropout=dropout)
+
         elif gnn == 'gpr':
             self.gnn = GPR_Net(in_channels=hidden,
                                out_channels=hidden,
@@ -122,54 +108,73 @@ class GNN_Net_Graph(torch.nn.Module):
         else:
             raise ValueError(f'Unsupported pooling type: {pooling}.')
         # Output layer
-        self.linear = Sequential(Linear(hidden, hidden), torch.nn.ReLU())
+        self.linear = Linear(hidden, hidden*2)
         self.clf = Linear(hidden, out_channels)
-        self.vae_decoder = VAE_Decoder(out_channels, in_channels, hidden)
 
-    def kld_loss(self, mu, log_var):
-        kld_loss = torch.mean(-0.5 * torch.sum(1 + log_var - mu ** 2 - log_var.exp(), dim=1), dim=0)
-        # In https://github.com/AntixK/PyTorch-VAE/blob/master/models/vanilla_vae.py
-        # the number of minibatch samples is multiplied with the loss
-        return kld_loss
-
-    def reparametrize(self, mu, log_var):
+    def reparameterise(self, mu, logvar):
         if self.training:
-            std = torch.exp(0.5 * log_var)
-            eps = torch.randn_like(std)
-            return eps * std + mu
+            std = logvar.mul(0.5).exp_()
+            eps = std.data.new(std.size()).normal_()
+            return eps.mul(std).add_(mu)
         else:
             return mu
 
-    def vae_loss(self, mu, log_var, x_orig, x_decoded):
-        kld_loss = self.kld_loss(mu, log_var)
-        # recon_loss = F.mse_loss(x_decoded, x_orig)
-        loss = kld_loss
-        return loss
+    def kld_gauss(self, u1, logvar1, u2, logvar2):
+        # general KL two Gaussians
+        # u2, s2 often N(0,1)
+        # https://stats.stackexchange.com/questions/7440/ +
+        # kl-divergence-between-two-univariate-gaussians
+        # log(s2/s1) + [( s1^2 + (u1-u2)^2 ) / 2*s2^2] - 0.5
+        s1 = logvar1.mul(0.5).exp_()
+        s2 = logvar2.mul(0.5).exp_()
+        v1 = s1 * s1
+        v2 = s2 * s2
+        a = torch.log(s2 / s1)
+        num = v1 + (u1 - u2) ** 2
+        den = 2 * v2
+        b = num / den
+        res = a + b - 0.5
+        tmp = torch.mean(res)
+        if tmp > 1:
+            asdsad= 12321
+        return torch.mean(res)
 
     def forward(self, data):
         if isinstance(data, Batch):
-            x_in, edge_index, batch = data.x, data.edge_index, data.batch
+            x, edge_index, batch = data.x, data.edge_index, data.batch
         elif isinstance(data, tuple):
-            x_in, edge_index, batch = data
+            x, edge_index, batch = data
         else:
             raise TypeError('Unsupported data type!')
 
-        if x_in.dtype == torch.int64:
-            x = self.encoder_atom(x_in)
+        if x.dtype == torch.int64:
+            x = self.encoder_atom(x)
         else:
-            x = self.encoder(x_in)
+            x = self.encoder(x)
 
-        mu_logvar = x.view(-1, 2, self.hidden)
-        mu = mu_logvar[:, 0, :]
-        log_var = mu_logvar[:, 1, :]
 
-        x = self.reparametrize(mu, log_var)
+        # local encoder
+        x_local = self.local_gnn((x, edge_index))
+        x_local = self.pooling(x_local, batch)
 
-        kld_loss = self.kld_loss(mu, log_var)
+        mu_logvar_local = self.linear(x_local).view(-1, 2, self.hidden)
+        mu_local = mu_logvar_local[:, 0, :]
+        logvar_local = mu_logvar_local[:, 1, :]
+        x_local = self.reparameterise(mu_local, logvar_local)
+        x_local = x_local.relu()
 
-        x = self.gnn((x, edge_index))
-        x = self.pooling(x, batch)
-        x = self.linear(x)
+        # global encoder
+        x_global = self.global_gnn((x, edge_index))
+        x_global = self.pooling(x_global, batch)
+
+        mu_logvar_global = self.linear(x_global).view(-1, 2, self.hidden)
+        mu_global = mu_logvar_global[:, 0, :]
+        logvar_global = mu_logvar_global[:, 1, :]
+        x_global = self.reparameterise(mu_global, logvar_global)
+        x_global = x_global.relu()
+
+        x = x_local + x_global
+        kld = self.kld_gauss(mu_local, logvar_local, mu_global, logvar_global)
         x = F.dropout(x, self.dropout, training=self.training)
         x = self.clf(x)
-        return x, kld_loss
+        return x, kld

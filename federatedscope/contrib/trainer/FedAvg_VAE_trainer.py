@@ -58,7 +58,7 @@ class FedAvg_VAE_trainer(GraphMiniBatchTrainer):
         """
 
         ctx.optimizer.zero_grad()
-        loss = ctx.loss_batch_ce + ctx.vae_loss
+        loss = ctx.loss_batch_ce + self.cfg.params.vae_importance * ctx.vae_loss
         loss.backward(retain_graph=False)
 
         if ctx.grad_clip > 0:
