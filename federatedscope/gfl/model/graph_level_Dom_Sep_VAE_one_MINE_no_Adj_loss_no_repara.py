@@ -92,8 +92,8 @@ class GNN_Net_Graph(torch.nn.Module):
         super(GNN_Net_Graph, self).__init__()
         self.dropout = dropout
         # Embedding (pre) layer
-        self.encoder_atom = AtomEncoder(in_channels, hidden)
-        self.encoder = Linear(in_channels, hidden)
+        self.encoder_atom = AtomEncoder(in_channels, hidden*2)
+        self.encoder = Linear(in_channels, hidden*2)
         self.cos_loss = torch.nn.CosineEmbeddingLoss()
         # GNN layer
         if gnn == 'gcn':
@@ -181,8 +181,11 @@ class GNN_Net_Graph(torch.nn.Module):
         self.vae_decoder = VAE_Decoder(hidden, hidden)
         #torch.nn.init.xavier_normal_(self.emb.weight.data)
 
-    def kld_loss(self, mu, log_var):
-        kld_loss = torch.mean(-0.5 * torch.sum(1 + log_var - mu ** 2 - log_var.exp(), dim=1), dim=0)
+    def kld_loss(self, x):
+        mu = torch.mean(x, dim=-2)
+        std = torch.std(x, dim=-2)
+        log_var = torch.log(std) * 2
+        kld_loss = -0.5 * torch.mean(1 + log_var - mu ** 2 - log_var.exp(), dim=0)
         # In https://github.com/AntixK/PyTorch-VAE/blob/master/models/vanilla_vae.py
         # the number of minibatch samples is multiplied with the loss
         return kld_loss
@@ -240,14 +243,9 @@ class GNN_Net_Graph(torch.nn.Module):
         else:
             x = self.encoder(x)
 
-        #mu_logvar = x.view(-1, 2, self.hidden)
-        #mu = mu_logvar[:, 0, :]
-        #log_var = mu_logvar[:, 1, :]
+        kld_loss = self.kld_loss(x)
 
         h_encoder = x
-        kld_loss = 0
-
-        x = h_encoder
         x_local_enc = self.local_gnn((x, edge_index))
 
         x_global_enc = self.global_gnn((x, edge_index))
@@ -265,7 +263,7 @@ class GNN_Net_Graph(torch.nn.Module):
 
         mi_local_global = self.mine(x_local_enc, x_global_enc)
         mi_global_fixed = self.mine(x_global_enc, x_fixed_enc)
-# 0.006357   0.006287   0.006446 0.0066
+
         x = x_local + x_global
 
 

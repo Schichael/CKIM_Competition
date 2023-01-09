@@ -176,16 +176,22 @@ class LaplacianDomainSeparationWithSummationMITrainer(GraphMiniBatchTrainer):
         # grad_params = [param[0] for param in ctx.model.named_parameters() if param[1].requires_grad]
 
         ctx.optimizer.zero_grad()
-        # compute omega
-        ctx.loss_batch_ce.backward(retain_graph=True)
 
-        tmp = ctx.model.named_parameters()
+        for param in ctx.model.named_parameters():
+            if param[0].startswith("mine"):
+                param[1].requires_grad = False
+
+        # compute omega
+        loss = ctx.loss_batch_ce + self.config.params.diff_importance * ctx.mi
+        loss.backward(retain_graph=True)
+
         for name, param in ctx.model.named_parameters():
             if param.grad is not None:
                 ctx.omega[name] += (len(ctx.data_batch.y) / len(
                     ctx.data['train'].dataset)) * param.grad.data.clone() ** 2
 
         ctx.optimizer.zero_grad()
+
         #print(f"csd loss: {self.config.params.csd_importance * ctx.loss_batch_csd}")
         #print(f"diff loss: {self.config.params.diff_importance * ctx.mi}")
 
