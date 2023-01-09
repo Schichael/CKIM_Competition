@@ -21,7 +21,7 @@ from federatedscope.gfl.model.gat import GAT_Net
 from federatedscope.gfl.model.gin import GIN_Net
 from federatedscope.gfl.model.gpr import GPR_Net
 
-# graph_level_Dom_Sep_VAE_one_MINE_no_Adj_loss_no_repara
+# graph_level_Dom_Sep_VAE_one_MINE_no_Adj_loss_no_repara_no_decoder
 
 EPS = 1e-15
 EMD_DIM = 200
@@ -92,8 +92,8 @@ class GNN_Net_Graph(torch.nn.Module):
         super(GNN_Net_Graph, self).__init__()
         self.dropout = dropout
         # Embedding (pre) layer
-        self.encoder_atom = AtomEncoder(in_channels, hidden*2)
-        self.encoder = Linear(in_channels, hidden*2)
+        self.encoder_atom = AtomEncoder(in_channels, hidden)
+        self.encoder = Linear(in_channels, hidden)
         self.cos_loss = torch.nn.CosineEmbeddingLoss()
         # GNN layer
         if gnn == 'gcn':
@@ -178,7 +178,6 @@ class GNN_Net_Graph(torch.nn.Module):
         self.bn_linear2 = BatchNorm1d(hidden)
         self.clf = Linear(hidden, out_channels)
         self.emb = Linear(edge_dim, hidden)
-        self.vae_decoder = VAE_Decoder(hidden, hidden)
         #torch.nn.init.xavier_normal_(self.emb.weight.data)
 
     def kld_loss(self, x):
@@ -245,7 +244,6 @@ class GNN_Net_Graph(torch.nn.Module):
 
         kld_loss = self.kld_loss(x)
 
-        h_encoder = x
         x_local_enc = self.local_gnn((x, edge_index))
 
         x_global_enc = self.global_gnn((x, edge_index))
@@ -256,32 +254,18 @@ class GNN_Net_Graph(torch.nn.Module):
 
 
         x_local = self.pooling(x_local_enc, batch)
-
         x_local = self.local_linear_out1(x_local).relu()
-
-
 
         mi_local_global = self.mine(x_local_enc, x_global_enc)
         mi_global_fixed = self.mine(x_global_enc, x_fixed_enc)
 
         x = x_local + x_global
 
-
         x = F.dropout(x, self.dropout, training=self.training)
 
         x = self.clf(x)
 
-
-        decoder_input = x_global_enc + x_local_enc
-        decoder_out = self.vae_decoder(decoder_input)
-        recon_loss_node_features = self.node_recon_loss(decoder_out, h_encoder)
-
-        # recon loss adjacency matrix
-
-        rec_loss = recon_loss_node_features
-        #return x, mi
-
-        return x, kld_loss, rec_loss, mi_local_global, mi_global_fixed
+        return x, kld_loss, 0, mi_local_global, mi_global_fixed
 
 
 
