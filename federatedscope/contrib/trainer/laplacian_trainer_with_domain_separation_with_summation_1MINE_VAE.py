@@ -208,7 +208,7 @@ class LaplacianDomainSeparation1MINEVAETrainer(GraphMiniBatchTrainer):
             if param[0].startswith("mine"):
                 param[1].requires_grad = False
         # compute omega
-        loss_omega = ctx.loss_batch_ce + ctx.rec_loss - \
+        loss_omega = ctx.loss_batch_ce + self.config.params.recon_importance * ctx.rec_loss - \
                self.config.params.diff_importance * ctx.mi_local_global + self.config.params.diff_importance * ctx.mi_global_fixed
 
         loss_omega.backward(retain_graph=True)
