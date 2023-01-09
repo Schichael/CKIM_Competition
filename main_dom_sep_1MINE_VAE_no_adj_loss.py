@@ -48,7 +48,7 @@ def train():
 
     # init_cfg.data.subdirectory = 'graph_dt_backup/processed'
     # init_cfg.merge_from_list(args.opts)
-    init_cfg.data.save_dir = 'FedDomSep_1_global_MINE_VAE_no_adj_loss_csd_1e2_diff_importance_1_lam_0_01_kld_imp_0_1'
+    init_cfg.data.save_dir = 'FedDomSep_1_global_MINE_VAE_no_adj_loss_csd_1e2_diff_imp_0_01_lam_0_01_kld_imp_0_01_recon_imp_0_01'
     init_cfg.model.dropout = 0.5
     init_cfg.params = CN()
     init_cfg.params.alpha = 0.1
