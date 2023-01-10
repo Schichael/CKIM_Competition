@@ -59,7 +59,7 @@ def train():
     init_cfg.params.eps = 1e-20
     init_cfg.params.kld_importance = 0  # 0.01
     init_cfg.params.recon_importance = 0.4  # 0.01
-    init_cfg.federate.client_num = 2
+    init_cfg.federate.client_num = 16
     init_cfg.params.p = 0.
     update_logger(init_cfg)
     setup_seed(init_cfg.seed)

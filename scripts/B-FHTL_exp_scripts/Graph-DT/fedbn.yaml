@@ -5,7 +5,7 @@ early_stop:
   improve_indicator_mode: mean
   the_smaller_the_better: False
 federate:
-  method: 'Graph-DC-FedBN'
+  method: 'Graph-DT-FedBN'
   mode: 'standalone'
   make_global_eval: False
   total_round_num: 400

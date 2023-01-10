@@ -5,10 +5,9 @@ early_stop:
   improve_indicator_mode: best
   the_smaller_the_better: False
 federate:
-  method: 'Graph-DT-FedAvg'
   mode: 'standalone'
   make_global_eval: False
-  total_round_num: 10000
+  total_round_num: 200
   share_local_model: False
   client_num: 16
 train:

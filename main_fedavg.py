@@ -1,7 +1,8 @@
 import os
 import sys
 
-sys.path = ['~/Master-Thesis/CKIM_Competition/federatedscope', '~/Master-Thesis/CKIM_Competition',] + sys.path
+# sys.path = ['~/Master-Thesis/CKIM_Competition/federatedscope', '~/Master-Thesis/CKIM_Competition',] + sys.path
+sys.path = ['/home/ms234795/Master Thesis/CKIM_Competition/federatedscope', '/home/ms234795/Master Thesis/CKIM_Competition',] + sys.path
 
 print(sys.path)
 from federatedscope.core.cmd_args import parse_args
@@ -19,7 +20,7 @@ if os.environ.get('http_proxy'):
 
 
 def train():
-    cfg_file = 'scripts/B-FHTL_exp_scripts/Graph-DT/fedbn_own.yaml'
+    cfg_file = 'scripts/B-FHTL_exp_scripts/Graph-DT/fedavg.yaml'
     cfg_client = 'scripts/B-FHTL_exp_scripts/Graph-DT/cfg_per_client_theirs.yaml'
     # cfg_per_Client_ours_lr
     # cfg_per_client_ours_lr_local_steps
@@ -31,7 +32,7 @@ def train():
 
     # init_cfg.data.subdirectory = 'graph_dt_backup/processed'
     # init_cfg.merge_from_list(args.opts)
-    init_cfg.data.save_dir = 'FedBN_ALL_LAYERS_our_baseline_their_lrs_dropout_0_5'
+    init_cfg.data.save_dir = 'FedAvg_NEW'
     init_cfg.model.dropout = 0.5
     update_logger(init_cfg)
     setup_seed(init_cfg.seed)
@@ -58,7 +59,7 @@ def train():
 
 
 if __name__ == '__main__':
-    num_trainings = 3
+    num_trainings = 1
     for i in range(num_trainings):
         print(f"training run: {i + 1}")
         train()
