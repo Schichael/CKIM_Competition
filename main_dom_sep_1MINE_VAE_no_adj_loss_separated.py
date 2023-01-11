@@ -3,8 +3,8 @@ import sys
 
 from federatedscope.contrib.trainer.laplacian_trainer_with_domain_separation_with_summation_1MINE_VAE import \
     call_laplacian_trainer
-sys.path = ['/home/ms234795/Master Thesis/CKIM_Competition/federatedscope', '/home/ms234795/Master Thesis/CKIM_Competition',] + sys.path
-#sys.path = ['~/Master-Thesis/CKIM_Competition/federatedscope', '~/Master-Thesis/CKIM_Competition',] + sys.path
+#sys.path = ['/home/ms234795/Master Thesis/CKIM_Competition/federatedscope', '/home/ms234795/Master Thesis/CKIM_Competition',] + sys.path
+sys.path = ['~/Master-Thesis/CKIM_Competition/federatedscope', '~/Master-Thesis/CKIM_Competition',] + sys.path
 
 print(sys.path)
 from federatedscope.core.cmd_args import parse_args
@@ -49,18 +49,18 @@ def train():
 
     # init_cfg.data.subdirectory = 'graph_dt_backup/processed'
     # init_cfg.merge_from_list(args.opts)
-    init_cfg.data.save_dir = 'SEPARATED_11_01_[1,4,6,7, normal] FedDomSep_1_global_MINE_VAE_csd_0_diff_imp_1_lam_0_kld_imp_0_recon_imp_0_1'
+    init_cfg.data.save_dir = 'SEPARATED_10_01_[1,4,6,7, normal] FedDomSep_1_global_MINE_VAE_no_adj_loss_csd_1e2_diff_imp_1_lam_0_kld_imp_0_recon_imp_0'
     init_cfg.model.dropout = 0.5
     init_cfg.params = CN()
     init_cfg.params.alpha = 0.1
     init_cfg.params.diff_importance = 1
-    init_cfg.params.csd_importance = 0  # 1e2  # 1e2
+    init_cfg.params.csd_importance = 0 #  1e2  # 1e2
     init_cfg.params.mine_lr = 0.01
     init_cfg.params.lam = 0  # 0.01
     init_cfg.params.eps = 1e-20
-    init_cfg.params.kld_importance = 0  # 0.01
+    init_cfg.params.kld_importance = 0.  # 0.01
     init_cfg.params.recon_importance = 0.1  # 0.01
-    # init_cfg.federate.client_num = 2
+    init_cfg.federate.client_num = 5
     init_cfg.params.p = 0.
     update_logger(init_cfg)
     setup_seed(init_cfg.seed)

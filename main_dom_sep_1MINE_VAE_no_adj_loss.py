@@ -3,8 +3,8 @@ import sys
 
 from federatedscope.contrib.trainer.laplacian_trainer_with_domain_separation_with_summation_1MINE_VAE import \
     call_laplacian_trainer
-sys.path = ['/home/ms234795/Master Thesis/CKIM_Competition/federatedscope', '/home/ms234795/Master Thesis/CKIM_Competition',] + sys.path
-#sys.path = ['~/Master-Thesis/CKIM_Competition/federatedscope', '~/Master-Thesis/CKIM_Competition',] + sys.path
+#sys.path = ['/home/ms234795/Master Thesis/CKIM_Competition/federatedscope', '/home/ms234795/Master Thesis/CKIM_Competition',] + sys.path
+sys.path = ['~/Master-Thesis/CKIM_Competition/federatedscope', '~/Master-Thesis/CKIM_Competition',] + sys.path
 
 print(sys.path)
 from federatedscope.core.cmd_args import parse_args
@@ -53,13 +53,13 @@ def train():
     init_cfg.params = CN()
     init_cfg.params.alpha = 0.1
     init_cfg.params.diff_importance = 1
-    init_cfg.params.csd_importance = 0  # 1e2
+    init_cfg.params.csd_importance = 0  # 1e2  # 1e2
     init_cfg.params.mine_lr = 0.01
     init_cfg.params.lam = 0  # 0.01
     init_cfg.params.eps = 1e-20
     init_cfg.params.kld_importance = 0  # 0.01
-    init_cfg.params.recon_importance = 0.4  # 0.01
-    init_cfg.federate.client_num = 16
+    init_cfg.params.recon_importance = 0.1  # 0.01
+    init_cfg.federate.client_num = 2
     init_cfg.params.p = 0.
     update_logger(init_cfg)
     setup_seed(init_cfg.seed)
