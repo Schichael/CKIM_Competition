@@ -21,7 +21,7 @@ from federatedscope.gfl.model.gat import GAT_Net
 from federatedscope.gfl.model.gin import GIN_Net
 from federatedscope.gfl.model.gpr import GPR_Net
 
-# graph_level_Dom_Sep_VAE_one_MINE_no_Adj_loss_no_repara_other_diff
+# graph_level_Dom_Sep_VAE_one_MINE_no_Adj_loss_no_repara
 
 EPS = 1e-15
 EMD_DIM = 200
@@ -61,26 +61,6 @@ class VAE_Decoder(torch.nn.Module):
         out = self.clf(out)
         return out
 
-class DiffLoss(torch.nn.Module):
-
-    def __init__(self):
-        super(DiffLoss, self).__init__()
-
-    def forward(self, input1, input2):
-        batch_size = input1.size(0)
-        input1 = input1.view(batch_size, -1)
-        input2 = input2.view(batch_size, -1)
-
-        input1_l2_norm = torch.norm(input1, p=2, dim=1, keepdim=True).detach()
-        input1_l2 = input1.div(input1_l2_norm.expand_as(input1) + 1e-6)
-
-        input2_l2_norm = torch.norm(input2, p=2, dim=1, keepdim=True).detach()
-        input2_l2 = input2.div(input2_l2_norm.expand_as(input2) + 1e-6)
-
-        diff_loss = torch.mean((input1_l2.t().mm(input2_l2)).pow(2))
-
-        return diff_loss
-
 class GNN_Net_Graph(torch.nn.Module):
     r"""GNN model with pre-linear layer, pooling layer
         and output layer for graph classification tasks.
@@ -110,7 +90,6 @@ class GNN_Net_Graph(torch.nn.Module):
         if edge_dim is None or edge_dim == 0:
             edge_dim = 1
         super(GNN_Net_Graph, self).__init__()
-        self.diff_loss = DiffLoss()
         self.dropout = dropout
         # Embedding (pre) layer
         self.encoder_atom = AtomEncoder(in_channels, hidden)
@@ -282,7 +261,7 @@ class GNN_Net_Graph(torch.nn.Module):
 
 
 
-        diff_local_global = self.diff_loss(x_local_enc, x_global_enc)
+        mi_local_global = self.mine(x_local_enc, x_global_enc)
         mi_global_fixed = self.mine(x_global_enc, x_fixed_enc)
 
         x = x_local + x_global
@@ -302,7 +281,7 @@ class GNN_Net_Graph(torch.nn.Module):
         rec_loss = recon_loss_node_features
         #return x, mi
 
-        return x, kld_loss, rec_loss, diff_local_global, mi_global_fixed
+        return x, kld_loss, rec_loss, mi_local_global, mi_global_fixed
 
 
 
