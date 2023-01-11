@@ -14,7 +14,7 @@ from federatedscope.gfl.trainer import GraphMiniBatchTrainer
 logger = logging.getLogger(__name__)
 
 
-class LaplacianDomainSeparation1MINE_Other_Diff_VAETrainer(GraphMiniBatchTrainer):
+class LaplacianDomainSeparation1MINEVAE_Separated_OtherDiff_Trainer(GraphMiniBatchTrainer):
     def __init__(self,
                  model,
                  omega,
@@ -115,12 +115,13 @@ class LaplacianDomainSeparation1MINE_Other_Diff_VAETrainer(GraphMiniBatchTrainer
         #    print(f"last round mean difference loss: {ctx.aggr_diff_loss/ctx.batchnumbers}")
 
         if ctx.cur_data_split == "train" and not self.in_finetune:
-            #print("in train")
+            print("in train")
             self.round_num += 1
             self.in_finetune = True
         elif ctx.cur_data_split == "train" and self.in_finetune:
             self.in_finetune = False
-
+        else:
+            print("in val or test")
         ctx.log_ce_loss = 0
         ctx.log_csd_loss = 0
         new_omega = dict()
@@ -140,16 +141,16 @@ class LaplacianDomainSeparation1MINE_Other_Diff_VAETrainer(GraphMiniBatchTrainer
     def _hook_on_batch_forward(self, ctx):
         self.tmp += 1
         batch = ctx.data_batch.to(ctx.device)
-        pred, kld_loss, rec_loss, diff_local_global, mi_global_fixed = ctx.model(batch)
-        ctx.diff_local_global = diff_local_global
+        pred, kld_loss, rec_loss, mi_local_global, mi_global_fixed = ctx.model(batch)
+        ctx.diff_local_global = mi_local_global
         ctx.mi_global_fixed = mi_global_fixed
         ctx.kld_loss = kld_loss
         ctx.rec_loss = rec_loss
 
-        #print(f"mi_local_global: {diff_local_global}")
-        #print(f"mi_global_fixed: {mi_global_fixed}")
-        #print(f"rec_loss: {rec_loss}")
-        #print(f"kld_loss: {kld_loss}")
+        print(f"mi_local_global: {mi_local_global}")
+        print(f"mi_global_fixed: {mi_global_fixed}")
+        print(f"rec_loss: {rec_loss}")
+        print(f"kld_loss: {kld_loss}")
 
         # print(f"negative mi: {-ctx.mi}")
         csd_loss = CSDLoss(self._param_filter, ctx)
@@ -202,22 +203,49 @@ class LaplacianDomainSeparation1MINE_Other_Diff_VAETrainer(GraphMiniBatchTrainer
         # grad_params = [param[0] for param in ctx.model.named_parameters() if param[1].requires_grad]
 
         ctx.optimizer.zero_grad()
-        # compute loss for network without MINE network
-        for param in ctx.model.named_parameters():
-            if param[0].startswith("mine"):
-                param[1].requires_grad = False
-        # compute omega
-        loss_omega = ctx.loss_batch_ce + self.config.params.recon_importance * ctx.rec_loss + \
-                     self.config.params.diff_importance * ctx.diff_local_global + self.config.params.diff_importance * ctx.mi_global_fixed
+        ###################################################################################
+        #################################    omega    #####################################
+        ###################################################################################
 
-        loss_omega.backward(retain_graph=True)
-        # backprop MINE
+        # compute gradient for node encoder and classifying layers (only task loss and KLD loss.)
+        loss = ctx.loss_batch_ce + self.config.params.kld_importance * ctx.kld_loss
+        loss.backward(retain_graph=True)
+
+        # freeze gradients of node encoder for the following operations
+        for param in ctx.model.named_parameters():
+            if param[0].startswith("encoder") or param[0].startswith("encoder_atom"):
+                param[1].requires_grad = False
+
+        # disabled layers: encoder, encoder_atom
+        # compute gradients for local gnn and for the decoder.
+        # Freeze global gnn and MINE
+        for param in ctx.model.named_parameters():
+            if param[0].startswith("global_gnn") or param[0].startswith("mine"):
+                param[1].requires_grad = False
+        # frozen layers: local_gnn, mine, encoder, encoder_atom
+        loss = -self.config.params.diff_importance * ctx.diff_local_global + self.config.params.recon_importance * ctx.rec_loss
+        loss.backward(retain_graph=True)
+
+        # compute gradients for global gnn and for the decoder.
+        # unfreeze global_gnn,
+        # freeze local_gnn, decoder
+        for param in ctx.model.named_parameters():
+            if param[0].startswith("global_gnn"):
+                param[1].requires_grad = True
+            if param[0].startswith("local_gnn") or param[0].startswith("vae_decoder"):
+                param[1].requires_grad = False
+        # frozen layers: global_gnn, mine, vae_decoder, encoder, encoder_atom
+        loss_global_fixed = self.config.params.diff_importance * ctx.mi_global_fixed + self.config.params.recon_importance * ctx.rec_loss
+        loss_global_fixed.backward(retain_graph=True)
+
+        # Compute gradients for MINE
+        # Freeze everything but MINE
         for param in ctx.model.named_parameters():
             if param[0] in self.mine_grad_params:
                 param[1].requires_grad = True
             else:
                 param[1].requires_grad = False
-
+        # frozen layers: all but mine
         mine_loss = (self.config.params.mine_lr / self.config.train.optimizer.lr) * ctx.mi_global_fixed
         mine_loss.backward(retain_graph=True)
 
@@ -226,46 +254,19 @@ class LaplacianDomainSeparation1MINE_Other_Diff_VAETrainer(GraphMiniBatchTrainer
                 ctx.omega[name] += (len(ctx.data_batch.y) / len(
                     ctx.data['train'].dataset)) * param.grad.data.clone() ** 2
 
-        ctx.optimizer.zero_grad()
-        #print(f"csd loss: {self.config.params.csd_importance * ctx.loss_batch_csd}")
-        #print(f"diff loss: {self.config.params.diff_importance * ctx.mi}")
+
+
+        ###################################################################################
+        ################################    TRAINING    ###################################
+        ###################################################################################
 
         # Reset requires_grad
         for param in ctx.model.named_parameters():
             if param[0] in self.grad_params:
                 param[1].requires_grad = True
-
-
-        # compute loss for network without MINE network
-        for param in ctx.model.named_parameters():
-            if param[0].startswith("mine"):
-                param[1].requires_grad = False
-
-        # Use negative mi to minimize it (mi is naturally negative for some reason and the true mi is -ctx.mi)
-        """
-        ctx.mi_local_global = mi_local_global
-        ctx.mi_global_fixed = mi_global_fixed
-        ctx.kld_loss = kld_loss
-        ctx.rec_loss = rec_loss
-        """
-        loss = ctx.loss_batch_ce + self.config.params.csd_importance * ctx.loss_batch_csd + \
-               self.config.params.diff_importance * ctx.diff_local_global + self.config.params.diff_importance * ctx.mi_global_fixed + \
-               self.config.params.kld_importance * self.ctx.kld_loss + self.config.params.recon_importance * ctx.rec_loss
-
-        #loss = self.config.params.diff_importance * ctx.mi
-        # print(f"loss: {loss}")
-
-        loss.backward(retain_graph=True)
-
-        #Train MINE
-        for param in ctx.model.named_parameters():
-            if param[0] in self.mine_grad_params:
-                param[1].requires_grad = True
-            else:
-                param[1].requires_grad = False
-
-        mine_loss = (self.config.params.mine_lr / self.config.train.optimizer.lr) * ctx.mi_global_fixed
-        mine_loss.backward(retain_graph=False)
+        # Reuse the computed gradients and add the gradients from prior loss
+        loss_prox_prior = self.config.params.csd_importance * ctx.loss_batch_csd
+        loss_prox_prior.backward()
 
         # Perform training step
         if ctx.grad_clip > 0:
@@ -285,16 +286,6 @@ class LaplacianDomainSeparation1MINE_Other_Diff_VAETrainer(GraphMiniBatchTrainer
             if param[0] in self.grad_params:
                 param[1].requires_grad = True
 
-
-
-
-
-
-        #for key, param in prox_loss_change.items():
-        #    curr_val = self.ctx.model.state_dict()[key]
-        #    updated_val = curr_val + param
-        #    self.ctx.model.state_dict()[key].data.copy_(updated_val)
-        #self.prox_loss_model_update()
 
 
 
@@ -342,12 +333,14 @@ class LaplacianDomainSeparation1MINE_Other_Diff_VAETrainer(GraphMiniBatchTrainer
         prox_loss_change = {}
         for key in self.grad_params:
             # self.ctx.model.state_dict()[key].data.copy_(new_model_params[key])
-            if key.startswith('fixed'):
-                stripped_key = key[len('fixed'):]
-                local_key = 'local' + stripped_key
-                local_val = self.ctx.model.state_dict()[local_key]
-                server_val = model_params[key]
-                prox_loss_change[local_key] = - lr * lam * (local_val - server_val)
+            if key.startswith('local'):
+                stripped_key = key[len('local'):]
+                fixed_key = 'fixed' + stripped_key
+                if fixed_key not in self.ctx.model.state_dict():
+                    continue
+                fixed_val = self.ctx.model.state_dict()[fixed_key]
+                local_val = model_params[key]
+                prox_loss_change[key] = - lr * lam * (local_val - fixed_val)
                 #updated_val = local_val - lr * lam * (local_val - server_val)
                 #self.ctx.model.state_dict()[key].data.copy_(updated_val)
         return prox_loss_change
@@ -410,5 +403,5 @@ class CSDLoss(torch.nn.Module):
 
 def call_laplacian_trainer(trainer_type):
     if trainer_type == 'laplacian_trainer':
-        trainer_builder = LaplacianDomainSeparation1MINE_Other_Diff_VAETrainer
+        trainer_builder = LaplacianDomainSeparation1MINEVAE_Separated_OtherDiff_Trainer
         return trainer_builder

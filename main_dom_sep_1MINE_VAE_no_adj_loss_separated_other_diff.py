@@ -3,8 +3,11 @@ import sys
 
 from federatedscope.contrib.trainer.laplacian_trainer_with_domain_separation_with_summation_1MINE_VAE import \
     call_laplacian_trainer
-sys.path = ['/home/ms234795/Master Thesis/CKIM_Competition/federatedscope', '/home/ms234795/Master Thesis/CKIM_Competition',] + sys.path
-# sys.path = ['~/Master-Thesis/CKIM_Competition/federatedscope', '~/Master-Thesis/CKIM_Competition',] + sys.path
+from federatedscope.contrib.workers.laplacian_with_domain_separation_1MINE_VAE_Separated_other_diffloss_client import \
+    LaplacianDomainSeparation1MINE_Separated_Other_Diff_Client
+
+#sys.path = ['/home/ms234795/Master Thesis/CKIM_Competition/federatedscope', '/home/ms234795/Master Thesis/CKIM_Competition',] + sys.path
+sys.path = ['~/Master-Thesis/CKIM_Competition/federatedscope', '~/Master-Thesis/CKIM_Competition',] + sys.path
 
 print(sys.path)
 from federatedscope.core.cmd_args import parse_args
@@ -23,7 +26,7 @@ from federatedscope.contrib.workers.laplacian_server_dom_sep import LaplacianSer
 from federatedscope.contrib.workers.laplacian_server import LaplacianServer
 from federatedscope.contrib.workers.laplacian_with_domain_separation_1MINE_VAE_Separated_client import LaplacianDomainSeparation1MINE_Separated_Client
 
-from federatedscope.contrib.trainer.laplacian_trainer_with_domain_separation_with_summation_1MINE_VAE_separated import call_laplacian_trainer
+from federatedscope.contrib.trainer.laplacian_trainer_with_domain_separation_with_summation_1MINE_VAE_separated_other_diff import call_laplacian_trainer
 
 register_trainer('laplacian_trainer', call_laplacian_trainer)
 
@@ -53,14 +56,14 @@ def train():
     init_cfg.model.dropout = 0.5
     init_cfg.params = CN()
     init_cfg.params.alpha = 0.1
-    init_cfg.params.diff_importance = 0.1
+    init_cfg.params.diff_importance = 1
     init_cfg.params.csd_importance = 0.5 #  1e2  # 1e2
     init_cfg.params.mine_lr = 0.01
     init_cfg.params.lam = 0  # 0.01
     init_cfg.params.eps = 1e-20
     init_cfg.params.kld_importance = 0.1  # 0.01
     init_cfg.params.recon_importance = 0.1  # 0.01
-    # init_cfg.federate.client_num = 5
+    init_cfg.federate.client_num = 5
     init_cfg.params.p = 0.
     update_logger(init_cfg)
     setup_seed(init_cfg.seed)
@@ -82,7 +85,7 @@ def train():
         cfg_client = CfgNode.load_cfg(open(cfg_client, 'r')).clone()
     runner = FedRunner(data=data,
                    server_class=LaplacianServer,
-                   client_class=LaplacianDomainSeparation1MINE_Separated_Client,
+                   client_class=LaplacianDomainSeparation1MINE_Separated_Other_Diff_Client,
                    config=init_cfg.clone(),
                    client_config=cfg_client)
     _ = runner.run()

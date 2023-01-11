@@ -4,20 +4,15 @@ from copy import deepcopy
 
 import torch
 
-from federatedscope.contrib.trainer.laplacian_trainer_with_domain_separation_with_summation import \
-    LaplacianDomainSeparationWithSummationTrainer
-from federatedscope.contrib.trainer.laplacian_trainer_with_domain_separation_with_summation_1MINE_VAE import \
-    LaplacianDomainSeparation1MINEVAETrainer
 from federatedscope.contrib.trainer.laplacian_trainer_with_domain_separation_with_summation_1MINE_VAE_separated_other_diff import \
     LaplacianDomainSeparation1MINEVAE_Separated_OtherDiff_Trainer
-
 from federatedscope.contrib.workers.client import Client
 from federatedscope.core.message import Message
 
 logger = logging.getLogger(__name__)
 
 
-class LaplacianDomainSeparation1MINEOtherDiffClient(Client):
+class LaplacianDomainSeparation1MINE_Separated_Other_Diff_Client(Client):
     def __init__(self,
                  ID=-1,
                  server_id=None,
