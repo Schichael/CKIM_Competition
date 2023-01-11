@@ -211,7 +211,7 @@ class LaplacianDomainSeparation1MINEVAE_Separated_Trainer(GraphMiniBatchTrainer)
         loss = ctx.loss_batch_ce + self.config.params.kld_importance * ctx.kld_loss
         loss.backward(retain_graph=True)
 
-        # frozen gradients of node encoder for the following operations
+        # freeze gradients of node encoder for the following operations
         for param in ctx.model.named_parameters():
             if param[0].startswith("encoder") or param[0].startswith("encoder_atom"):
                 param[1].requires_grad = False
@@ -337,6 +337,8 @@ class LaplacianDomainSeparation1MINEVAE_Separated_Trainer(GraphMiniBatchTrainer)
             if key.startswith('local'):
                 stripped_key = key[len('local'):]
                 fixed_key = 'fixed' + stripped_key
+                if fixed_key not in self.ctx.model.state_dict():
+                    continue
                 fixed_val = self.ctx.model.state_dict()[fixed_key]
                 local_val = model_params[key]
                 prox_loss_change[key] = - lr * lam * (local_val - fixed_val)
