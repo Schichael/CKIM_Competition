@@ -21,7 +21,7 @@ from federatedscope.gfl.model.gat import GAT_Net
 from federatedscope.gfl.model.gin import GIN_Net
 from federatedscope.gfl.model.gpr import GPR_Net
 
-# graph_level_Dom_Sep_VAE_one_MINE_no_Adj_loss_no_repara_no_decoder
+# graph_level_Dom_Sep_VAE_one_MINE_other_diffloss_no_Adj_loss_no_repara_no_decoder
 
 EPS = 1e-15
 EMD_DIM = 200
@@ -82,6 +82,8 @@ class DiffLoss(torch.nn.Module):
 
         return diff_loss
 
+
+
 class GNN_Net_Graph(torch.nn.Module):
     r"""GNN model with pre-linear layer, pooling layer
         and output layer for graph classification tasks.
@@ -106,12 +108,13 @@ class GNN_Net_Graph(torch.nn.Module):
                  edge_dim = None,
                  rho = 0.0):
         self.hidden = hidden
-        self.diff_loss = DiffLoss()
+
         self.rho=rho
         print(f"rho: {rho}")
         if edge_dim is None or edge_dim == 0:
             edge_dim = 1
         super(GNN_Net_Graph, self).__init__()
+        self.diff_loss = DiffLoss()
         self.dropout = dropout
         # Embedding (pre) layer
         self.encoder_atom = AtomEncoder(in_channels, hidden)

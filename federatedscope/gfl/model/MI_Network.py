@@ -18,7 +18,8 @@ class EMALoss(torch.autograd.Function):
     def forward(ctx, input, running_ema):
         ctx.save_for_backward(input, running_ema)
         input_log_sum_exp = input.exp().mean().log()
-
+        if True in torch.isnan(input_log_sum_exp).data:
+            print(f"input: {input}, running_ema: {running_ema}")
         return input_log_sum_exp
 
     @staticmethod

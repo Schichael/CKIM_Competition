@@ -14,7 +14,7 @@ from federatedscope.gfl.trainer import GraphMiniBatchTrainer
 logger = logging.getLogger(__name__)
 
 
-class LaplacianDomainSeparation1MINEVAETrainer(GraphMiniBatchTrainer):
+class LaplacianDomainSeparation1MINE_Other_Diff_VAETrainer(GraphMiniBatchTrainer):
     def __init__(self,
                  model,
                  omega,
@@ -115,13 +115,12 @@ class LaplacianDomainSeparation1MINEVAETrainer(GraphMiniBatchTrainer):
         #    print(f"last round mean difference loss: {ctx.aggr_diff_loss/ctx.batchnumbers}")
 
         if ctx.cur_data_split == "train" and not self.in_finetune:
-            print("in train")
+            #print("in train")
             self.round_num += 1
             self.in_finetune = True
         elif ctx.cur_data_split == "train" and self.in_finetune:
             self.in_finetune = False
-        else:
-            print("in val or test")
+
         ctx.log_ce_loss = 0
         ctx.log_csd_loss = 0
         new_omega = dict()
@@ -141,16 +140,16 @@ class LaplacianDomainSeparation1MINEVAETrainer(GraphMiniBatchTrainer):
     def _hook_on_batch_forward(self, ctx):
         self.tmp += 1
         batch = ctx.data_batch.to(ctx.device)
-        pred, kld_loss, rec_loss, mi_local_global, mi_global_fixed = ctx.model(batch)
-        ctx.diff_local_global = mi_local_global
+        pred, kld_loss, rec_loss, diff_local_global, mi_global_fixed = ctx.model(batch)
+        ctx.diff_local_global = diff_local_global
         ctx.mi_global_fixed = mi_global_fixed
         ctx.kld_loss = kld_loss
         ctx.rec_loss = rec_loss
 
-        print(f"mi_local_global: {mi_local_global}")
-        print(f"mi_global_fixed: {mi_global_fixed}")
-        print(f"rec_loss: {rec_loss}")
-        print(f"kld_loss: {kld_loss}")
+        #print(f"mi_local_global: {diff_local_global}")
+        #print(f"mi_global_fixed: {mi_global_fixed}")
+        #print(f"rec_loss: {rec_loss}")
+        #print(f"kld_loss: {kld_loss}")
 
         # print(f"negative mi: {-ctx.mi}")
         csd_loss = CSDLoss(self._param_filter, ctx)
@@ -208,7 +207,7 @@ class LaplacianDomainSeparation1MINEVAETrainer(GraphMiniBatchTrainer):
             if param[0].startswith("mine"):
                 param[1].requires_grad = False
         # compute omega
-        loss_omega = ctx.loss_batch_ce + self.config.params.recon_importance * ctx.rec_loss - \
+        loss_omega = ctx.loss_batch_ce + self.config.params.recon_importance * ctx.rec_loss + \
                      self.config.params.diff_importance * ctx.diff_local_global + self.config.params.diff_importance * ctx.mi_global_fixed
 
         loss_omega.backward(retain_graph=True)
@@ -219,8 +218,7 @@ class LaplacianDomainSeparation1MINEVAETrainer(GraphMiniBatchTrainer):
             else:
                 param[1].requires_grad = False
 
-        mine_loss = 1 * ((self.config.params.mine_lr / self.config.train.optimizer.lr) * ctx.diff_local_global + (
-                    self.config.params.mine_lr / self.config.train.optimizer.lr) * ctx.mi_global_fixed)
+        mine_loss = (self.config.params.mine_lr / self.config.train.optimizer.lr) * ctx.mi_global_fixed
         mine_loss.backward(retain_graph=True)
 
         for name, param in ctx.model.named_parameters():
@@ -250,7 +248,7 @@ class LaplacianDomainSeparation1MINEVAETrainer(GraphMiniBatchTrainer):
         ctx.kld_loss = kld_loss
         ctx.rec_loss = rec_loss
         """
-        loss = ctx.loss_batch_ce + self.config.params.csd_importance * ctx.loss_batch_csd - \
+        loss = ctx.loss_batch_ce + self.config.params.csd_importance * ctx.loss_batch_csd + \
                self.config.params.diff_importance * ctx.diff_local_global + self.config.params.diff_importance * ctx.mi_global_fixed + \
                self.config.params.kld_importance * self.ctx.kld_loss + self.config.params.recon_importance * ctx.rec_loss
 
@@ -266,7 +264,7 @@ class LaplacianDomainSeparation1MINEVAETrainer(GraphMiniBatchTrainer):
             else:
                 param[1].requires_grad = False
 
-        mine_loss = 0.5*((self.config.params.mine_lr / self.config.train.optimizer.lr) * ctx.diff_local_global + (self.config.params.mine_lr / self.config.train.optimizer.lr) * ctx.mi_global_fixed)
+        mine_loss = (self.config.params.mine_lr / self.config.train.optimizer.lr) * ctx.mi_global_fixed
         mine_loss.backward(retain_graph=False)
 
         # Perform training step
@@ -412,5 +410,5 @@ class CSDLoss(torch.nn.Module):
 
 def call_laplacian_trainer(trainer_type):
     if trainer_type == 'laplacian_trainer':
-        trainer_builder = LaplacianDomainSeparation1MINEVAETrainer
+        trainer_builder = LaplacianDomainSeparation1MINE_Other_Diff_VAETrainer
         return trainer_builder

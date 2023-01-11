@@ -135,7 +135,7 @@ class LaplacianDomainSeparation2MINEVAETrainer(GraphMiniBatchTrainer):
         self.tmp += 1
         batch = ctx.data_batch.to(ctx.device)
         pred, kld_loss, rec_loss, mi_local_global, mi_global_fixed = ctx.model(batch)
-        ctx.mi_local_global = mi_local_global
+        ctx.diff_local_global = mi_local_global
         ctx.mi_global_fixed = mi_global_fixed
         ctx.kld_loss = kld_loss
         ctx.rec_loss = rec_loss
@@ -199,7 +199,7 @@ class LaplacianDomainSeparation2MINEVAETrainer(GraphMiniBatchTrainer):
             else:
                 param[1].requires_grad = False
 
-        mine_loss = (self.config.params.mine_lr / self.config.train.optimizer.lr) * ctx.mi_local_global + (
+        mine_loss = (self.config.params.mine_lr / self.config.train.optimizer.lr) * ctx.diff_local_global + (
                     self.config.params.mine_lr / self.config.train.optimizer.lr) * ctx.mi_global_fixed
         mine_loss.backward(retain_graph=True)
 
@@ -231,7 +231,7 @@ class LaplacianDomainSeparation2MINEVAETrainer(GraphMiniBatchTrainer):
         ctx.rec_loss = rec_loss
         """
         loss = ctx.loss_batch_ce + self.config.params.csd_importance * ctx.loss_batch_csd - \
-               self.config.params.diff_importance * ctx.mi_local_global + self.config.params.diff_importance * ctx.mi_global_fixed + \
+               self.config.params.diff_importance * ctx.diff_local_global + self.config.params.diff_importance * ctx.mi_global_fixed + \
                self.ctx.kld_loss + ctx.rec_loss
 
         #loss = self.config.params.diff_importance * ctx.mi
@@ -246,7 +246,7 @@ class LaplacianDomainSeparation2MINEVAETrainer(GraphMiniBatchTrainer):
             else:
                 param[1].requires_grad = False
 
-        mine_loss = (self.config.params.mine_lr / self.config.train.optimizer.lr) * ctx.mi_local_global + (self.config.params.mine_lr / self.config.train.optimizer.lr) * ctx.mi_global_fixed
+        mine_loss = (self.config.params.mine_lr / self.config.train.optimizer.lr) * ctx.diff_local_global + (self.config.params.mine_lr / self.config.train.optimizer.lr) * ctx.mi_global_fixed
         mine_loss.backward(retain_graph=False)
 
         # Perform training step

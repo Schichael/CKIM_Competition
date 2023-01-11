@@ -55,8 +55,7 @@ class LaplacianAggregator(Aggregator):
             self.model.state_dict()[key].data.copy_(new_param[key])
             self.omega[key] = copy.deepcopy(new_omega[key])
         et2 = time.time()
-        print(f"Time for aggregation 1: {(et1 - st) * 1000}")
-        print(f"Time for aggregation 2: {(et2 - st) * 1000}")
+
         return new_param, new_omega
 
     def pruning_server(self, p, new_param, new_omega):
