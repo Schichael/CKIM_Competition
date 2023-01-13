@@ -6,8 +6,8 @@ from federatedscope.contrib.trainer.laplacian_trainer_with_domain_separation_wit
 from federatedscope.contrib.workers.laplacian_with_domain_separation_1MINE_VAE_Separated_other_diffloss_client import \
     LaplacianDomainSeparation1MINE_Separated_Other_Diff_Client
 
-#sys.path = ['/home/ms234795/Master Thesis/CKIM_Competition/federatedscope', '/home/ms234795/Master Thesis/CKIM_Competition',] + sys.path
-sys.path = ['~/Master-Thesis/CKIM_Competition/federatedscope', '~/Master-Thesis/CKIM_Competition',] + sys.path
+sys.path = ['/home/ms234795/Master Thesis/CKIM_Competition/federatedscope', '/home/ms234795/Master Thesis/CKIM_Competition',] + sys.path
+#sys.path = ['~/Master-Thesis/CKIM_Competition/federatedscope', '~/Master-Thesis/CKIM_Competition',] + sys.path
 
 print(sys.path)
 from federatedscope.core.cmd_args import parse_args
@@ -26,7 +26,7 @@ from federatedscope.contrib.workers.laplacian_server_dom_sep import LaplacianSer
 from federatedscope.contrib.workers.laplacian_server import LaplacianServer
 from federatedscope.contrib.workers.laplacian_with_domain_separation_1MINE_VAE_Separated_client import LaplacianDomainSeparation1MINE_Separated_Client
 
-from federatedscope.contrib.trainer.laplacian_trainer_with_domain_separation_with_summation_1MINE_VAE_separated_other_diff import call_laplacian_trainer
+from federatedscope.contrib.trainer.laplacian_trainer_with_domain_separation_VAE_separated_other_diff_other_sim import call_laplacian_trainer
 
 register_trainer('laplacian_trainer', call_laplacian_trainer)
 
@@ -40,7 +40,7 @@ if os.environ.get('http_proxy'):
 
 
 def train():
-    cfg_file = 'scripts/B-FHTL_exp_scripts/Graph-DT/fed_dom_sep_MI.yaml'
+    cfg_file = 'scripts/B-FHTL_exp_scripts/Graph-DT/fed_dom_sep_otherDiff_otherSim.yaml'
     cfg_client = 'scripts/B-FHTL_exp_scripts/Graph-DT/cfg_per_client_theirs.yaml'
     # cfg_per_Client_ours_lr
     # cfg_per_client_ours_lr_local_steps
@@ -52,7 +52,7 @@ def train():
 
     # init_cfg.data.subdirectory = 'graph_dt_backup/processed'
     # init_cfg.merge_from_list(args.opts)
-    init_cfg.data.save_dir = 'SEPARATED_NEW_OTHER_DIFF_11_01_[1,4,6,7,normal]csd_1e2_diff_imp_1_lam_0_kld_imp_0_recon_imp_0'
+    init_cfg.data.save_dir = 'SEPARATED_NEW_OTHER_DIFF_OTHER_SIM_13_01_csd_1e2_diff_imp_1_lam_0_kld_imp_0_1_recon_imp_0_1'
     init_cfg.model.dropout = 0.5
     init_cfg.params = CN()
     init_cfg.params.alpha = 0.1
@@ -63,7 +63,7 @@ def train():
     init_cfg.params.eps = 1e-20
     init_cfg.params.kld_importance = 0.1  # 0.01
     init_cfg.params.recon_importance = 0.1  # 0.01
-    init_cfg.federate.client_num = 5
+    init_cfg.federate.client_num = 16
     init_cfg.params.p = 0.
     update_logger(init_cfg)
     setup_seed(init_cfg.seed)
@@ -85,7 +85,7 @@ def train():
         cfg_client = CfgNode.load_cfg(open(cfg_client, 'r')).clone()
     runner = FedRunner(data=data,
                    server_class=LaplacianServer,
-                   client_class=LaplacianDomainSeparation1MINE_Separated_Other_Diff_Client,
+                   client_class=LaplacianDomainSeparation1MINE_Separated_OtherDiff_OtherSim_Client,
                    config=init_cfg.clone(),
                    client_config=cfg_client)
     _ = runner.run()

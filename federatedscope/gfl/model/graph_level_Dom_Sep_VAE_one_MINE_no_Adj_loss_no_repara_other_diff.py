@@ -21,7 +21,7 @@ from federatedscope.gfl.model.gat import GAT_Net
 from federatedscope.gfl.model.gin import GIN_Net
 from federatedscope.gfl.model.gpr import GPR_Net
 
-# graph_level_Dom_Sep_VAE_no_repara_other_diff_other_sim
+# graph_level_Dom_Sep_VAE_one_MINE_no_Adj_loss_no_repara_other_diff
 
 EPS = 1e-15
 EMD_DIM = 200
@@ -168,6 +168,8 @@ class GNN_Net_Graph(torch.nn.Module):
 
         #self.mine = Mine(mi_model, loss='mine')
 
+        self.mine = MutualInformationEstimator(hidden, hidden, loss='mine')
+
         # Pooling layer
         if pooling == 'add':
             self.pooling = global_add_pool
@@ -217,11 +219,6 @@ class GNN_Net_Graph(torch.nn.Module):
         else:
             return mu
 
-    def similarity_loss(self, x1, x2):
-        #cosine embedding loss: 1-cos(x1, x2). The 1 defines this loss function.
-        y = torch.ones(x1.size(0)).to('cuda:0')
-        recon_loss = self.cos_loss(x1, x2, y)
-        return recon_loss
     def node_recon_loss(self, x_orig, x_decoded):
         #cosine embedding loss: 1-cos(x1, x2). The 1 defines this loss function.
         y = torch.ones(x_decoded.size(0)).to('cuda:0')
@@ -274,20 +271,19 @@ class GNN_Net_Graph(torch.nn.Module):
 
         x_global_enc = self.global_gnn((x, edge_index))
         x_fixed_enc = self.fixed_gnn((x, edge_index))
-        x_global_pooled = self.pooling(x_global_enc, batch)
-        x_fixed_enc_pooled = self.pooling(x_fixed_enc, batch)
+        x_global = self.pooling(x_global_enc, batch)
 
-        x_global = self.global_linear_out1(x_global_pooled).relu()
-
-
-        x_local_pooled = self.pooling(x_local_enc, batch)
-
-        x_local = self.local_linear_out1(x_local_pooled).relu()
+        x_global = self.global_linear_out1(x_global).relu()
 
 
+        x_local = self.pooling(x_local_enc, batch)
 
-        diff_local_global = self.diff_loss(x_local_pooled, x_global_pooled)
-        sim_global_fixed = self.similarity_loss(x_global_pooled, x_fixed_enc_pooled)
+        x_local = self.local_linear_out1(x_local).relu()
+
+
+
+        diff_local_global = self.diff_loss(x_local_enc, x_global_enc)
+        mi_global_fixed = self.mine(x_global_enc, x_fixed_enc)
 
         x = x_local + x_global
 
@@ -306,7 +302,7 @@ class GNN_Net_Graph(torch.nn.Module):
         rec_loss = recon_loss_node_features
         #return x, mi
 
-        return x, kld_loss, rec_loss, diff_local_global, sim_global_fixed
+        return x, kld_loss, rec_loss, diff_local_global, mi_global_fixed
 
 
 
