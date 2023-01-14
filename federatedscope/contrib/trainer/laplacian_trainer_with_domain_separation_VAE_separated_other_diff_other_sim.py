@@ -118,9 +118,9 @@ class LaplacianDomainSeparationVAE_Separated_OtherDiff_OtherSim_Trainer(GraphMin
             self.round_num += 1
             self.in_finetune = True
             self.kld_imp = self.config.params.kld_importance
-            if self.round_num > 25 and self.round_num <= 34:
-                self.kld_imp = self.config.params.kld_importance - (self.config.params.kld_importance / 10) * (self.round_num - 25)
-            elif self.round_num>34:
+            if self.round_num > 30 and self.round_num <= 39:
+                self.kld_imp = self.config.params.kld_importance - (self.config.params.kld_importance / 10) * (self.round_num - 30)
+            elif self.round_num>39:
                 self.kld_imp = 0.1 * self.config.params.kld_importance
 
 
