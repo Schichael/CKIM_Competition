@@ -1,8 +1,8 @@
 import os
 import sys
 
-sys.path = ['/home/ms234795/Master Thesis/CKIM_Competition/federatedscope', '/home/ms234795/Master Thesis/CKIM_Competition',] + sys.path
-
+#  sys.path = ['/home/ms234795/Master Thesis/CKIM_Competition/federatedscope', '/home/ms234795/Master Thesis/CKIM_Competition',] + sys.path
+sys.path = ['~/Master-Thesis/CKIM_Competition/federatedscope', '~/Master-Thesis/CKIM_Competition',] + sys.path
 print(sys.path)
 from federatedscope.core.cmd_args import parse_args
 from federatedscope.core.auxiliaries.data_builder import get_data
@@ -47,12 +47,13 @@ def train():
     init_cfg.model.dropout = 0.5
     init_cfg.params = CN()
     init_cfg.params.alpha = 0.1
-    init_cfg.params.diff_importance = 1
+    init_cfg.params.diff_importance = 0.
     init_cfg.params.csd_importance = 1e2
     init_cfg.params.mine_lr = 0.02
-    init_cfg.params.lam = 0.01
+    init_cfg.params.lam = 0.0
     init_cfg.params.eps = 1e-15
     init_cfg.params.p = 0.
+    init_cfg.federate.client_num = 2
     update_logger(init_cfg)
     setup_seed(init_cfg.seed)
 

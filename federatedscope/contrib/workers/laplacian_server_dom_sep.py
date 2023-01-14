@@ -28,6 +28,7 @@ class LaplacianServerDomSep(Server):
 
         self.omega_set = self._set_init_omega(model, device)
         self._align_global_local_parameters(model)
+        self._align_global_fixed_parameters(model)
         self.eps = config.params.eps
         self.p = config.params.p
         #aggregator = agg.ClientsAvgAggregator(model=model,
@@ -82,6 +83,13 @@ class LaplacianServerDomSep(Server):
         for name, param in deepcopy(model).named_parameters():
             if name.startswith('local'):
                 stripped_name = name[len('local'):]
+                global_name = 'global' + stripped_name
+                model.state_dict()[name].data.copy_(copy.deepcopy(model.state_dict()[global_name].data))
+
+    def _align_global_fixed_parameters(self, model):
+        for name, param in deepcopy(model).named_parameters():
+            if name.startswith('fixed'):
+                stripped_name = name[len('fixed'):]
                 global_name = 'global' + stripped_name
                 model.state_dict()[name].data.copy_(copy.deepcopy(model.state_dict()[global_name].data))
 

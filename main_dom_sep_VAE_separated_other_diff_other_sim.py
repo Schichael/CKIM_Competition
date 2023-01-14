@@ -8,8 +8,8 @@ from federatedscope.contrib.workers.laplacian_with_domain_separation_1MINE_VAE_S
 from federatedscope.contrib.workers.laplacian_with_domain_separation_VAE_Separated_otherDiff_otherSim_client import \
     LaplacianDomainSeparation1MINE_Separated_OtherDiff_OtherSim_Client
 
-sys.path = ['/home/ms234795/Master Thesis/CKIM_Competition/federatedscope', '/home/ms234795/Master Thesis/CKIM_Competition',] + sys.path
-#sys.path = ['~/Master-Thesis/CKIM_Competition/federatedscope', '~/Master-Thesis/CKIM_Competition',] + sys.path
+#sys.path = ['/home/ms234795/Master Thesis/CKIM_Competition/federatedscope', '/home/ms234795/Master Thesis/CKIM_Competition',] + sys.path
+sys.path = ['~/Master-Thesis/CKIM_Competition/federatedscope', '~/Master-Thesis/CKIM_Competition',] + sys.path
 
 print(sys.path)
 from federatedscope.core.cmd_args import parse_args
@@ -57,13 +57,13 @@ def train():
     init_cfg.model.dropout = 0.5
     init_cfg.params = CN()
     init_cfg.params.alpha = 0.1
-    init_cfg.params.csd_importance = 0.
-    init_cfg.params.sim_importance = 0.1
-    init_cfg.params.diff_importance = 0.1
+    init_cfg.params.csd_importance = 1e2
+    init_cfg.params.sim_importance = 0.01
+    init_cfg.params.diff_importance = 0.01
     init_cfg.params.eps = 1e-20
     init_cfg.params.p = 0.
     init_cfg.params.lam = 0.
-    init_cfg.params.recon_importance = 0.1
+    init_cfg.params.recon_importance = 0.01
     init_cfg.params.kld_importance = 0.1
     init_cfg.federate.client_num = 16
     init_cfg.params.p = 0.
@@ -86,7 +86,7 @@ def train():
     else:
         cfg_client = CfgNode.load_cfg(open(cfg_client, 'r')).clone()
     runner = FedRunner(data=data,
-                   server_class=LaplacianServer,
+                   server_class=LaplacianServerDomSep,
                    client_class=LaplacianDomainSeparation1MINE_Separated_OtherDiff_OtherSim_Client,
                    config=init_cfg.clone(),
                    client_config=cfg_client)

@@ -39,6 +39,7 @@ class LaplacianDomainSeparationVAE_Separated_OtherDiff_OtherSim_Trainer(GraphMin
         self.round_num=0
         self.in_finetune = False
         self.tmp = 0
+        self.kld_imp = 0.
         # Get all model parameters with reuqires_grad = True
         #for param in self.ctx.model.named_parameters():
         #    if param[0].startswith('fixed'):
@@ -116,6 +117,13 @@ class LaplacianDomainSeparationVAE_Separated_OtherDiff_OtherSim_Trainer(GraphMin
             print("in train")
             self.round_num += 1
             self.in_finetune = True
+            self.kld_imp = self.config.params.kld_importance
+            if self.round_num > 25 and self.round_num <= 34:
+                self.kld_imp = self.config.params.kld_importance - (self.config.params.kld_importance / 10) * (self.round_num - 25)
+            elif self.round_num>34:
+                self.kld_imp = 0.1 * self.config.params.kld_importance
+
+
         elif ctx.cur_data_split == "train" and self.in_finetune:
             self.in_finetune = False
         else:
@@ -125,6 +133,9 @@ class LaplacianDomainSeparationVAE_Separated_OtherDiff_OtherSim_Trainer(GraphMin
         new_omega = dict()
         new_mu = dict()
         server_model_state_dict = ctx.model.state_dict()
+
+
+
         i=0
         for name, param in ctx.model.named_parameters():
             # new_omega[name] = 1 / (1 - data_alpha) * (server_omega[name] - data_alpha * client_omega_set[client_idx][name])
@@ -206,22 +217,30 @@ class LaplacianDomainSeparationVAE_Separated_OtherDiff_OtherSim_Trainer(GraphMin
         ###################################################################################
 
         # compute gradient for node encoder and classifying layers (only task loss and KLD loss.)
-        loss = ctx.loss_batch_ce + self.config.params.kld_importance * ctx.kld_loss
+        loss = ctx.loss_batch_ce + self.kld_imp * ctx.kld_loss
         loss.backward(retain_graph=True)
 
         # freeze gradients of node encoder for the following operations
         for param in ctx.model.named_parameters():
-            if param[0].startswith("encoder") or param[0].startswith("encoder_atom"):
+            if param[0].startswith("encoder") or param[0].startswith("encoder_atom") or param[0].startswith("vae_decoder"):
                 param[1].requires_grad = False
 
         # disabled layers: encoder, encoder_atom
         # compute gradients for local gnn and for the decoder.
         # Freeze global gnn and MINE
 
-        # frozen layers: local_gnn, mine, encoder, encoder_atom
         loss = self.config.params.diff_importance * ctx.diff_local_global + self.config.params.sim_importance * ctx.sim_global_fixed + self.config.params.recon_importance * ctx.rec_loss
         loss.backward(retain_graph=True)
 
+        # backward for decoder
+        for param in ctx.model.named_parameters():
+            if param[0].startswith("vae_decoder") and param[0] in self.grad_params:
+                param[1].requires_grad = True
+            else:
+                param[1].requires_grad = False
+
+        loss = ctx.rec_loss
+        loss.backward(retain_graph=True)
 
         # Compute omega
         for name, param in ctx.model.named_parameters():
