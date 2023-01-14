@@ -1,5 +1,6 @@
 import copy
 import logging
+import time
 from copy import deepcopy
 
 import torch
@@ -141,6 +142,8 @@ class LaplacianTrainer(GraphMiniBatchTrainer):
                                            ctx.grad_clip)
         ctx.optimizer.step()
         """
+
+        """
         ctx.optimizer.zero_grad()
         ctx.loss_batch_ce.backward(retain_graph=True)
         for name, param in ctx.model.named_parameters():
@@ -156,6 +159,20 @@ class LaplacianTrainer(GraphMiniBatchTrainer):
             torch.nn.utils.clip_grad_norm_(ctx.model.parameters(),
                                            ctx.grad_clip)
         ctx.optimizer.step()
+        """
+        ctx.optimizer.zero_grad()
+        ctx.loss_batch_ce.backward(retain_graph=True)
+        for name, param in ctx.model.named_parameters():
+            if param.grad is not None:
+                ctx.omega[name] += (len(ctx.data_batch.y) / len(
+                    ctx.data['train'].dataset)) * param.grad.data.clone() ** 2
+        loss = self.config.params.csd_importance * ctx.loss_batch_csd
+        loss.backward(retain_graph=False)
+        if ctx.grad_clip > 0:
+            torch.nn.utils.clip_grad_norm_(ctx.model.parameters(),
+                                           ctx.grad_clip)
+        ctx.optimizer.step()
+
 
     @use_diff_laplacian
     def train(self, state:int, target_data_split_name="train", hooks_set=None):
