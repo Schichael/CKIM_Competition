@@ -1,6 +1,9 @@
 import os
 import sys
 
+from federatedscope.contrib.workers.laplacian_client import LaplacianClient
+from federatedscope.contrib.workers.laplacian_server import LaplacianServer
+
 sys.path = ['/home/ms234795/Master Thesis/CKIM_Competition/federatedscope', '/home/ms234795/Master Thesis/CKIM_Competition',] + sys.path
 
 print(sys.path)
@@ -71,8 +74,8 @@ def train():
     else:
         cfg_client = CfgNode.load_cfg(open(cfg_client, 'r')).clone()
     runner = FedRunner(data=data,
-                   server_class=LaplacianServerDomSep,
-                   client_class=LaplacianDomainSeparationMIClient,
+                   server_class=LaplacianServer,
+                   client_class=LaplacianClient,
                    config=init_cfg.clone(),
                    client_config=cfg_client)
     _ = runner.run()
