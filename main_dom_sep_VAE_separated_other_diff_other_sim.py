@@ -8,8 +8,8 @@ from federatedscope.contrib.workers.laplacian_with_domain_separation_1MINE_VAE_S
 from federatedscope.contrib.workers.laplacian_with_domain_separation_VAE_Separated_otherDiff_otherSim_client import \
     LaplacianDomainSeparation1MINE_Separated_OtherDiff_OtherSim_Client
 
-#sys.path = ['/home/ms234795/Master Thesis/CKIM_Competition/federatedscope', '/home/ms234795/Master Thesis/CKIM_Competition',] + sys.path
-sys.path = ['~/Master-Thesis/CKIM_Competition/federatedscope', '~/Master-Thesis/CKIM_Competition',] + sys.path
+sys.path = ['/home/ms234795/Master Thesis/CKIM_Competition/federatedscope', '/home/ms234795/Master Thesis/CKIM_Competition',] + sys.path
+#sys.path = ['~/Master-Thesis/CKIM_Competition/federatedscope', '~/Master-Thesis/CKIM_Competition',] + sys.path
 
 print(sys.path)
 from federatedscope.core.cmd_args import parse_args
