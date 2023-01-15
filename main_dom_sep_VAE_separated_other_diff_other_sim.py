@@ -53,17 +53,17 @@ def train():
 
     # init_cfg.data.subdirectory = 'graph_dt_backup/processed'
     # init_cfg.merge_from_list(args.opts)
-    init_cfg.data.save_dir = 'SEPARATED_NEW_OTHER_DIFF_OTHER_SIM_14_01_csd_1e2_diff_imp_0_1_lam_0_kld_imp_0_1_recon_imp_0_1'
+    init_cfg.data.save_dir = 'SEPARATED_NEW_OTHER_DIFF_OTHER_SIM_14_01_csd_1e2_diff_imp_0_01_sim_imp_0_lam_0_kld_imp_0_1_recon_imp_0'
     init_cfg.model.dropout = 0.5
     init_cfg.params = CN()
     init_cfg.params.alpha = 0.1
     init_cfg.params.csd_importance = 1e2
-    init_cfg.params.sim_importance = 0.1
-    init_cfg.params.diff_importance = 0.1
+    init_cfg.params.sim_importance = 0.
+    init_cfg.params.diff_importance = 0.01
     init_cfg.params.eps = 1e-20
     init_cfg.params.p = 0.
     init_cfg.params.lam = 0.
-    init_cfg.params.recon_importance = 0.1
+    init_cfg.params.recon_importance = 0.
     init_cfg.params.kld_importance = 0.1
     init_cfg.federate.client_num = 16
     init_cfg.params.p = 0.
