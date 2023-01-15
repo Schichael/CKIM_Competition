@@ -22,7 +22,7 @@ from federatedscope.gfl.model.gat import GAT_Net
 from federatedscope.gfl.model.gin import GIN_Net
 from federatedscope.gfl.model.gpr import GPR_Net
 
-# graph_level_Dom_Sep_VAE_no_repara_other_diff_other_sim_no_decoder_no_fixed
+# graph_level_Dom_Sep_VAE_no_repara_other_diff_other_sim_no_decoder
 
 EPS = 1e-15
 EMD_DIM = 200
@@ -274,7 +274,9 @@ class GNN_Net_Graph(torch.nn.Module):
         x_local_enc = self.local_gnn((x, edge_index))
 
         x_global_enc = self.global_gnn((x, edge_index))
+        x_fixed_enc = self.fixed_gnn((x, edge_index))
         x_global_pooled = self.pooling(x_global_enc, batch)
+        x_fixed_enc_pooled = self.pooling(x_fixed_enc, batch)
 
         x_global = self.global_linear_out1(x_global_pooled).relu()
 
@@ -286,6 +288,7 @@ class GNN_Net_Graph(torch.nn.Module):
 
 
         diff_local_global = self.diff_loss(x_local_pooled, x_global_pooled)
+        sim_global_fixed = self.similarity_loss(x_global_pooled, x_fixed_enc_pooled)
 
         x = x_local + x_global
         x = F.dropout(x, self.dropout, training=self.training)
@@ -297,7 +300,7 @@ class GNN_Net_Graph(torch.nn.Module):
         # rec_loss = recon_loss_node_features
         #return x, mi
 
-        return x, kld_loss, torch.Tensor([0]).to('cuda:0'), diff_local_global, torch.Tensor([0]).to('cuda:0')
+        return x, kld_loss, torch.Tensor([0]).to('cuda:0'), diff_local_global, sim_global_fixed
 
 
 

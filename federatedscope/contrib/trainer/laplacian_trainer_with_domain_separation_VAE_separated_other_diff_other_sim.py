@@ -239,8 +239,9 @@ class LaplacianDomainSeparationVAE_Separated_OtherDiff_OtherSim_Trainer(GraphMin
             else:
                 param[1].requires_grad = False
 
-        loss = ctx.rec_loss
-        loss.backward(retain_graph=True)
+        if self.config.params.recon_importance != 0:
+            loss = ctx.rec_loss
+            loss.backward(retain_graph=True)
 
         # Compute omega
         for name, param in ctx.model.named_parameters():
