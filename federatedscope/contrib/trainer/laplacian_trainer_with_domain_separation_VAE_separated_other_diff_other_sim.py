@@ -114,7 +114,7 @@ class LaplacianDomainSeparationVAE_Separated_OtherDiff_OtherSim_Trainer(GraphMin
         #    print(f"last round mean difference loss: {ctx.aggr_diff_loss/ctx.batchnumbers}")
 
         if ctx.cur_data_split == "train" and not self.in_finetune:
-            print("in train")
+            #print("in train")
             self.round_num += 1
             self.in_finetune = True
             self.kld_imp = self.config.params.kld_importance
@@ -126,8 +126,7 @@ class LaplacianDomainSeparationVAE_Separated_OtherDiff_OtherSim_Trainer(GraphMin
 
         elif ctx.cur_data_split == "train" and self.in_finetune:
             self.in_finetune = False
-        else:
-            print("in val or test")
+
         ctx.log_ce_loss = 0
         ctx.log_csd_loss = 0
         new_omega = dict()
@@ -156,10 +155,10 @@ class LaplacianDomainSeparationVAE_Separated_OtherDiff_OtherSim_Trainer(GraphMin
         ctx.kld_loss = kld_loss
         ctx.rec_loss = rec_loss
 
-        print(f"diff_local_global: {diff_local_global}")
-        print(f"mi_global_fixed: {sim_global_fixed}")
-        print(f"rec_loss: {rec_loss}")
-        print(f"kld_loss: {kld_loss}")
+        #print(f"diff_local_global: {diff_local_global}")
+        #print(f"mi_global_fixed: {sim_global_fixed}")
+        #print(f"rec_loss: {rec_loss}")
+        #print(f"kld_loss: {kld_loss}")
 
         # print(f"negative mi: {-ctx.mi}")
         csd_loss = CSDLoss(self._param_filter, ctx)
@@ -177,7 +176,7 @@ class LaplacianDomainSeparationVAE_Separated_OtherDiff_OtherSim_Trainer(GraphMin
         #ctx.loss_batch_csd = self.get_csd_loss(ctx.model.state_dict(), ctx.new_mu, ctx.new_omega, ctx.cur_epoch_i + 1)
         ctx.loss_batch_csd = csd_loss(ctx.model.state_dict(), ctx.new_mu,
                                       ctx.new_omega, self.round_num)
-
+        #print(f"loss_batch_csd: {ctx.loss_batch_csd}")
 
 
         ctx.batch_size = len(label)

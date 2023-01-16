@@ -1,4 +1,3 @@
-
 from typing import List
 
 import torch
@@ -22,7 +21,7 @@ from federatedscope.gfl.model.gat import GAT_Net
 from federatedscope.gfl.model.gin import GIN_Net
 from federatedscope.gfl.model.gpr import GPR_Net
 
-# graph_level_Dom_Sep_VAE_no_repara_other_diff_other_sim_no_decoder
+# graph_level_Dom_Sep_VAE_no_repara_other_diff_other_sim
 
 EPS = 1e-15
 EMD_DIM = 200
@@ -198,7 +197,7 @@ class GNN_Net_Graph(torch.nn.Module):
         self.bn_linear2 = BatchNorm1d(hidden)
         self.clf = Linear(hidden, out_channels)
         self.emb = Linear(edge_dim, hidden)
-        #self.vae_decoder = VAE_Decoder(hidden, hidden)
+        self.vae_decoder = VAE_Decoder(hidden, hidden)
         #torch.nn.init.xavier_normal_(self.emb.weight.data)
 
     def kld_loss(self, x):
@@ -291,16 +290,23 @@ class GNN_Net_Graph(torch.nn.Module):
         sim_global_fixed = self.similarity_loss(x_global_pooled, x_fixed_enc_pooled)
 
         x = x_local + x_global
+
+
         x = F.dropout(x, self.dropout, training=self.training)
 
         x = self.clf(x)
 
+
+        decoder_input = x_global_enc + x_local_enc
+        decoder_out = self.vae_decoder(decoder_input)
+        recon_loss_node_features = self.node_recon_loss(decoder_out, h_encoder)
+
         # recon loss adjacency matrix
 
-        # rec_loss = recon_loss_node_features
+        rec_loss = recon_loss_node_features
         #return x, mi
 
-        return x, kld_loss, torch.Tensor([0]).to('cuda:0'), diff_local_global, sim_global_fixed
+        return x, kld_loss, rec_loss, diff_local_global, sim_global_fixed
 
 
 
