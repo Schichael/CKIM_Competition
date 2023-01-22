@@ -1,9 +1,9 @@
 import os
 import sys
 
-from contrib.trainer.laplacian_trainer import call_laplacian_trainer
-from contrib.workers.laplacian_client import LaplacianClient
-from contrib.workers.laplacian_server import LaplacianServer
+from federatedscope.contrib.trainer.laplacian_trainer import call_laplacian_trainer
+from federatedscope.contrib.workers.laplacian_client import LaplacianClient
+from federatedscope.contrib.workers.laplacian_server import LaplacianServer
 from federatedscope.register import register_trainer
 
 # sys.path = ['~/Master-Thesis/CKIM_Competition/federatedscope', '~/Master-Thesis/CKIM_Competition',] + sys.path
@@ -14,7 +14,7 @@ from federatedscope.core.cmd_args import parse_args
 from federatedscope.core.auxiliaries.data_builder import get_data
 from federatedscope.core.auxiliaries.utils import setup_seed, update_logger
 from federatedscope.core.auxiliaries.worker_builder import get_client_cls, get_server_cls
-from federatedscope.core.configs.config import global_cfg
+from federatedscope.core.configs.config import global_cfg, CN
 from federatedscope.core.fed_runner import FedRunner
 from yacs.config import CfgNode
 
@@ -44,6 +44,7 @@ def train(lr, csd_imp):
                              + str(csd_imp).replace('.', '_')
     init_cfg.train.lr = lr
 
+    init_cfg.params = CN()
     init_cfg.params.eps = 1e-15
     init_cfg.params.csd_imp = csd_imp
 
@@ -75,8 +76,10 @@ def train(lr, csd_imp):
 if __name__ == '__main__':
     num_trainings = 1
     csd_imps = [0, 1, 10, 1e2, 1e3, 1e4]
-    lrs = [0.001, 0.005, 0.01, 0.05, 0.1, 0.5]
+    # lrs = [0.001, 0.005, 0.01, 0.05, 0.1, 0.5]
+    lrs = [0.001, 0.005]
     for lr in lrs:
-        for i in range(num_trainings):
-            print(f"training run: {i + 1}")
-            train(lr)
+        for csd_imp in csd_imps:
+            for i in range(num_trainings):
+                print(f"training run: {i + 1}")
+                train(lr, csd_imp)
