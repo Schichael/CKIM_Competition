@@ -1,15 +1,22 @@
 use_gpu: True
 device: 0
 early_stop:
-  patience: 20
+  patience: 400
   improve_indicator_mode: mean
+  the_smaller_the_better: False
 federate:
   mode: 'standalone'
   make_global_eval: False
-  local_update_steps: 10
-  batch_or_epoch: 'epoch'
+
   total_round_num: 400
   share_local_model: False
+train:
+  local_update_steps: 1
+  batch_or_epoch: 'epoch'
+  optimizer:
+    lr: 0.5
+    weight_decay: 0.0005
+    type: SGD
 data:
   root: data/
   type: fs_contest_data
@@ -18,17 +25,15 @@ model:
   type: gin
   hidden: 64
   out_channels: 0
-  task: graph
+  task: graphClassification
 personalization:
   local_param: [ 'encoder_atom', 'encoder', 'clf', 'norms' ]  # pre, post + FedBN
-optimizer:
-  lr: 0.05
-  weight_decay: 0.0005
-  type: SGD
+
 criterion:
   type: CrossEntropyLoss
 trainer:
   type: graphminibatch_trainer
 eval:
-  freq: 5
-  metrics: ['acc', 'correct']
+  report: ['avg']
+  freq: 1
+  metrics: ['imp_ratio', 'acc']

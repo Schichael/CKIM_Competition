@@ -1,11 +1,12 @@
 use_gpu: True
 device: 0
 early_stop:
-  patience: 4000
+  patience: 400
   improve_indicator_mode: mean
+  the_smaller_the_better: False
 federate:
   mode: 'standalone'
-  method: Ditto
+  method: 'FedAvg_GraphDC'
   make_global_eval: False
   total_round_num: 400
   share_local_model: False
@@ -13,7 +14,7 @@ train:
   local_update_steps: 1
   batch_or_epoch: 'epoch'
   optimizer:
-    lr: 0.0005
+    lr: 0.01
     weight_decay: 0.0005
     type: SGD
 data:
@@ -26,8 +27,8 @@ model:
   out_channels: 0
   task: graphClassification
 personalization:
-  regular_weight: 0.01
   local_param: ['encoder_atom', 'encoder', 'clf']   # to handle size-different pre & post layers
+
 criterion:
   type: CrossEntropyLoss
 trainer:
