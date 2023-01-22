@@ -6,8 +6,8 @@ from federatedscope.contrib.workers.laplacian_client import LaplacianClient
 from federatedscope.contrib.workers.laplacian_server import LaplacianServer
 from federatedscope.register import register_trainer
 
-# sys.path = ['~/Master-Thesis/CKIM_Competition/federatedscope', '~/Master-Thesis/CKIM_Competition',] + sys.path
-sys.path = ['/home/michael/Projects/CKIM_Competition/federatedscope', '/home/michael/Projects/CKIM_Competition',] + sys.path
+sys.path = ['~/Master-Thesis/CKIM_Competition/federatedscope', '~/Master-Thesis/CKIM_Competition',] + sys.path
+# sys.path = ['/home/michael/Projects/CKIM_Competition/federatedscope', '/home/michael/Projects/CKIM_Competition',] + sys.path
 
 print(sys.path)
 from federatedscope.core.cmd_args import parse_args
@@ -46,7 +46,9 @@ def train(lr, csd_imp):
 
     init_cfg.params = CN()
     init_cfg.params.eps = 1e-15
-    init_cfg.params.csd_imp = csd_imp
+    init_cfg.params.csd_importance = csd_imp
+    init_cfg.params.p = 0.
+    init_cfg.params.alpha = 0.1
 
     init_cfg.model.dropout = 0.5
     update_logger(init_cfg)
@@ -77,7 +79,7 @@ if __name__ == '__main__':
     num_trainings = 1
     csd_imps = [0, 1, 10, 1e2, 1e3, 1e4]
     # lrs = [0.001, 0.005, 0.01, 0.05, 0.1, 0.5]
-    lrs = [0.001, 0.005]
+    lrs = [0.01, 0.05]
     for lr in lrs:
         for csd_imp in csd_imps:
             for i in range(num_trainings):
