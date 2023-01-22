@@ -12,7 +12,7 @@ class MLP(torch.nn.Module):
                  channel_list,
                  dropout=0.,
                  batch_norm=True,
-                 relu_first=True):
+                 relu_first=False):
         super().__init__()
         assert len(channel_list) >= 2
         self.channel_list = channel_list
