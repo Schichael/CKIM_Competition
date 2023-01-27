@@ -25,7 +25,6 @@ class Fedavg_VAE_client(Client):
                  is_unseen_client=False,
                  *args,
                  **kwargs):
-        self.alpha = config.params.alpha
         trainer = FedAvg_VAE_trainer(
             model=model,
             data=data,
