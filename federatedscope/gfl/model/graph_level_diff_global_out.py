@@ -1,3 +1,4 @@
+
 from typing import List
 
 import torch
@@ -21,7 +22,7 @@ from federatedscope.gfl.model.gat import GAT_Net
 from federatedscope.gfl.model.gin import GIN_Net
 from federatedscope.gfl.model.gpr import GPR_Net
 
-# graph_level_Dom_Sep_VAE_no_repara_other_diff_other_sim
+# graph_level_diff_global_out
 
 EPS = 1e-15
 EMD_DIM = 200
@@ -103,8 +104,7 @@ class GNN_Net_Graph(torch.nn.Module):
                  gnn='gcn',
                  pooling='add',
                  edge_dim = None,
-                 rho = 0.0,
-                 **kwargs):
+                 rho = 0.0):
         self.hidden = hidden
         self.rho=rho
         print(f"rho: {rho}")
@@ -148,14 +148,7 @@ class GNN_Net_Graph(torch.nn.Module):
                                 max_depth=max_depth,
                                 dropout=dropout)
 
-            self.fixed_gnn = GIN_Net(in_channels=hidden,
-                                out_channels=hidden,
-                                hidden=hidden,
-                                max_depth=max_depth,
-                                dropout=dropout)
 
-            for param in self.fixed_gnn.named_parameters():
-                param[1].requires_grad = False
 
         elif gnn == 'gpr':
             self.gnn = GPR_Net(in_channels=hidden,
@@ -187,18 +180,16 @@ class GNN_Net_Graph(torch.nn.Module):
         #self.bn_linear2_glob = BatchNorm1d(64)
         self.local_linear_out1 = Linear(hidden, hidden)
         #self.linear_out2_loc = Sequential(Linear(hidden, 64))
-        self.bn_linear0_loc = BatchNorm1d(hidden * max_depth)
-        self.bn_linear1_loc = BatchNorm1d(hidden)
-        self.bn_after_summation = BatchNorm1d(hidden)
         #self.bn_linear2_loc = BatchNorm1d(64)
 
 
         # local
         self.linear_out2 = Sequential(Linear(hidden, hidden))
         self.bn_linear2 = BatchNorm1d(hidden)
-        self.clf = Linear(hidden, out_channels)
+        self.clf_mixed = Linear(hidden, out_channels)
+        self.clf_global = Linear(hidden, out_channels)
         self.emb = Linear(edge_dim, hidden)
-        self.vae_decoder = VAE_Decoder(hidden, hidden)
+        #self.vae_decoder = VAE_Decoder(hidden, hidden)
         #torch.nn.init.xavier_normal_(self.emb.weight.data)
 
     def kld_loss(self, x):
@@ -270,13 +261,10 @@ class GNN_Net_Graph(torch.nn.Module):
 
         kld_loss = self.kld_loss(x)
 
-        h_encoder = x
         x_local_enc = self.local_gnn((x, edge_index))
 
         x_global_enc = self.global_gnn((x, edge_index))
-        x_fixed_enc = self.fixed_gnn((x, edge_index))
         x_global_pooled = self.pooling(x_global_enc, batch)
-        x_fixed_enc_pooled = self.pooling(x_fixed_enc, batch)
 
         x_global = self.global_linear_out1(x_global_pooled).relu()
 
@@ -288,26 +276,20 @@ class GNN_Net_Graph(torch.nn.Module):
 
 
         diff_local_global = self.diff_loss(x_local_pooled, x_global_pooled)
-        sim_global_fixed = self.similarity_loss(x_global_pooled, x_fixed_enc_pooled)
 
         x = x_local + x_global
-
-
         x = F.dropout(x, self.dropout, training=self.training)
 
-        x = self.clf(x)
+        out_mixed = self.clf_mixed(x)
+        out_global = self.clf_global(x)
 
-
-        decoder_input = x_global_enc + x_local_enc
-        decoder_out = self.vae_decoder(decoder_input)
-        recon_loss_node_features = self.node_recon_loss(decoder_out, h_encoder)
 
         # recon loss adjacency matrix
 
-        rec_loss = recon_loss_node_features
+        # rec_loss = recon_loss_node_features
         #return x, mi
 
-        return x, kld_loss, rec_loss, diff_local_global, sim_global_fixed
+        return out_global, out_mixed, diff_local_global
 
 
 

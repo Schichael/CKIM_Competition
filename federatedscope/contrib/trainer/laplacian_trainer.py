@@ -207,6 +207,7 @@ class CSDLoss(torch.nn.Module):
                 for param in self.ctx.model.named_parameters():
                     if param[0] == name:
                         theta = param[1]
+                        break
                 # omega_dropout = torch.rand(omega[name].size()).cuda() if cuda else torch.rand(omega[name].size())
                 # omega_dropout[omega_dropout>0.5] = 1.0
                 # omega_dropout[omega_dropout <= 0.5] = 0.0

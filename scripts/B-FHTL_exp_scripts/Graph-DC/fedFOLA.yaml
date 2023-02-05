@@ -10,6 +10,7 @@ federate:
   make_global_eval: False
   total_round_num: 400
   share_local_model: False
+  client_num: 13
 train:
   local_update_steps: 1
   batch_or_epoch: 'epoch'

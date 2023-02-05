@@ -103,7 +103,7 @@ def load_fs_contest_data(config):
 
     # Build data
     dataset = FSContestDataset(config.data.root)
-    config.merge_from_list(['federate.client_num', len(dataset)])
+    # config.merge_from_list(['federate.client_num', len(dataset)])
 
     data_dict = {}
     # Build DataLoader dict

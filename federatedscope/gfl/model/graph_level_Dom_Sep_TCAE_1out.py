@@ -1,8 +1,11 @@
+import math
+from tokenize import Number
 from typing import List
 
 import torch
 import torch.nn.functional as F
 from torch import Tensor
+from torch.autograd import Variable
 from torch.nn import Linear, Sequential, BatchNorm1d
 from torch_geometric.data import Data
 from torch_geometric.data.batch import Batch
@@ -21,7 +24,7 @@ from federatedscope.gfl.model.gat import GAT_Net
 from federatedscope.gfl.model.gin import GIN_Net
 from federatedscope.gfl.model.gpr import GPR_Net
 
-# graph_level_Dom_Sep_VAE_no_repara_other_diff_other_sim
+# graph_level_Dom_Sep_TCAE_1out
 
 EPS = 1e-15
 EMD_DIM = 200
@@ -104,9 +107,11 @@ class GNN_Net_Graph(torch.nn.Module):
                  pooling='add',
                  edge_dim = None,
                  rho = 0.0,
+                 dataset_size = None,
                  **kwargs):
         self.hidden = hidden
         self.rho=rho
+        self.dataset_size = dataset_size
         print(f"rho: {rho}")
         if edge_dim is None or edge_dim == 0:
             edge_dim = 1
@@ -138,21 +143,27 @@ class GNN_Net_Graph(torch.nn.Module):
                                dropout=dropout)
         elif gnn == 'gin':
             self.local_gnn = GIN_Net(in_channels=hidden,
-                               out_channels=hidden,
+                               out_channels=2*hidden,
                                hidden=hidden,
                                max_depth=max_depth,
                                dropout=dropout)
             self.global_gnn = GIN_Net(in_channels=hidden,
-                                out_channels=hidden,
+                                out_channels=2*hidden,
                                 hidden=hidden,
                                 max_depth=max_depth,
                                 dropout=dropout)
 
             self.fixed_gnn = GIN_Net(in_channels=hidden,
-                                out_channels=hidden,
+                                out_channels=2*hidden,
                                 hidden=hidden,
                                 max_depth=max_depth,
                                 dropout=dropout)
+
+            self.decoder_gnn = GIN_Net(in_channels=hidden,
+                                     out_channels=hidden,
+                                     hidden=hidden,
+                                     max_depth=max_depth,
+                                     dropout=dropout)
 
             for param in self.fixed_gnn.named_parameters():
                 param[1].requires_grad = False
@@ -200,6 +211,68 @@ class GNN_Net_Graph(torch.nn.Module):
         self.emb = Linear(edge_dim, hidden)
         self.vae_decoder = VAE_Decoder(hidden, hidden)
         #torch.nn.init.xavier_normal_(self.emb.weight.data)
+
+        # return prior parameters wrapped in a suitable Variable
+    def _get_prior_params(self, batch_size=1):
+        expanded_size = (batch_size,) + self.prior_params.size()
+        prior_params = Variable(self.prior_params.expand(expanded_size))
+        return prior_params
+
+    def elbo(self, x,):
+        # log p(x|z) + log p(z) - log q(z|x)
+        batch_size = x.size(0)
+        x = x.view(batch_size, 1, 64, 64)
+        prior_params = self._get_prior_params(batch_size)
+        x_recon, x_params, zs, z_params = self.reconstruct_img(x)
+        logpx = self.x_dist.log_density(x, params=x_params).view(batch_size, -1).sum(1)
+        logpz = self.prior_dist.log_density(zs, params=prior_params).view(batch_size, -1).sum(1)
+        logqz_condx = self.q_dist.log_density(zs, params=z_params).view(batch_size, -1).sum(1)
+
+        elbo = logpx + logpz - logqz_condx
+
+        if self.beta == 1 and self.include_mutinfo and self.lamb == 0:
+            return elbo, elbo.detach()
+
+        # compute log q(z) ~= log 1/(NM) sum_m=1^M q(z|x_m) = - log(MN) + logsumexp_m(q(z|x_m))
+        _logqz = self.q_dist.log_density(
+            zs.view(batch_size, 1, self.z_dim),
+            z_params.view(1, batch_size, self.z_dim, self.q_dist.nparams)
+        )
+
+        if not self.mss:
+            # minibatch weighted sampling
+            logqz_prodmarginals = (logsumexp(_logqz, dim=1, keepdim=False) - math.log(batch_size * self.dataset_size)).sum(1)
+            logqz = (logsumexp(_logqz.sum(2), dim=1, keepdim=False) - math.log(batch_size * self.dataset_size))
+        else:
+            # minibatch stratified sampling
+            logiw_matrix = Variable(self._log_importance_weight_matrix(batch_size, self.dataset_size).type_as(_logqz.data))
+            logqz = logsumexp(logiw_matrix + _logqz.sum(2), dim=1, keepdim=False)
+            logqz_prodmarginals = logsumexp(
+                logiw_matrix.view(batch_size, batch_size, 1) + _logqz, dim=1, keepdim=False).sum(1)
+
+        if not self.tcvae:
+            if self.include_mutinfo:
+                modified_elbo = logpx - self.beta * (
+                        (logqz_condx - logpz) -
+                        self.lamb * (logqz_prodmarginals - logpz)
+                )
+            else:
+                modified_elbo = logpx - self.beta * (
+                        (logqz - logqz_prodmarginals) +
+                        (1 - self.lamb) * (logqz_prodmarginals - logpz)
+                )
+        else:
+            if self.include_mutinfo:
+                modified_elbo = logpx - \
+                                (logqz_condx - logqz) - \
+                                self.beta * (logqz - logqz_prodmarginals) - \
+                                (1 - self.lamb) * (logqz_prodmarginals - logpz)
+            else:
+                modified_elbo = logpx - \
+                                self.beta * (logqz - logqz_prodmarginals) - \
+                                (1 - self.lamb) * (logqz_prodmarginals - logpz)
+
+        return modified_elbo, elbo.detach()
 
     def kld_loss(self, x):
         mu = torch.mean(x, dim=-2)
@@ -313,7 +386,24 @@ class GNN_Net_Graph(torch.nn.Module):
 
 
 
-
+def logsumexp(value, dim=None, keepdim=False):
+    """Numerically stable implementation of the operation
+    value.exp().sum(dim, keepdim).log()
+    """
+    if dim is not None:
+        m, _ = torch.max(value, dim=dim, keepdim=True)
+        value0 = value - m
+        if keepdim is False:
+            m = m.squeeze(dim)
+        return m + torch.log(torch.sum(torch.exp(value0),
+                                       dim=dim, keepdim=keepdim))
+    else:
+        m = torch.max(value)
+        sum_exp = torch.sum(torch.exp(value - m))
+        if isinstance(sum_exp, Number):
+            return m + math.log(sum_exp)
+        else:
+            return m + torch.log(sum_exp)
 
 def dot_product_decode(Z):
     A_pred = torch.sigmoid(torch.matmul(Z, Z.t()))

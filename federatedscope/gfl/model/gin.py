@@ -1,3 +1,4 @@
+import numpy as np
 import torch
 import torch.nn.functional as F
 from torch.nn import ModuleList
@@ -90,3 +91,8 @@ class GIN_Net(torch.nn.Module):
                 break
             x = F.relu(F.dropout(x, p=self.dropout, training=self.training))
         return x
+
+def glorot_init(input_dim, output_dim):
+    init_range = np.sqrt(6.0 / (input_dim + output_dim))
+    initial = torch.rand(input_dim, output_dim) * 2 * init_range - init_range
+    return torch.nn.Parameter(initial)

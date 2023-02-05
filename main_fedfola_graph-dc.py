@@ -39,10 +39,10 @@ def train(lr, csd_imp):
 
     # init_cfg.data.subdirectory = 'graph_dt_backup/processed'
     # init_cfg.merge_from_list(args.opts)
-    init_cfg.data.save_dir = 'Graph-DC_FedFOLA_lr_' + str(lr).replace('.', '_') + \
+    init_cfg.data.save_dir = 'TESTGraph-DC_FedFOLA_lr_' + str(lr).replace('.', '_') + \
                                                     '_local_update_steps_1_csd_imp_' \
                              + str(csd_imp).replace('.', '_')
-    init_cfg.train.lr = lr
+    init_cfg.train.optimizer.lr = lr
 
     init_cfg.params = CN()
     init_cfg.params.eps = 1e-15
@@ -77,9 +77,9 @@ def train(lr, csd_imp):
 
 if __name__ == '__main__':
     num_trainings = 1
-    csd_imps = [0, 1, 10, 1e2, 1e3, 1e4]
+    csd_imps = [10]
     # lrs = [0.001, 0.005, 0.01, 0.05, 0.1, 0.5]
-    lrs = [0.5]
+    lrs = [0.01]
     for lr in lrs:
         for csd_imp in csd_imps:
             for i in range(num_trainings):

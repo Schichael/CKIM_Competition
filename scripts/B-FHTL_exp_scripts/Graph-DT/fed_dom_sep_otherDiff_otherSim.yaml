@@ -37,7 +37,7 @@ trainer:
   type: fed_MI_trainer
 eval:
   freq: 1
-  metrics: ['imp_ratio']
+  metrics: ['imp_ratio', 'recon_loss']
   report: ['avg']
   best_res_update_round_wise_key: val_imp_ratio
   count_flops: False

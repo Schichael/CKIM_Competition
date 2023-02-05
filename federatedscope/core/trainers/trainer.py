@@ -261,6 +261,8 @@ class Trainer(object):
         for hook in hooks_set["on_fit_start"]:
             hook(self.ctx)
 
+        self.ctx.total_epochs = self.ctx.get("num_{}_epoch".format(dataset_name))
+
         for epoch_i in range(self.ctx.get(
                 "num_{}_epoch".format(dataset_name))):
             self.ctx.cur_epoch_i = epoch_i

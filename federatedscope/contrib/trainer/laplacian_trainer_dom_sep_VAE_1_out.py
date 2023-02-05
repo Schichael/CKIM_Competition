@@ -14,7 +14,7 @@ from federatedscope.gfl.trainer import GraphMiniBatchTrainer
 logger = logging.getLogger(__name__)
 
 
-class LaplacianDomainSeparation1MINEVAE_Separated_OtherDiff_Trainer(GraphMiniBatchTrainer):
+class LaplacianDomainSeparationVAE_1Out_Trainer(GraphMiniBatchTrainer):
     def __init__(self,
                  model,
                  omega,
@@ -39,14 +39,14 @@ class LaplacianDomainSeparation1MINEVAE_Separated_OtherDiff_Trainer(GraphMiniBat
         self.round_num=0
         self.in_finetune = False
         self.tmp = 0
+        self.kld_imp = 0.
+        self.routine_steps = 3
         # Get all model parameters with reuqires_grad = True
         #for param in self.ctx.model.named_parameters():
         #    if param[0].startswith('fixed'):
         #        param[1].requires_grad = False
 
         self.grad_params = [param[0] for param in self.ctx.model.named_parameters() if param[1].requires_grad]
-        self.mine_grad_params = [el for el in self.grad_params if el.startswith('mine')]
-
 
     def _align_global_local_parameters(self, model):
         for name, param in deepcopy(model).named_parameters():
@@ -54,13 +54,18 @@ class LaplacianDomainSeparation1MINEVAE_Separated_OtherDiff_Trainer(GraphMiniBat
                 stripped_name = name[len('local'):]
                 global_name = 'global' + stripped_name
                 model.state_dict()[name].data.copy_(copy.deepcopy(model.state_dict()[global_name].data))
+                if name in self.ctx.omega:
+                    self.ctx.omega[name] = deepcopy(self.ctx.omega[global_name])
 
-    def _align_fixed_parameters(self, model):
+    def _align_interm_parameters(self, model):
         for name, param in deepcopy(model).named_parameters():
-            if name.startswith('fixed'):
-                stripped_name = name[len('fixed'):]
+            if name.startswith('interm'):
+                stripped_name = name[len('interm'):]
                 global_name = 'global' + stripped_name
                 model.state_dict()[name].data.copy_(copy.deepcopy(model.state_dict()[global_name].data))
+                if name in self.ctx.omega:
+                    self.ctx.omega[name] = deepcopy(self.ctx.omega[global_name])
+
 
     def update(self, content, strict=False):
         """
@@ -99,7 +104,7 @@ class LaplacianDomainSeparation1MINEVAE_Separated_OtherDiff_Trainer(GraphMiniBat
                 self.ctx.model.state_dict()[key].data.copy_(updated_val)
                 self.ctx.omega[key] = copy.deepcopy(updated_omega)
 
-        self._align_fixed_parameters(self.ctx.model)
+        self._align_interm_parameters(self.ctx.model)
 
         if self.first_round:
             self._align_global_local_parameters(self.ctx.model)
@@ -111,22 +116,35 @@ class LaplacianDomainSeparation1MINEVAE_Separated_OtherDiff_Trainer(GraphMiniBat
     def _hook_on_fit_start_init(self, ctx):
         super()._hook_on_fit_start_init(ctx)
         setattr(ctx, "{}_y_inds".format(ctx.cur_data_split), [])
+        ctx.acc_rec_loss = 0.
         #if not self.first_round:
         #    print(f"last round mean difference loss: {ctx.aggr_diff_loss/ctx.batchnumbers}")
 
         if ctx.cur_data_split == "train" and not self.in_finetune:
-            print("in train")
+            #print("in train")
             self.round_num += 1
             self.in_finetune = True
+            """
+            self.kld_imp = self.config.params.kld_importance
+            if self.round_num > 30 and self.round_num <= 39:
+                self.kld_imp = self.config.params.kld_importance - (self.config.params.kld_importance / 10) * (self.round_num - 30)
+            elif self.round_num>39:
+                self.kld_imp = 0.1 * self.config.params.kld_importance
+            
+            """
+
+
         elif ctx.cur_data_split == "train" and self.in_finetune:
             self.in_finetune = False
-        else:
-            print("in val or test")
+
         ctx.log_ce_loss = 0
         ctx.log_csd_loss = 0
         new_omega = dict()
         new_mu = dict()
         server_model_state_dict = ctx.model.state_dict()
+
+
+
         i=0
         for name, param in ctx.model.named_parameters():
             # new_omega[name] = 1 / (1 - data_alpha) * (server_omega[name] - data_alpha * client_omega_set[client_idx][name])
@@ -141,17 +159,33 @@ class LaplacianDomainSeparation1MINEVAE_Separated_OtherDiff_Trainer(GraphMiniBat
     def _hook_on_batch_forward(self, ctx):
         self.tmp += 1
         batch = ctx.data_batch.to(ctx.device)
-        pred, kld_loss, rec_loss, mi_local_global, mi_global_fixed = ctx.model(batch)
-        ctx.diff_local_global = mi_local_global
-        ctx.mi_global_fixed = mi_global_fixed
-        ctx.kld_loss = kld_loss
-        ctx.rec_loss = rec_loss
-        ctx.acc_rec_loss += rec_loss.detach()
+        out_global,out_interm, out_local_interm, kld_loss_encoder, kld_global, kld_interm, kld_local, rec_loss, diff_local_interm, sim_global_interm = ctx.model(batch, ctx.routine_step)
+        ctx.kld_loss_encoder = kld_loss_encoder
+        ctx.kld_loss_encoder_metric = kld_loss_encoder.detach().item()
 
-        print(f"mi_local_global: {mi_local_global}")
-        print(f"mi_global_fixed: {mi_global_fixed}")
-        print(f"rec_loss: {rec_loss}")
-        print(f"kld_loss: {kld_loss}")
+        ctx.kld_global = kld_global
+        ctx.kld_global_metric = kld_global.detach().item()
+
+        ctx.kld_interm = kld_interm
+        ctx.kld_interm_metric = kld_interm.detach().item()
+
+        ctx.kld_local = kld_local
+        ctx.kld_local_metric = kld_local.detach().item()
+
+        ctx.rec_loss = rec_loss
+        ctx.rec_loss_metric = rec_loss.detach().item()
+
+        ctx.diff_local_interm = diff_local_interm
+        ctx.diff_local_interm_metric = diff_local_interm.detach().item()
+
+        ctx.sim_global_interm = sim_global_interm
+        ctx.sim_global_interm_metric = sim_global_interm.detach().item()
+
+
+        #print(f"diff_local_global: {diff_local_global}")
+        #print(f"mi_global_fixed: {sim_global_fixed}")
+        #print(f"rec_loss: {rec_loss}")
+        #print(f"kld_loss: {kld_loss}")
 
         # print(f"negative mi: {-ctx.mi}")
         csd_loss = CSDLoss(self._param_filter, ctx)
@@ -163,18 +197,22 @@ class LaplacianDomainSeparation1MINEVAE_Separated_OtherDiff_Trainer(GraphMiniBat
         if len(label.size()) == 0:
             label = label.unsqueeze(0)
 
-        ctx.loss_batch_ce = ctx.criterion(pred, label)
-        ctx.loss_batch = ctx.loss_batch_ce
+        ctx.loss_batch = ctx.criterion(out_global, label)
+        ctx.loss_out_global = ctx.loss_batch
+        ctx.loss_out_interm = ctx.criterion(out_interm, label)
+        ctx.loss_out_interm_metric = ctx.loss_out_interm.detach().item()
+        ctx.loss_out_local_interm = ctx.criterion(out_local_interm, label)
+        ctx.loss_out_local_interm_metric = ctx.loss_out_local_interm.detach().item()
 
         #ctx.loss_batch_csd = self.get_csd_loss(ctx.model.state_dict(), ctx.new_mu, ctx.new_omega, ctx.cur_epoch_i + 1)
         ctx.loss_batch_csd = csd_loss(ctx.model.state_dict(), ctx.new_mu,
                                       ctx.new_omega, self.round_num)
-
-
+        ctx.loss_batch_csd_metric = ctx.loss_batch_csd.detach().item()
+        #print(f"loss_batch_csd: {ctx.loss_batch_csd}")
 
         ctx.batch_size = len(label)
         ctx.y_true = label
-        ctx.y_prob = pred
+        ctx.y_prob = out_global
 
         # record the index of the ${MODE} samples
         if hasattr(ctx.data_batch, 'data_index'):
@@ -199,96 +237,262 @@ class LaplacianDomainSeparation1MINEVAE_Separated_OtherDiff_Trainer(GraphMiniBat
 
         return sum(loss_set)
 
+    def _backward_step1_all(self, ctx):
+        """ Only the global branch and node encoder for testing
+
+        Args:
+            ctx:
+
+        Returns:
+
+        """
+        ctx.optimizer.zero_grad()
+
+        # backward through the global branch
+        for param in ctx.model.named_parameters():
+            if not (param[0].startswith("global") or param[0].startswith("clf")) and not (param[0].startswith("encoder") or param[0].startswith("encoder_atom")) and not (param[0].startswith("decoder")):
+                param[1].requires_grad = False
+
+        loss = ctx.loss_out_global + 0*ctx.rec_loss + self.config.params.kld_global_imp * ctx.kld_global# + ctx.loss_out_global # + self.config.params.sim_global_interm_imp * ctx.sim_global_interm
+        # loss = ctx.loss_out_global
+
+        loss.backward(retain_graph=False)
+        # Compute omega
+        for name, param in ctx.model.named_parameters():
+            if param.grad is not None and param.requires_grad is True:
+                ctx.omega[name] += (len(ctx.data_batch.y) / len(
+                    ctx.data['train'].dataset)) * param.grad.data.clone() ** 2
+
+        # loss = self.config.params.csd_interm_imp * ctx.loss_batch_csd
+        # loss.backward(retain_graph=False)
+
+        # freeze everything that is not local
+        """
+        for param in ctx.model.named_parameters():
+            if not param[0].startswith("local"):
+                param[1].requires_grad = False
+
+
+        loss = ctx.loss_out_local_interm + self.config.params.kld_local_imp * ctx.kld_local + self.config.params.diff_local_imp * ctx.diff_local_interm
+
+        loss.backward()
+        """
+        if ctx.grad_clip > 0:
+            torch.nn.utils.clip_grad_norm_(ctx.model.parameters(),
+                                           ctx.grad_clip)
+        ctx.optimizer.step()
+
+        # Reset requires_grad
+        for param in ctx.model.named_parameters():
+            if param[0] in self.grad_params:
+                param[1].requires_grad = True
+
+
+    def _backward_step1(self, ctx):
+        """ Only train Noder Encoder through the global task loss and the KLD loss
+
+        Args:
+            ctx:
+
+        Returns:
+
+        """
+        ctx.optimizer.zero_grad()
+        # freeze all but node encoder
+        for param in ctx.model.named_parameters():
+            if not (param[0].startswith("encoder") or param[0].startswith("encoder_atom")):
+                param[1].requires_grad = False
+
+        loss = ctx.loss_out_global + self.config.params.kld_ne_imp * ctx.kld_loss_encoder
+        loss.backward()
+        if ctx.grad_clip > 0:
+            torch.nn.utils.clip_grad_norm_(ctx.model.parameters(),
+                                           ctx.grad_clip)
+        ctx.optimizer.step()
+
+        # Reset requires_grad
+        for param in ctx.model.named_parameters():
+            if param[0] in self.grad_params:
+                param[1].requires_grad = True
+
+
+    def _backward_step_2(self, ctx):
+        """ Train the intermediate branch with the interm Task loss, decoder loss and KLD loss
+
+        Args:
+            ctx:
+
+        Returns:
+
+        """
+        ctx.optimizer.zero_grad()
+        # freeze node encoder
+        for param in ctx.model.named_parameters():
+            if not (param[0].startswith("interm") or param[0].startswith("decoder")):
+                param[1].requires_grad = False
+
+        loss = ctx.loss_out_interm + self.config.params.kld_interm_imp * ctx.kld_interm + self.config.params.recon_imp * ctx.rec_loss + \
+               self.config.params.diff_interm_imp * ctx.diff_local_interm
+
+        loss.backward(retain_graph=True)
+
+        # Compute omega
+        for name, param in ctx.model.named_parameters():
+            if param.grad is not None and param.requires_grad is True:
+                ctx.omega[name] += (len(ctx.data_batch.y) / len(
+                    ctx.data['train'].dataset)) * param.grad.data.clone() ** 2
+
+        loss = self.config.params.csd_interm_imp * ctx.loss_batch_csd
+        loss.backward()
+        if ctx.grad_clip > 0:
+            torch.nn.utils.clip_grad_norm_(ctx.model.parameters(),
+                                           ctx.grad_clip)
+        ctx.optimizer.step()
+
+        # Reset requires_grad
+        for param in ctx.model.named_parameters():
+            if param[0] in self.grad_params:
+                param[1].requires_grad = True
+
+
+    def _backward_step_3(self, ctx):
+        """ Train the local and global branch. Freeze everything else
+
+        Args:
+            ctx:
+
+        Returns:
+
+        """
+        ctx.optimizer.zero_grad()
+
+        # backward through the global branch
+        for param in ctx.model.named_parameters():
+            if not (param[0].startswith("global") or param[0].startswith("clf")):
+                param[1].requires_grad = False
+
+        loss = ctx.loss_out_global + self.config.params.kld_global_imp * ctx.kld_global + self.config.params.sim_global_interm_imp * ctx.sim_global_interm
+        # loss = ctx.loss_out_global
+
+        loss.backward(retain_graph=False)
+        # Compute omega
+        for name, param in ctx.model.named_parameters():
+            if param.grad is not None and param.requires_grad is True:
+                ctx.omega[name] += (len(ctx.data_batch.y) / len(
+                    ctx.data['train'].dataset)) * param.grad.data.clone() ** 2
+
+        # loss = self.config.params.csd_interm_imp * ctx.loss_batch_csd
+        # loss.backward(retain_graph=False)
+
+        # freeze everything that is not local
+        """
+        for param in ctx.model.named_parameters():
+            if not param[0].startswith("local"):
+                param[1].requires_grad = False
+
+
+        loss = ctx.loss_out_local_interm + self.config.params.kld_local_imp * ctx.kld_local + self.config.params.diff_local_imp * ctx.diff_local_interm
+
+        loss.backward()
+        """
+        if ctx.grad_clip > 0:
+            torch.nn.utils.clip_grad_norm_(ctx.model.parameters(),
+                                           ctx.grad_clip)
+        ctx.optimizer.step()
+
+        # Reset requires_grad
+        for param in ctx.model.named_parameters():
+            if param[0] in self.grad_params:
+                param[1].requires_grad = True
+
     def _hook_on_batch_backward(self, ctx):
         # Get all model parameters with reuqires_grad = True
         # grad_params = [param[0] for param in ctx.model.named_parameters() if param[1].requires_grad]
 
         ctx.optimizer.zero_grad()
-        ###################################################################################
-        #################################    omega    #####################################
-        ###################################################################################
 
-        # compute gradient for node encoder and classifying layers (only task loss and KLD loss.)
-        loss = ctx.loss_batch_ce + self.config.params.kld_importance * ctx.kld_loss
-        loss.backward(retain_graph=True)
+        if ctx.routine_step == 0:
+            #self._backward_step1_all(ctx)
+            self._backward_step1(ctx)
+        elif ctx.routine_step == 1:
+            self._backward_step_2(ctx)
+        else:
+            self._backward_step_3(ctx)
 
-        # freeze gradients of node encoder for the following operations
-        for param in ctx.model.named_parameters():
-            if param[0].startswith("encoder") or param[0].startswith("encoder_atom"):
-                param[1].requires_grad = False
 
-        # disabled layers: encoder, encoder_atom
-        # compute gradients for local gnn and for the decoder.
-        # Freeze global gnn and MINE
-        for param in ctx.model.named_parameters():
-            if param[0].startswith("global_gnn") or param[0].startswith("mine"):
-                param[1].requires_grad = False
-        # frozen layers: local_gnn, mine, encoder, encoder_atom
-        loss = -self.config.params.diff_importance * ctx.diff_local_global + self.config.params.recon_importance * ctx.rec_loss
-        loss.backward(retain_graph=True)
 
-        # compute gradients for global gnn and for the decoder.
-        # unfreeze global_gnn,
-        # freeze local_gnn, decoder
-        for param in ctx.model.named_parameters():
-            if param[0].startswith("global_gnn"):
-                param[1].requires_grad = True
-            if param[0].startswith("local_gnn") or param[0].startswith("vae_decoder"):
-                param[1].requires_grad = False
-        # frozen layers: global_gnn, mine, vae_decoder, encoder, encoder_atom
-        loss_global_fixed = self.config.params.diff_importance * ctx.mi_global_fixed + self.config.params.recon_importance * ctx.rec_loss
-        loss_global_fixed.backward(retain_graph=True)
 
-        # Compute gradients for MINE
-        # Freeze everything but MINE
-        for param in ctx.model.named_parameters():
-            if param[0] in self.mine_grad_params:
-                param[1].requires_grad = True
+    def _run_routine(self, mode, hooks_set, dataset_name=None):
+        """Run the hooks_set and maintain the mode
+
+        Arguments:
+            mode (str): running mode of client, chosen from train/test
+            hooks_set (dict): functions to be executed.
+            dataset_name (str): which split.
+
+        Note:
+            Considering evaluation could be in ```hooks_set[
+            "on_epoch_end"]```, there could be two data loaders in
+        self.ctx, we must tell the running hooks which data_loader to call
+        and which num_samples to count
+
+        """
+        if dataset_name is None:
+            dataset_name = mode
+        self.ctx.append_mode(mode)
+        self.ctx.track_used_dataset(dataset_name)
+        self.ctx.routine_step = None
+        for hook in hooks_set["on_fit_start"]:
+            hook(self.ctx)
+
+        for epoch_i in range(self.ctx.get(
+                "num_{}_epoch".format(dataset_name))):
+            self.ctx.cur_epoch_i = epoch_i
+            for hook in hooks_set["on_epoch_start"]:
+                hook(self.ctx)
+
+            for batch_i in range(
+                    self.ctx.get("num_{}_batch".format(dataset_name))):
+                self.ctx.cur_batch_i = batch_i
+                for hook in hooks_set["on_batch_start"]:
+                    hook(self.ctx)
+
+                if self.ctx.cur_mode == 'train':
+                    for routine_step in range(self.routine_steps):
+                        self.ctx.routine_step = routine_step
+                        for hook in hooks_set["on_batch_forward"]:
+                            hook(self.ctx)
+                        for hook in hooks_set["on_batch_backward"]:
+                            hook(self.ctx)
+                    self.ctx.routine_step = None
+                else:
+                    self.ctx.routine_step = None
+                    for hook in hooks_set["on_batch_forward"]:
+                        hook(self.ctx)
+
+
+                for hook in hooks_set["on_batch_end"]:
+                    hook(self.ctx)
+
+                # Break in the final epoch
+                if self.ctx.cur_mode == 'train' and epoch_i == \
+                        self.ctx.num_train_epoch - 1:
+                    if batch_i >= self.ctx.num_train_batch_last_epoch - 1:
+                        break
+
+            for hook in hooks_set["on_epoch_end"]:
+                hook(self.ctx)
+        for hook in hooks_set["on_fit_end"]:
+            hook(self.ctx)
+
+        self.ctx.pop_mode()
+        self.ctx.reset_used_dataset()
+        # Avoid memory leak
+        if not self.cfg.federate.share_local_model:
+            if torch is None:
+                pass
             else:
-                param[1].requires_grad = False
-        # frozen layers: all but mine
-        mine_loss = (self.config.params.mine_lr / self.config.train.optimizer.lr) * ctx.mi_global_fixed
-        mine_loss.backward(retain_graph=True)
-
-        for name, param in ctx.model.named_parameters():
-            if param.grad is not None:
-                ctx.omega[name] += (len(ctx.data_batch.y) / len(
-                    ctx.data['train'].dataset)) * param.grad.data.clone() ** 2
-
-
-
-        ###################################################################################
-        ################################    TRAINING    ###################################
-        ###################################################################################
-
-        # Reset requires_grad
-        for param in ctx.model.named_parameters():
-            if param[0] in self.grad_params:
-                param[1].requires_grad = True
-        # Reuse the computed gradients and add the gradients from prior loss
-        loss_prox_prior = self.config.params.csd_importance * ctx.loss_batch_csd
-        loss_prox_prior.backward()
-
-        # Perform training step
-        if ctx.grad_clip > 0:
-            torch.nn.utils.clip_grad_norm_(ctx.model.parameters(),
-                                           ctx.grad_clip)
-
-        prox_loss_change = self.get_prox_loss_change()
-        ctx.optimizer.step()
-
-        for key, param in prox_loss_change.items():
-            curr_val = self.ctx.model.state_dict()[key]
-            updated_val = curr_val + param
-            self.ctx.model.state_dict()[key].data.copy_(updated_val)
-
-        # Reset requires_grad
-        for param in ctx.model.named_parameters():
-            if param[0] in self.grad_params:
-                param[1].requires_grad = True
-
-
-
+                self.ctx.model.to(torch.device("cpu"))
 
     @use_diff_laplacian
     def train(self, state: int, target_data_split_name="train", hooks_set=None):
@@ -300,8 +504,8 @@ class LaplacianDomainSeparation1MINEVAE_Separated_OtherDiff_Trainer(GraphMiniBat
 
         self._run_routine(MODE.TRAIN, hooks_set, target_data_split_name)
         self.first_round = False
-        self.ctx.avg_recon_loss = self.ctx.acc_rec_loss / self.ctx.total_epochs
-        return self.ctx.cfg.params.alpha, self.get_model_para(
+
+        return self.ctx.num_samples_train, self.get_model_para(
         ), self.get_omega_para(), self.ctx.eval_metrics
 
     def get_omega_para(self):
@@ -380,13 +584,14 @@ class CSDLoss(torch.nn.Module):
         loss = None
         trainable_parameters = self._param_filter(model_params)
         for name in trainable_parameters:
-            if 'norm' in name:
-                continue
+            #if 'norm' in name:
+            #    continue
             if name in omega:
                 theta = None
                 for param in self.ctx.model.named_parameters():
                     if param[0] == name:
                         theta = param[1]
+                        break
                 # omega_dropout = torch.rand(omega[name].size()).cuda() if cuda else torch.rand(omega[name].size())
                 # omega_dropout[omega_dropout>0.5] = 1.0
                 # omega_dropout[omega_dropout <= 0.5] = 0.0
@@ -404,5 +609,5 @@ class CSDLoss(torch.nn.Module):
 
 def call_laplacian_trainer(trainer_type):
     if trainer_type == 'laplacian_trainer':
-        trainer_builder = LaplacianDomainSeparation1MINEVAE_Separated_OtherDiff_Trainer
+        trainer_builder = LaplacianDomainSeparationVAE_1Out_Trainer
         return trainer_builder

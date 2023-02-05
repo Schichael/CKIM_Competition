@@ -35,7 +35,9 @@ class MetricCalculator(object):
             for metric in {'loss', 'avg_loss', 'total'} | eval_metric
             if metric in SUPPORT_METRICS
         }
+        x = eval_metric - set(SUPPORT_METRICS.keys())
         metric_register = get_metric(eval_metric - set(SUPPORT_METRICS.keys()))
+
         return {**metric_buildin, **metric_register}
 
     def eval(self, ctx):

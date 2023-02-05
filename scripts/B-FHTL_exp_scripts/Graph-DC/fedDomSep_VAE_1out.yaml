@@ -1,0 +1,45 @@
+use_gpu: True
+device: 0
+early_stop:
+  patience: 200
+  improve_indicator_mode: best
+  the_smaller_the_better: False
+federate:
+  mode: 'standalone'
+  method: 'FedDomSep_GraphDC'
+  make_global_eval: False
+  total_round_num: 1000
+  share_local_model: False
+train:
+  local_update_steps: 1
+  batch_or_epoch: 'epoch'
+  optimizer:
+    lr: 0.01
+    weight_decay: 0.0005
+    type: SGD
+data:
+  root: data/
+  type: fs_contest_data
+  splitter: ooxx
+  shuffle: false
+model:
+  type: gin
+  hidden: 64
+  out_channels: 0
+  task: graphClassification
+personalization:
+  local_param: ['encoder_atom', 'encoder', 'clf', 'local', 'decoder']   # to handle size-different pre & post layers
+
+criterion:
+  type: CrossEntropyLoss
+trainer:
+  type: graphminibatch_trainer
+eval:
+  report: ['avg']
+  freq: 1
+  # metrics: ['imp_ratio', 'acc']
+  metrics: ['imp_ratio', 'acc', 'recon_loss', 'kld_loss_encoder', 'kld_global', 'kld_interm', 'kld_local', 'diff_local_interm', 'sim_global_interm',
+    'loss_out_interm', 'loss_out_local_interm', 'loss_out_local_interm']
+  best_res_update_round_wise_key: val_imp_ratio
+  count_flops: False
+  base: 0.

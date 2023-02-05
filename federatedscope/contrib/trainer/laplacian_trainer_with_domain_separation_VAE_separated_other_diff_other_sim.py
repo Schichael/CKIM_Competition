@@ -110,6 +110,7 @@ class LaplacianDomainSeparationVAE_Separated_OtherDiff_OtherSim_Trainer(GraphMin
     def _hook_on_fit_start_init(self, ctx):
         super()._hook_on_fit_start_init(ctx)
         setattr(ctx, "{}_y_inds".format(ctx.cur_data_split), [])
+        ctx.acc_rec_loss = 0.
         #if not self.first_round:
         #    print(f"last round mean difference loss: {ctx.aggr_diff_loss/ctx.batchnumbers}")
 
@@ -154,6 +155,7 @@ class LaplacianDomainSeparationVAE_Separated_OtherDiff_OtherSim_Trainer(GraphMin
         ctx.sim_global_fixed = sim_global_fixed
         ctx.kld_loss = kld_loss
         ctx.rec_loss = rec_loss
+        ctx.rec_loss_metric = rec_loss.detach().item()
 
         #print(f"diff_local_global: {diff_local_global}")
         #print(f"mi_global_fixed: {sim_global_fixed}")
