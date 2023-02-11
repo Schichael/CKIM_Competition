@@ -14,7 +14,7 @@ from federatedscope.gfl.trainer import GraphMiniBatchTrainer
 logger = logging.getLogger(__name__)
 
 
-class LaplacianDomainSeparationVAE_1Out_Trainer(GraphMiniBatchTrainer):
+class LaplacianDomainSeparationVAE_1Out_NEW_Trainer(GraphMiniBatchTrainer):
     def __init__(self,
                  model,
                  omega,
@@ -57,14 +57,6 @@ class LaplacianDomainSeparationVAE_1Out_Trainer(GraphMiniBatchTrainer):
                 if name in self.ctx.omega:
                     self.ctx.omega[name] = deepcopy(self.ctx.omega[global_name])
 
-    def _align_global_fixed_parameters(self, model):
-        for name, param in deepcopy(model).named_parameters():
-            if name.startswith('fixed'):
-                stripped_name = name[len('fixed'):]
-                global_name = 'global' + stripped_name
-                model.state_dict()[name].data.copy_(copy.deepcopy(model.state_dict()[global_name].data))
-                if name in self.ctx.omega:
-                    self.ctx.omega[name] = deepcopy(self.ctx.omega[global_name])
 
     def _align_interm_parameters(self, model):
         for name, param in deepcopy(model).named_parameters():
@@ -113,11 +105,12 @@ class LaplacianDomainSeparationVAE_1Out_Trainer(GraphMiniBatchTrainer):
                 self.ctx.model.state_dict()[key].data.copy_(updated_val)
                 self.ctx.omega[key] = copy.deepcopy(updated_omega)
 
-        self._align_interm_parameters(self.ctx.model)
-        self._align_global_fixed_parameters(self.ctx.model)
+        #self._align_interm_parameters(self.ctx.model)
+        #self._align_global_fixed_parameters(self.ctx.model)
 
         if self.first_round:
             self._align_global_local_parameters(self.ctx.model)
+            self._align_interm_parameters(self.ctx.model)
 
         # trainable_parameters = self._param_filter(model_parameters)
         # for key in trainable_parameters:
@@ -169,12 +162,12 @@ class LaplacianDomainSeparationVAE_1Out_Trainer(GraphMiniBatchTrainer):
     def _hook_on_batch_forward(self, ctx):
         self.tmp += 1
         batch = ctx.data_batch.to(ctx.device)
-        out_global,out_interm, out_local_interm, kld_loss_encoder, kld_global, kld_interm, kld_local, rec_loss, diff_local_interm, sim_global_interm, sim_interm_fixed = ctx.model(batch, ctx.routine_step)
+        out_global, out_local_interm, out_interm, kld_loss_encoder, kld_global, kld_interm, kld_local, rec_loss, diff_local_interm, sim_global_interm = ctx.model(batch, ctx.routine_step)
 
-        ctx.sim_interm_fixed = sim_interm_fixed
+        #ctx.sim_interm_fixed = sim_interm_fixed
 
         # TODO: Not in metrics yet
-        ctx.sim_interm_fixed_metric = sim_interm_fixed.detach().item()
+        #ctx.sim_interm_fixed_metric = sim_interm_fixed.detach().item()
 
         ctx.kld_loss_encoder = kld_loss_encoder
         ctx.kld_loss_encoder_metric = kld_loss_encoder.detach().item()
@@ -215,10 +208,10 @@ class LaplacianDomainSeparationVAE_1Out_Trainer(GraphMiniBatchTrainer):
 
         ctx.loss_batch = ctx.criterion(out_global, label)
         ctx.loss_out_global = ctx.loss_batch
-        ctx.loss_out_interm = ctx.criterion(out_interm, label)
-        ctx.loss_out_interm_metric = ctx.loss_out_interm.detach().item()
         ctx.loss_out_local_interm = ctx.criterion(out_local_interm, label)
         ctx.loss_out_local_interm_metric = ctx.loss_out_local_interm.detach().item()
+        ctx.loss_out_interm = ctx.criterion(out_interm, label)
+        ctx.loss_out_interm_metric = ctx.loss_out_interm.detach().item()
 
         #ctx.loss_batch_csd = self.get_csd_loss(ctx.model.state_dict(), ctx.new_mu, ctx.new_omega, ctx.cur_epoch_i + 1)
         ctx.loss_batch_csd = csd_loss(ctx.model.state_dict(), ctx.new_mu,
@@ -342,23 +335,45 @@ class LaplacianDomainSeparationVAE_1Out_Trainer(GraphMiniBatchTrainer):
 
         """
         ctx.optimizer.zero_grad()
-        # freeze node encoder
+        # only ther interm layers
         for param in ctx.model.named_parameters():
-            if not (param[0].startswith("interm") or param[0].startswith("decoder")):
+            if not (param[0].startswith("interm")):
                 param[1].requires_grad = False
 
         loss = ctx.loss_out_interm + self.config.params.kld_interm_imp * ctx.kld_interm + self.config.params.recon_imp * ctx.rec_loss + \
-               self.config.params.diff_interm_imp * ctx.diff_local_interm + self.config.params.sim_interm_fixed_imp * ctx.sim_interm_fixed
+               self.config.params.diff_interm_imp * ctx.diff_local_interm
 
-        loss.backward(retain_graph=False)
+        loss.backward(retain_graph=True)
 
-        """
+        # Train decoder
+        for param in ctx.model.named_parameters():
+            if not (param[0].startswith("decoder")):
+                param[1].requires_grad = False
+            else:
+                param[1].requires_grad = True
+
+        loss = ctx.rec_loss
+
+        loss.backward(retain_graph=True)
+
+
+
         # Compute omega
         for name, param in ctx.model.named_parameters():
             if param.grad is not None and param.requires_grad is True:
                 ctx.omega[name] += (len(ctx.data_batch.y) / len(
                     ctx.data['train'].dataset)) * param.grad.data.clone() ** 2
-        """
+
+        # L_prior
+        # only the interm layers
+        for param in ctx.model.named_parameters():
+            if not (param[0].startswith("interm") or param[0].startswith("decoder")):
+                param[1].requires_grad = False
+            else:
+                param[1].requires_grad = True
+
+        loss = self.config.params.csd_imp * ctx.loss_batch_csd
+        loss.backward()
 
         #loss = self.config.params.csd_interm_imp * ctx.loss_batch_csd
         #loss.backward()
@@ -386,13 +401,29 @@ class LaplacianDomainSeparationVAE_1Out_Trainer(GraphMiniBatchTrainer):
 
         # backward through the global branch
         for param in ctx.model.named_parameters():
-            if not (param[0].startswith("global") or param[0].startswith("clf") or param[0].startswith("local")):
+            if not (param[0].startswith("global") or param[0].startswith("clf")):
                 param[1].requires_grad = False
 
-        loss = ctx.loss_out_global + self.config.params.kld_global_imp * ctx.kld_global + self.config.params.sim_global_interm_imp * ctx.sim_global_interm
+        loss = ctx.loss_out_global + self.config.params.sim_global_interm_imp * ctx.sim_global_interm
         # loss = ctx.loss_out_global
 
         loss.backward(retain_graph=True)
+
+        for param in ctx.model.named_parameters():
+            if not (param[0].startswith("local")):
+                param[1].requires_grad = False
+            else:
+                param[1].requires_grad = True
+
+        loss = ctx.loss_out_local_interm
+        loss.backward()
+
+        # Reset requires_grad
+        for param in ctx.model.named_parameters():
+            if param[0] in self.grad_params:
+                param[1].requires_grad = True
+
+
         # Compute omega
         for name, param in ctx.model.named_parameters():
             if param.grad is not None and param.requires_grad is True:
@@ -400,31 +431,24 @@ class LaplacianDomainSeparationVAE_1Out_Trainer(GraphMiniBatchTrainer):
                     ctx.data['train'].dataset)) * param.grad.data.clone() ** 2
 
         # Prior loss for linear layer
+        #for param in ctx.model.named_parameters():
+        #    if not (param[0].startswith("global_linear_out1")):
+        #        param[1].requires_grad = False
 
-        for param in ctx.model.named_parameters():
-            if not (param[0].startswith("global_linear_out1")):
-                param[1].requires_grad = False
-
-        loss = self.config.params.csd_imp * ctx.loss_batch_csd
-        loss.backward(retain_graph=True)
-
+        #loss = self.config.params.csd_imp * ctx.loss_batch_csd
+        #loss.backward(retain_graph=False)
 
         # freeze everything that is not local
-        # Reset requires_grad
-        for param in ctx.model.named_parameters():
-            if param[0] in self.grad_params:
-                param[1].requires_grad = True
-
+        """
         for param in ctx.model.named_parameters():
             if not param[0].startswith("local"):
                 param[1].requires_grad = False
 
-        loss = ctx.loss_out_local_interm + self.config.params.kld_local_imp * ctx.kld_local
 
-        loss.backward(retain_graph=False)
+        loss = ctx.loss_out_local_interm + self.config.params.kld_local_imp * ctx.kld_local + self.config.params.diff_local_imp * ctx.diff_local_interm
 
-
-
+        loss.backward()
+        """
         if ctx.grad_clip > 0:
             torch.nn.utils.clip_grad_norm_(ctx.model.parameters(),
                                            ctx.grad_clip)
@@ -639,5 +663,5 @@ class CSDLoss(torch.nn.Module):
 
 def call_laplacian_trainer(trainer_type):
     if trainer_type == 'laplacian_trainer':
-        trainer_builder = LaplacianDomainSeparationVAE_1Out_Trainer
+        trainer_builder = LaplacianDomainSeparationVAE_1Out_NEW_Trainer
         return trainer_builder

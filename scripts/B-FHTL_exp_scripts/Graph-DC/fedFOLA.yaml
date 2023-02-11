@@ -1,14 +1,14 @@
 use_gpu: True
 device: 0
 early_stop:
-  patience: 400
+  patience: 100
   improve_indicator_mode: mean
   the_smaller_the_better: False
 federate:
   mode: 'standalone'
   method: 'FedFOLA_GraphDC'
   make_global_eval: False
-  total_round_num: 400
+  total_round_num: 100
   share_local_model: False
   client_num: 13
 train:

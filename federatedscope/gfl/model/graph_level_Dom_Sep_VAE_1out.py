@@ -22,7 +22,7 @@ from federatedscope.gfl.model.gat import GAT_Net
 from federatedscope.gfl.model.gin import GIN_Net
 from federatedscope.gfl.model.gpr import GPR_Net
 
-# graph_level_Dom_Sep_VAE_2out_NEW
+# graph_level_Dom_Sep_VAE_1out
 
 EPS = 1e-15
 EMD_DIM = 200
@@ -122,8 +122,6 @@ class GNN_Net_Graph(torch.nn.Module):
         self.encoder = Linear(in_channels, hidden)
         self.cos_loss = torch.nn.CosineEmbeddingLoss()
         self.decoder = InnerProductDecoder()
-        self.eps = None
-
         # GNN layer
         if gnn == 'gcn':
             self.gnn = GCN_Net(in_channels=hidden,
@@ -160,7 +158,6 @@ class GNN_Net_Graph(torch.nn.Module):
                                       hidden=hidden,
                                       max_depth=max_depth,
                                       dropout=dropout)
-            """
             self.global_gnn_mu = GIN_Net(in_channels=hidden,
                                       out_channels=hidden,
                                       hidden=hidden,
@@ -171,13 +168,12 @@ class GNN_Net_Graph(torch.nn.Module):
                                          hidden=hidden,
                                          max_depth=1,
                                          dropout=dropout)
-            """
+
             self.decoder_gnn = GIN_Net(in_channels=hidden,
                                        out_channels=hidden,
                                        hidden=hidden,
                                        max_depth=max_depth,
                                        dropout=dropout)
-
 
         elif gnn == 'gpr':
             self.gnn = GPR_Net(in_channels=hidden,
@@ -206,7 +202,6 @@ class GNN_Net_Graph(torch.nn.Module):
         self.interm_linear_out1 = Linear(hidden, hidden)
         self.local_linear_out1 = Linear(hidden, hidden)
 
-
         # local
         self.clf = Linear(hidden, out_channels)
         self.emb = Linear(edge_dim, hidden)
@@ -233,12 +228,11 @@ class GNN_Net_Graph(torch.nn.Module):
         # the number of minibatch samples is multiplied with the loss
         #return kld_loss
 
-    def reparametrize_from_x(self, x, return_mu = False):
+    def reparametrize_from_x(self, x):
         """ x is just the normal output of the encoder
 
         Args:
             x:
-            return_mu: If True, just return mu
 
         Returns:
 
@@ -248,20 +242,16 @@ class GNN_Net_Graph(torch.nn.Module):
         log_var = mu_logvar[:, 1, :]
         kld_loss = self.kld_loss_mu_logvar(mu, log_var)
         samples = self.reparametrize(mu, log_var)
-        if return_mu:
-            return mu, kld_loss
-        else:
-            return samples, kld_loss
+        return samples, kld_loss
 
 
 
     def reparametrize(self, mu, log_var):
         if self.training:
             vector_size = log_var.size()
-            if self.eps is None:
-                self.eps = Variable(torch.FloatTensor(vector_size).normal_()).to('cuda:0')
+            eps = Variable(torch.FloatTensor(vector_size).normal_()).to('cuda:0')
             std = log_var.mul(0.5).exp_()
-            return self.eps.mul(std).add_(mu)
+            return eps.mul(std).add_(mu)
         else:
             return mu
 
@@ -309,9 +299,8 @@ class GNN_Net_Graph(torch.nn.Module):
 
     def forward(self, data, routine_step):
 
-
         if routine_step == 0:
-            self.eps = None
+            #return self.forward_adj_mat(data)
             return self.forward_routine_step_1(data)
         elif routine_step == 1:
             return self.forward_routine_step_2(data)
@@ -414,21 +403,21 @@ class GNN_Net_Graph(torch.nn.Module):
         kld_loss_encoder = self.kld_loss(x)
 
         h_encoder = x
-        x_local_enc = self.local_gnn((x, edge_index))
+        #x_local_enc = self.local_gnn((x, edge_index))
         #x_interm_enc = self.interm_gnn((x, edge_index))
         x_global_enc = self.global_gnn((x, edge_index))
 
-        x_local_enc, kld_local = self.reparametrize_from_x(x_local_enc, return_mu=True)
+        #x_local_enc, kld_local = self.reparametrize_from_x(x_local_enc)
         #x_interm_enc, kld_interm = self.reparametrize_from_x(x_interm_enc)
 
-        x_global_enc, kld_global = self.reparametrize_from_x(x_global_enc, return_mu=True)
+        x_global_enc, kld_global = self.reparametrize_from_x(x_global_enc)
 
 
-        x_local_pooled = self.pooling(x_local_enc, batch)
+        #x_local_pooled = self.pooling(x_local_enc, batch)
         #x_interm_pooled = self.pooling(x_interm_enc, batch)
         x_global_enc_pooled = self.pooling(x_global_enc, batch)
 
-        x_local = self.local_linear_out1(x_local_pooled).relu()
+        #x_local = self.local_linear_out1(x_local_pooled).relu()
         #x_interm = self.interm_linear_out1(x_interm_pooled).relu()
         x_global = self.global_linear_out1(x_global_enc_pooled).relu()
 
@@ -436,26 +425,25 @@ class GNN_Net_Graph(torch.nn.Module):
         #sim_global_interm = self.similarity_loss(x_interm_pooled, x_global_enc_pooled)
 
         #x_local_interm = x_local + x_interm
-        x_local_global = x_local + x_global
 
         #x_local_interm = F.dropout(x_local_interm, self.dropout, training=self.training)
         #x_interm = F.dropout(x_interm, self.dropout, training=self.training)
-        x_local_global = F.dropout(x_local_global, self.dropout, training=self.training)
+        x_global = F.dropout(x_global, self.dropout, training=self.training)
 
         #out_local_interm = self.clf(x_local_interm)
         #out_interm = self.clf(x_interm)
-        out_local_global = self.clf(x_local_global)
+        out_global = self.clf(x_global)
 
-        #decoder_out = self.decoder_gnn((x_global_enc, edge_index))
-        #recon_loss_node_features = self.node_recon_loss(decoder_out, h_encoder)
+        decoder_out = self.decoder_gnn((x_global_enc, edge_index))
+        recon_loss_node_features = self.node_recon_loss(decoder_out, h_encoder)
 
         # recon loss adjacency matrix
 
-        #rec_loss = recon_loss_node_features
+        rec_loss = recon_loss_node_features
         # return x, mi
         # return out_global, torch.Tensor([[0.1, 0.9]]*out_global.size(0)).float().to('cuda:0'), torch.Tensor([[0.1, 0.9]]*out_global.size(0)).float().to('cuda:0'), kld_loss_encoder, kld_global, torch.Tensor([0.]).float().to('cuda:0'), torch.Tensor([0.]).float().to('cuda:0'), torch.Tensor([0.]).float().to('cuda:0'), torch.Tensor([0.]).float().to('cuda:0'), torch.Tensor([0.]).float().to('cuda:0')
 
-        return out_local_global, torch.Tensor([[0.1, 0.9]]*out_local_global.size(0)).float().to('cuda:0'), kld_loss_encoder, kld_global, torch.Tensor([0.]).float().to('cuda:0'), torch.Tensor([0.]).float().to('cuda:0'), torch.Tensor([0.]).float().to('cuda:0'), torch.Tensor([0.]).float().to('cuda:0'), torch.Tensor([0.]).float().to('cuda:0')
+        return out_global, torch.Tensor([[0.1, 0.9]]*out_global.size(0)).float().to('cuda:0'), torch.Tensor([[0.1, 0.9]]*out_global.size(0)).float().to('cuda:0'), kld_loss_encoder, kld_global, torch.Tensor([0.]).float().to('cuda:0'), torch.Tensor([0.]).float().to('cuda:0'), rec_loss, torch.Tensor([0.]).float().to('cuda:0'), torch.Tensor([0.]).float().to('cuda:0')
 
 
     def forward_routine_step_2(self, data):
@@ -469,37 +457,36 @@ class GNN_Net_Graph(torch.nn.Module):
         kld_loss_encoder = self.kld_loss(x)
 
         h_encoder = x
-        x_local_enc = self.local_gnn((x, edge_index))
+        #x_local_enc = self.local_gnn((x, edge_index))
         x_interm_enc = self.interm_gnn((x, edge_index))
         #x_global_enc = self.global_gnn((x, edge_index))
 
-        x_local_enc, kld_local = self.reparametrize_from_x(x_local_enc, return_mu=True)
-        x_interm_enc_repara, kld_interm = self.reparametrize_from_x(x_interm_enc)
-        x_interm_enc_mu, _ = self.reparametrize_from_x(x_interm_enc, return_mu=True)
+        #x_local_enc, kld_local = self.reparametrize_from_x(x_local_enc)
+        x_interm_enc, kld_interm = self.reparametrize_from_x(x_interm_enc)
         #x_global_enc, kld_global = self.reparametrize_from_x(x_global_enc)
 
-        x_local_pooled = self.pooling(x_local_enc, batch)
-        x_interm_pooled = self.pooling(x_interm_enc_mu, batch)
+        #x_local_pooled = self.pooling(x_local_enc, batch)
+        x_interm_pooled = self.pooling(x_interm_enc, batch)
         #x_global_enc_pooled = self.pooling(x_global_enc, batch)
 
-        x_local = self.local_linear_out1(x_local_pooled).relu()
+        #x_local = self.local_linear_out1(x_local_pooled).relu()
         x_interm = self.interm_linear_out1(x_interm_pooled).relu()
-
         #x_global = self.global_linear_out1(x_global_enc_pooled).relu()
-        diff_local_interm = self.diff_loss(x_local, x_interm)
+
         #diff_local_interm = self.diff_loss(x_local_pooled, x_interm_pooled)
         #sim_global_interm = self.similarity_loss(x_interm_pooled, x_global_enc_pooled)
 
-        x_local_interm = x_local + x_interm
+        #x_local_interm = x_local + x_interm
+
         #x_local_interm = F.dropout(x_local_interm, self.dropout, training=self.training)
-        x_local_interm = F.dropout(x_local_interm, self.dropout, training=self.training)
+        x_interm = F.dropout(x_interm, self.dropout, training=self.training)
         #x_global = F.dropout(x_global, self.dropout, training=self.training)
 
         #out_local_interm = self.clf(x_local_interm)
-        out_local_interm = self.clf(x_local_interm)
+        out_interm = self.clf(x_interm)
         #out_global = self.clf(x_global)
 
-        decoder_out = self.decoder_gnn((x_interm_enc_repara, edge_index))
+        decoder_out = self.decoder_gnn((x_interm_enc, edge_index))
         recon_loss_node_features = self.node_recon_loss(decoder_out, h_encoder)
 
         # recon loss adjacency matrix
@@ -508,7 +495,7 @@ class GNN_Net_Graph(torch.nn.Module):
         # return x, mi
         # return out_global, torch.Tensor([[0.1, 0.9]]*out_global.size(0)).float().to('cuda:0'), torch.Tensor([[0.1, 0.9]]*out_global.size(0)).float().to('cuda:0'), kld_loss_encoder, kld_global, torch.Tensor([0.]).float().to('cuda:0'), torch.Tensor([0.]).float().to('cuda:0'), torch.Tensor([0.]).float().to('cuda:0'), torch.Tensor([0.]).float().to('cuda:0'), torch.Tensor([0.]).float().to('cuda:0')
 
-        return torch.Tensor([[0.1, 0.9]]*out_local_interm.size(0)).float().to('cuda:0'), out_local_interm, kld_loss_encoder, torch.Tensor([0.]).float().to('cuda:0'), kld_interm, torch.Tensor([0.]).float().to('cuda:0'), rec_loss, diff_local_interm, torch.Tensor([0.]).float().to('cuda:0'),
+        return torch.Tensor([[0.1, 0.9]]*out_interm.size(0)).float().to('cuda:0'), out_interm, torch.Tensor([[0.1, 0.9]]*out_interm.size(0)).float().to('cuda:0'), kld_loss_encoder, torch.Tensor([0.]).float().to('cuda:0'), kld_interm, torch.Tensor([0.]).float().to('cuda:0'), rec_loss, torch.Tensor([0.]).float().to('cuda:0'), torch.Tensor([0.]).float().to('cuda:0')
 
 
     def forward_routine_step_3(self, data):
@@ -527,26 +514,30 @@ class GNN_Net_Graph(torch.nn.Module):
         x_interm_enc = self.interm_gnn((x, edge_index))
         x_global_enc = self.global_gnn((x, edge_index))
 
-        x_local_enc, kld_local = self.reparametrize_from_x(x_local_enc, return_mu=True)
-        x_interm_enc, kld_interm = self.reparametrize_from_x(x_interm_enc, return_mu=True)
-        x_global_enc, kld_global = self.reparametrize_from_x(x_global_enc, return_mu=True)
+        x_local_enc, kld_local = self.reparametrize_from_x(x_local_enc)
+        x_interm_enc, kld_interm = self.reparametrize_from_x(x_interm_enc)
+        x_global_enc, kld_global = self.reparametrize_from_x(x_global_enc)
 
         x_local_pooled = self.pooling(x_local_enc, batch)
         x_interm_pooled = self.pooling(x_interm_enc, batch)
         x_global_enc_pooled = self.pooling(x_global_enc, batch)
 
         x_local = self.local_linear_out1(x_local_pooled).relu()
-        x_global = self.global_linear_out1(x_global_enc_pooled).relu()
         x_interm = self.interm_linear_out1(x_interm_pooled).relu()
+        x_global = self.global_linear_out1(x_global_enc_pooled).relu()
 
-        sim_global_interm = self.similarity_loss(x_interm, x_global)
+        diff_local_interm = self.diff_loss(x_local_pooled, x_interm_pooled)
+        sim_global_interm = self.similarity_loss(x_interm_pooled, x_global_enc_pooled)
 
-        x_local_global = x_local + x_global
         x_local_interm = x_local + x_interm
 
-        x_local_global = F.dropout(x_local_global, self.dropout, training=self.training)
+        x_local_interm = F.dropout(x_local_interm, self.dropout, training=self.training)
+        x_interm = F.dropout(x_interm, self.dropout, training=self.training)
+        x_global = F.dropout(x_global, self.dropout, training=self.training)
 
-        out_local_global = self.clf(x_local_global)
+        out_local_interm = self.clf(x_local_interm)
+        out_interm = self.clf(x_interm)
+        out_global = self.clf(x_global)
 
         #decoder_out = self.decoder_gnn((x_interm_enc, edge_index))
         #recon_loss_node_features = self.node_recon_loss(decoder_out, h_encoder)
@@ -557,7 +548,7 @@ class GNN_Net_Graph(torch.nn.Module):
         # return x, mi
         # return out_global, torch.Tensor([[0.1, 0.9]]*out_global.size(0)).float().to('cuda:0'), torch.Tensor([[0.1, 0.9]]*out_global.size(0)).float().to('cuda:0'), kld_loss_encoder, kld_global, torch.Tensor([0.]).float().to('cuda:0'), torch.Tensor([0.]).float().to('cuda:0'), torch.Tensor([0.]).float().to('cuda:0'), torch.Tensor([0.]).float().to('cuda:0'), torch.Tensor([0.]).float().to('cuda:0')
 
-        return out_local_global, torch.Tensor([[0.1, 0.9]]*out_local_global.size(0)).float().to('cuda:0'), kld_loss_encoder, kld_global, kld_interm, kld_local, torch.Tensor([0.]).float().to('cuda:0'), torch.Tensor([0.]).float().to('cuda:0'), sim_global_interm
+        return out_global, out_interm, out_local_interm, kld_loss_encoder, kld_global, kld_interm, kld_local, torch.Tensor([0.]).float().to('cuda:0'), diff_local_interm, sim_global_interm
 
     def forward_routine_step_test(self, data):
 
@@ -575,9 +566,9 @@ class GNN_Net_Graph(torch.nn.Module):
         x_interm_enc = self.interm_gnn((x, edge_index))
         x_global_enc = self.global_gnn((x, edge_index))
 
-        x_local_enc, kld_local = self.reparametrize_from_x(x_local_enc, return_mu=True)
-        x_interm_enc, kld_interm = self.reparametrize_from_x(x_interm_enc, return_mu=True)
-        x_global_enc, kld_global = self.reparametrize_from_x(x_global_enc, return_mu=True)
+        x_local_enc, kld_local = self.reparametrize_from_x(x_local_enc)
+        x_interm_enc, kld_interm = self.reparametrize_from_x(x_interm_enc)
+        x_global_enc, kld_global = self.reparametrize_from_x(x_global_enc)
 
         x_local_pooled = self.pooling(x_local_enc, batch)
         x_interm_pooled = self.pooling(x_interm_enc, batch)
@@ -587,17 +578,18 @@ class GNN_Net_Graph(torch.nn.Module):
         x_interm = self.interm_linear_out1(x_interm_pooled).relu()
         x_global = self.global_linear_out1(x_global_enc_pooled).relu()
 
-        diff_local_interm = self.diff_loss(x_local, x_interm)
-        sim_global_interm = self.similarity_loss(x_interm, x_global)
+        diff_local_interm = self.diff_loss(x_local_pooled, x_interm_pooled)
+        sim_global_interm = self.similarity_loss(x_interm_pooled, x_global_enc_pooled)
 
         x_local_interm = x_local + x_interm
-        x_global_local = x_global + x_local
 
         x_local_interm = F.dropout(x_local_interm, self.dropout, training=self.training)
-        x_global_local = F.dropout(x_global_local, self.dropout, training=self.training)
+        x_interm = F.dropout(x_interm, self.dropout, training=self.training)
+        x_global = F.dropout(x_global, self.dropout, training=self.training)
 
         out_local_interm = self.clf(x_local_interm)
-        out_global_local = self.clf(x_global_local)
+        out_interm = self.clf(x_interm)
+        out_global = self.clf(x_global)
 
         decoder_out = self.decoder_gnn((x_interm_enc, edge_index))
         recon_loss_node_features = self.node_recon_loss(decoder_out, h_encoder)
@@ -608,7 +600,7 @@ class GNN_Net_Graph(torch.nn.Module):
         # return x, mi
         # return out_global, torch.Tensor([[0.1, 0.9]]*out_global.size(0)).float().to('cuda:0'), torch.Tensor([[0.1, 0.9]]*out_global.size(0)).float().to('cuda:0'), kld_loss_encoder, kld_global, torch.Tensor([0.]).float().to('cuda:0'), torch.Tensor([0.]).float().to('cuda:0'), torch.Tensor([0.]).float().to('cuda:0'), torch.Tensor([0.]).float().to('cuda:0'), torch.Tensor([0.]).float().to('cuda:0')
 
-        return out_global_local, out_local_interm, kld_loss_encoder, kld_global, kld_interm, kld_local, rec_loss, diff_local_interm, sim_global_interm
+        return out_global, out_interm, out_local_interm, kld_loss_encoder, kld_global, kld_interm, kld_local, rec_loss, diff_local_interm, sim_global_interm
 
 
 def dot_product_decode(Z):
