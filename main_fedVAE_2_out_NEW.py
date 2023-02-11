@@ -53,6 +53,9 @@ register_trainer('laplacian_trainer', call_laplacian_trainer)
 
 def train(lr, kld_ne_imp, kld_local_imp, kld_interm_imp, kld_global_imp, recon_imp, diff_interm_imp,
               diff_local_imp, sim_global_interm_imp, csd_imp, sim_interm_fixed_imp):
+
+
+
     cfg_file = 'scripts/B-FHTL_exp_scripts/Graph-DC/fedDomSep_VAE_1out.yaml'
     cfg_client = 'scripts/B-FHTL_exp_scripts/Graph-DC/cfg_per_client.yaml'
     # cfg_per_Client_ours_lr
@@ -64,7 +67,21 @@ def train(lr, kld_ne_imp, kld_local_imp, kld_interm_imp, kld_global_imp, recon_i
     init_cfg.merge_from_file(cfg_file)
     # init_cfg.data.subdirectory = 'graph_dt_backup/processed'
     # init_cfg.merge_from_list(args.opts)
-    init_cfg.data.save_dir = 'Graph-DC_FedVAE_2_out_NEW_lr_' + str(lr).replace('.', '_')
+    init_cfg.data.save_dir = 'Graph-DC_FedVAE_2_out_NEW_sim_loss_lr_' + str(lr).replace('.', '_') + '_A'+ str(kld_ne_imp).replace('.', '_') + \
+    '_B'+ str(kld_local_imp).replace('.', '_') + '_C'+ str(kld_interm_imp).replace('.', '_') + '_C'+ str(kld_interm_imp).replace('.', '_') + \
+    '_D' + str(kld_global_imp).replace('.', '_') + '_E' + str(recon_imp).replace('.', '_') + '_F' + str(diff_interm_imp).replace('.', '_') + \
+    '_G' + str(diff_local_imp).replace('.', '_') + '_H' + str(csd_imp).replace('.', '_') + '_I' + str(sim_interm_fixed_imp).replace('.', '_')
+    """
+        kld_ne_imps = [1] #A
+        kld_local_imp = 1 #B
+        kld_interm_imp = 1 #C
+        kld_global_imps = [0.1] #D
+        recon_imp = 0.1 #E
+        diff_interm_imp = [0.1] #F
+        diff_local_imp = 0. #G
+        csd_imp = 10 #H
+        sims = [0.1] #I
+    """
 
     init_cfg.params = CN()
     init_cfg.params.kld_ne_imp = kld_ne_imp
@@ -114,15 +131,15 @@ def train(lr, kld_ne_imp, kld_local_imp, kld_interm_imp, kld_global_imp, recon_i
 if __name__ == '__main__':
 
     num_trainings = 1
-    kld_ne_imps = [1]
-    kld_local_imp = 1
-    kld_interm_imp = 1
-    kld_global_imps = [0.1, 1]
-    recon_imp = 0.1
-    diff_interm_imp = [0.1, 1]
-    diff_local_imp = 0.
-    csd_imp = 10
-    sims = [0.1, 1]
+    kld_ne_imps = [1] #A
+    kld_local_imp = 1 #B
+    kld_interm_imp = 1 #C
+    kld_global_imps = [1] #D
+    recon_imp = 0.1 #E
+    diff_interm_imp = 0.1 #F
+    diff_local_imp = 0. #G
+    csd_imp = 10 #H
+    sims = [0.1] #I
 
     # lrs = [0.001, 0.005, 0.01, 0.05, 0.1, 0.5]
     lrs = [0.1, 0.01]
