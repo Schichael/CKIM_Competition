@@ -354,7 +354,10 @@ class LaplacianDomainSeparationVAE_2Out_NEW_Trainer(GraphMiniBatchTrainer):
 
         loss.backward(retain_graph=True)
 
-
+        # Reset requires_grad
+        for param in ctx.model.named_parameters():
+            if param[0] in self.grad_params:
+                param[1].requires_grad = True
 
         # Compute omega
         for name, param in ctx.model.named_parameters():
