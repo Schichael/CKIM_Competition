@@ -1,9 +1,10 @@
 import os
 import sys
 
+from federatedscope.contrib.metrics.custom_losses import call_kld_loss_encoder_metric
 from federatedscope.contrib.trainer.FedAvg_VAE_trainer import call_fedavg_VAE_trainer
 from federatedscope.contrib.workers.fedavg_VAE_client import Fedavg_VAE_client
-from federatedscope.register import register_trainer
+from federatedscope.register import register_trainer, register_metric
 
 # sys.path = ['~/Master-Thesis/CKIM_Competition/federatedscope', '~/Master-Thesis/CKIM_Competition',] + sys.path
 sys.path = ['/home/michael/Projects/CKIM_Competition/federatedscope', '/home/michael/Projects/CKIM_Competition',] + sys.path
@@ -24,6 +25,14 @@ if os.environ.get('http_proxy'):
 
 register_trainer('laplacian_trainer', call_fedavg_VAE_trainer)
 
+metrics = [
+ ('kld_loss_encoder', call_kld_loss_encoder_metric),
+           ]
+for metric in metrics:
+    register_metric(metric[0], metric[1])
+
+
+
 def train(lr, kld_imp):
     cfg_file = 'scripts/B-FHTL_exp_scripts/Graph-DC/fedavg.yaml'
     cfg_client = 'scripts/B-FHTL_exp_scripts/Graph-DC/cfg_per_client.yaml'
@@ -38,13 +47,17 @@ def train(lr, kld_imp):
 
     # init_cfg.data.subdirectory = 'graph_dt_backup/processed'
     # init_cfg.merge_from_list(args.opts)
-    init_cfg.data.save_dir = 'Graph-DC_FedAvg_KLD_noRepara_lr_' + str(lr).replace('.', '_')+ '_local_update_steps_1_KLD_imp_' + str(kld_imp).replace('.', '_')
-    init_cfg.train.lr = lr
+    init_cfg.data.save_dir = 'Graph-DC_FedAvg_NE_KLD_noRepara_lr_' + str(lr).replace(
+        '.', '_')+ '_local_update_steps_1_KLD_imp_' + str(kld_imp).replace('.', '_')
+    init_cfg.train.optimizer.lr = lr
     init_cfg.params = CN()
 
     init_cfg.params.vae_importance = kld_imp
 
     init_cfg.model.dropout = 0.5
+
+    init_cfg.federate.client_num = 13
+
     update_logger(init_cfg)
     setup_seed(init_cfg.seed)
 
@@ -71,8 +84,8 @@ def train(lr, kld_imp):
 
 if __name__ == '__main__':
 
-    lrs = [0.001]
-    kld_imps = [1, 2, 5]
+    lrs = [0.1]
+    kld_imps = [0,1,10,20,50,100]
     num_trainings = 1
     for lr in lrs:
         for kld_imp in kld_imps:

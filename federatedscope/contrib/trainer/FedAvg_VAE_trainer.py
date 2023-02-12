@@ -31,6 +31,7 @@ class FedAvg_VAE_trainer(GraphMiniBatchTrainer):
         if len(label.size()) == 0:
             label = label.unsqueeze(0)
         ctx.vae_loss = vae_loss
+        ctx.kld_loss_encoder_metric = vae_loss.detach().item()
         ctx.loss_batch_ce = ctx.criterion(pred, label)
         ctx.loss_batch = ctx.loss_batch_ce
 
