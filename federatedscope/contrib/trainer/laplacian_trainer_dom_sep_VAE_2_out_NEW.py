@@ -337,7 +337,6 @@ class LaplacianDomainSeparationVAE_2Out_NEW_Trainer(GraphMiniBatchTrainer):
         for param in ctx.model.named_parameters():
             if not (param[0].startswith("interm")):
                 param[1].requires_grad = False
-
         loss = ctx.loss_out_local_interm + self.config.params.kld_interm_imp * ctx.kld_interm + self.config.params.recon_imp * ctx.rec_loss + \
                self.config.params.diff_interm_imp * ctx.diff_local_interm
 
@@ -409,6 +408,8 @@ class LaplacianDomainSeparationVAE_2Out_NEW_Trainer(GraphMiniBatchTrainer):
         # loss = ctx.loss_out_global
 
         loss.backward(retain_graph=False)
+
+
         # Compute omega
         for name, param in ctx.model.named_parameters():
             if param.grad is not None and param.requires_grad is True:
@@ -504,6 +505,8 @@ class LaplacianDomainSeparationVAE_2Out_NEW_Trainer(GraphMiniBatchTrainer):
                         for hook in hooks_set["on_batch_backward"]:
                             hook(self.ctx)
                     self.ctx.routine_step = None
+                    for hook in hooks_set["on_batch_forward"]:
+                        hook(self.ctx)
                 else:
                     self.ctx.routine_step = None
                     for hook in hooks_set["on_batch_forward"]:
