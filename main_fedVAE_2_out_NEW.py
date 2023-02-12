@@ -134,12 +134,12 @@ if __name__ == '__main__':
     kld_ne_imps = [1] #A
     kld_local_imp = 1 #B
     kld_interm_imp = 1 #C
-    kld_global_imps = [1] #D
+    kld_global_imps = [0.1,1] #D   HERE
     recon_imp = 0.1 #E
-    diff_interm_imp = 0.1 #F
+    diff_interm_imp = 0.1 #F    HERE
     diff_local_imp = 0. #G
     csd_imp = 10 #H
-    sims = [0.1] #I
+    sims = [1] #I    HERE
 
     # lrs = [0.001, 0.005, 0.01, 0.05, 0.1, 0.5]
     lrs = [0.1, 0.01]
