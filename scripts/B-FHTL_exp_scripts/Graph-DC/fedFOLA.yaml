@@ -1,14 +1,14 @@
 use_gpu: True
 device: 0
 early_stop:
-  patience: 100
+  patience: 1000
   improve_indicator_mode: mean
   the_smaller_the_better: False
 federate:
   mode: 'standalone'
   method: 'FedFOLA_GraphDC'
   make_global_eval: False
-  total_round_num: 100
+  total_round_num: 1000
   share_local_model: False
   client_num: 13
 train:
@@ -37,4 +37,4 @@ trainer:
 eval:
   report: ['avg']
   freq: 1
-  metrics: ['imp_ratio', 'acc']
+  metrics: ['imp_ratio', 'acc', 'kld_loss_encoder']

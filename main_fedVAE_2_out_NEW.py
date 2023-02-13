@@ -134,25 +134,27 @@ if __name__ == '__main__':
     kld_ne_imps = [1] #A
     kld_local_imp = 1 #B
     kld_interm_imp = 1 #C
-    kld_global_imps = [0.1, 1] #D   HERE
+    kld_global_imps = [1] #D   HERE
     recon_imp = 0.01 #E
-    diff_interm_imp = 0.001 #F    HERE  [0.001, 0.01]
+    diff_interm_imp = 0.001 #F    HERE  [0.0001, 0.001]
     diff_local_imp = 0.01 #G
     csd_imp = 10 #H
-    sims = [1] #I    HERE   [0.1, 1]
+    sims = [0.1, 1] #I    HERE   [0.1, 1]
 
     # lrs = [0.001, 0.005, 0.01, 0.05, 0.1, 0.5]
-    lrs = [0.1, 0.01]
+    lrs = [0.01]
     for lr in lrs:
         for sim in sims:
             for kld_ne_imp in kld_ne_imps:
                 for kld_global_imp in kld_global_imps:
-                    if kld_global_imp == 1 and lrs == 0.01:
-                        continue
                     train(lr, kld_ne_imp, kld_local_imp, kld_interm_imp, kld_global_imp, recon_imp, diff_interm_imp,
                           diff_local_imp, sim, csd_imp, sim)
 
-
+    """
+    noch kombinationen zu machen:
+    diff: und sim die 4 Kombinaationen. Eins ist dann doppelt, aber ist ja egal. (
+    0.001 und 01 
+    """
     #kld=0 mit repara: ~1.00 - 1.05
     #kld=0.01 mit repara: ~1.00 - 1.05
     # kld=0.01 mit repara: ~1.37

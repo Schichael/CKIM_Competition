@@ -1,32 +1,19 @@
-from typing import List
-
 import torch
 import torch.nn.functional as F
-from torch import Tensor
 from torch.autograd import Variable
 from torch.nn import Linear, Sequential, BatchNorm1d
 from torch_geometric.data import Data
 from torch_geometric.data.batch import Batch
-from torch_geometric.utils import degree
-from torch_geometric.utils import negative_sampling
-from torch_geometric.nn.glob import global_add_pool, global_mean_pool, \
-    global_max_pool
-from wandb.util import np
+from torch_geometric.nn.glob import global_add_pool, global_mean_pool, global_max_pool
 
-from federatedscope.gfl.model.MI_Network import Mine, T, MutualInformationEstimator
 from federatedscope.gfl.model.gcn import GCN_Net
-from federatedscope.gfl.model.gine import GINE_Net
-from federatedscope.gfl.model.gine_no_jk import GINE_NO_JK_Net
 from federatedscope.gfl.model.sage import SAGE_Net
 from federatedscope.gfl.model.gat import GAT_Net
 from federatedscope.gfl.model.gin import GIN_Net
 from federatedscope.gfl.model.gpr import GPR_Net
 
-# graph_level_Dom_Sep_VAE_2out_NEW
-
-EPS = 1e-15
 EMD_DIM = 200
-
+# graph_level_default_node_encoder_KLD_no_repara
 
 class AtomEncoder(torch.nn.Module):
     def __init__(self, in_channels, hidden):
@@ -43,11 +30,11 @@ class AtomEncoder(torch.nn.Module):
             x_embedding += self.atom_embedding_list[i](x[:, i])
         return x_embedding
 
-
 class VAE_Decoder(torch.nn.Module):
     def __init__(self,
+                 in_channels,
                  out_channels,
-                 hidden=64, ):
+                 hidden=64,):
         super(VAE_Decoder, self).__init__()
         self.lin1 = Sequential(Linear(hidden, hidden), torch.nn.ReLU())
         self.bn1 = BatchNorm1d(hidden)
@@ -64,30 +51,11 @@ class VAE_Decoder(torch.nn.Module):
         return out
 
 
-class DiffLoss(torch.nn.Module):
-
-    def __init__(self):
-        super(DiffLoss, self).__init__()
-
-    def forward(self, input1, input2):
-        batch_size = input1.size(0)
-        input1 = input1.view(batch_size, -1)
-        input2 = input2.view(batch_size, -1)
-
-        input1_l2_norm = torch.norm(input1, p=2, dim=1, keepdim=True).detach()
-        input1_l2 = input1.div(input1_l2_norm.expand_as(input1) + 1e-6)
-
-        input2_l2_norm = torch.norm(input2, p=2, dim=1, keepdim=True).detach()
-        input2_l2 = input2.div(input2_l2_norm.expand_as(input2) + 1e-6)
-
-        diff_loss = torch.mean((input1_l2.t().mm(input2_l2)).pow(2))
-
-        return diff_loss
-
 
 class GNN_Net_Graph(torch.nn.Module):
     r"""GNN model with pre-linear layer, pooling layer
         and output layer for graph classification tasks.
+
     Arguments:
         in_channels (int): input channels.
         out_channels (int): output channels.
@@ -97,7 +65,6 @@ class GNN_Net_Graph(torch.nn.Module):
         gnn (str): name of gnn type, use ("gcn" or "gin").
         pooling (str): pooling method, use ("add", "mean" or "max").
     """
-
     def __init__(self,
                  in_channels,
                  out_channels,
@@ -105,25 +72,13 @@ class GNN_Net_Graph(torch.nn.Module):
                  max_depth=2,
                  dropout=.0,
                  gnn='gcn',
-                 pooling='add',
-                 edge_dim=None,
-                 rho=0.0,
-                 **kwargs):
-        self.hidden = hidden
-        self.rho = rho
-        print(f"rho: {rho}")
-        if edge_dim is None or edge_dim == 0:
-            edge_dim = 1
+                 pooling='add'):
         super(GNN_Net_Graph, self).__init__()
-        self.diff_loss = DiffLoss()
         self.dropout = dropout
+        self.hidden= hidden
         # Embedding (pre) layer
         self.encoder_atom = AtomEncoder(in_channels, hidden)
         self.encoder = Linear(in_channels, hidden)
-        self.cos_loss = torch.nn.CosineEmbeddingLoss()
-        self.decoder = InnerProductDecoder()
-        self.eps = None
-
         # GNN layer
         if gnn == 'gcn':
             self.gnn = GCN_Net(in_channels=hidden,
@@ -144,41 +99,11 @@ class GNN_Net_Graph(torch.nn.Module):
                                max_depth=max_depth,
                                dropout=dropout)
         elif gnn == 'gin':
-            self.local_gnn = GIN_Net(in_channels=hidden,
-                                     out_channels=2*hidden,
-                                     hidden=hidden,
-                                     max_depth=max_depth,
-                                     dropout=dropout)
-            self.interm_gnn = GIN_Net(in_channels=hidden,
-                                     out_channels=2*hidden,
-                                     hidden=hidden,
-                                     max_depth=max_depth,
-                                     dropout=dropout)
-
-            self.global_gnn = GIN_Net(in_channels=hidden,
-                                      out_channels=2*hidden,
-                                      hidden=hidden,
-                                      max_depth=max_depth,
-                                      dropout=dropout)
-            """
-            self.global_gnn_mu = GIN_Net(in_channels=hidden,
-                                      out_channels=hidden,
-                                      hidden=hidden,
-                                      max_depth=1,
-                                      dropout=dropout)
-            self.global_gnn_std = GIN_Net(in_channels=hidden,
-                                         out_channels=hidden,
-                                         hidden=hidden,
-                                         max_depth=1,
-                                         dropout=dropout)
-            """
-            self.decoder_gnn = GIN_Net(in_channels=hidden,
-                                       out_channels=hidden,
-                                       hidden=hidden,
-                                       max_depth=max_depth,
-                                       dropout=dropout)
-
-
+            self.gnn = GIN_Net(in_channels=hidden,
+                               out_channels=hidden,
+                               hidden=hidden,
+                               max_depth=max_depth,
+                               dropout=dropout)
         elif gnn == 'gpr':
             self.gnn = GPR_Net(in_channels=hidden,
                                out_channels=hidden,
@@ -187,9 +112,6 @@ class GNN_Net_Graph(torch.nn.Module):
                                dropout=dropout)
         else:
             raise ValueError(f'Unsupported gnn type: {gnn}.')
-        # mi_model = T(hidden, hidden)
-
-        # self.mine = Mine(mi_model, loss='mine')
 
         # Pooling layer
         if pooling == 'add':
@@ -200,487 +122,61 @@ class GNN_Net_Graph(torch.nn.Module):
             self.pooling = global_max_pool
         else:
             raise ValueError(f'Unsupported pooling type: {pooling}.')
-
         # Output layer
-        self.global_linear_out1 = Linear(hidden, hidden)
-        self.interm_linear_out1 = Linear(hidden, hidden)
-        self.local_linear_out1 = Linear(hidden, hidden)
-
-
-        # local
+        self.linear = Sequential(Linear(hidden, hidden), torch.nn.ReLU())
         self.clf = Linear(hidden, out_channels)
-        self.emb = Linear(edge_dim, hidden)
-        self.vae_decoder = VAE_Decoder(hidden, hidden)
-        # torch.nn.init.xavier_normal_(self.emb.weight.data)
+        self.vae_decoder = VAE_Decoder(out_channels, in_channels, hidden)
+
+    #def kld_loss(self, mu, log_var):
+    #    kld_loss = torch.mean(-0.5 * torch.sum(1 + log_var - mu ** 2 - log_var.exp(), dim=1), dim=0)
+        # In https://github.com/AntixK/PyTorch-VAE/blob/master/models/vanilla_vae.py
+        # the number of minibatch samples is multiplied with the loss
+    #    return kld_loss
 
     def kld_loss(self, x):
         mu = torch.mean(x, dim=-2)
         std = torch.std(x, dim=-2)
         log_var = torch.log(std) * 2
-        kld_loss = -0.5 * torch.mean(1 + log_var - mu ** 2 - log_var.exp(), dim=0)
-        # In https://github.com/AntixK/PyTorch-VAE/blob/master/models/vanilla_vae.py
-        # the number of minibatch samples is multiplied with the loss
-        return kld_loss
-
-    def kld_loss_mu_logvar(self, mu, log_var):
-        kld_loss_old = torch.mean(-0.5 * torch.sum(1 + log_var - mu ** 2 - log_var.exp(), dim=1), dim=0)
-        #kld_loss = -0.5 * torch.mean(torch.sum(1 + 2 * log_var - mu ** 2 - log_var.exp() ** 2, dim=1))
-        #kld_loss = -0.5/64 * torch.mean(torch.sum(1 + log_var - mu ** 2 - log_var.exp(), dim=1))
         kld_loss = -0.5 * torch.mean(1 + log_var - mu ** 2 - log_var.exp())
-        #kl_other = -0.5 / mu.size(0) * torch.mean(torch.sum(1 + 2 * log_var - mu ** 2 - log_var.exp() ** 2, dim=1))
-        return kld_loss
         # In https://github.com/AntixK/PyTorch-VAE/blob/master/models/vanilla_vae.py
         # the number of minibatch samples is multiplied with the loss
-        #return kld_loss
-
-    def reparametrize_from_x(self, x, return_mu = False):
-        """ x is just the normal output of the encoder
-
-        Args:
-            x:
-            return_mu: If True, just return mu
-
-        Returns:
-
-        """
-        mu_logvar = x.view(-1, 2, self.hidden)
-        mu = mu_logvar[:, 0, :]
-        log_var = mu_logvar[:, 1, :]
-        kld_loss = self.kld_loss_mu_logvar(mu, log_var)
-        samples = self.reparametrize(mu, log_var)
-        if return_mu:
-            return mu, kld_loss
-        else:
-            return samples, kld_loss
-
-
+        return kld_loss
 
     def reparametrize(self, mu, log_var):
         if self.training:
-            vector_size = log_var.size()
-            if self.eps is None:
-                self.eps = Variable(torch.FloatTensor(vector_size).normal_()).to('cuda:0')
             std = log_var.mul(0.5).exp_()
-            return self.eps.mul(std).add_(mu)
+            vector_size = log_var.size()
+            eps = Variable(torch.FloatTensor(vector_size).normal_()).to('cuda:0')
+            return eps.mul(std).add_(mu)
+            # return eps * std + mu
         else:
             return mu
+            #return torch.zeros(mu.size()).to('cuda:0')
 
-    def similarity_loss(self, x1, x2):
-        # cosine embedding loss: 1-cos(x1, x2). The 1 defines this loss function.
-        y = torch.ones(x1.size(0)).to('cuda:0')
-        recon_loss = self.cos_loss(x1, x2, y)
-        return recon_loss
+    def vae_loss(self, mu, log_var, x_orig, x_decoded):
+        kld_loss = self.kld_loss(mu, log_var)
+        # recon_loss = F.mse_loss(x_decoded, x_orig)
+        loss = kld_loss
+        return loss
 
-    def node_recon_loss(self, x_orig, x_decoded):
-        # cosine embedding loss: 1-cos(x1, x2). The 1 defines this loss function.
-        y = torch.ones(x_decoded.size(0)).to('cuda:0')
-        recon_loss = self.cos_loss(x_decoded, x_orig, y)
-        return recon_loss
-
-    def recon_loss_adj(self, z, num_nodes, pos_edge_index, neg_edge_index=None):
-        r"""Given latent variables :obj:`z`, computes the binary cross
-        entropy loss for positive edges :obj:`pos_edge_index` and negative
-        sampled edges.
-        Args:
-            z (Tensor): The latent space :math:`\mathbf{Z}`.
-            pos_edge_index (LongTensor): The positive edges to train against.
-            neg_edge_index (LongTensor, optional): The negative edges to train
-                against. If not given, uses negative sampling to calculate
-                negative edges. (default: :obj:`None`)
-        """
-
-        pos_loss = -torch.log(
-            self.decoder(z, pos_edge_index, sigmoid=True) + EPS).mean()
-
-        if neg_edge_index is None:
-            try:
-                neg_edge_index = negative_sampling(pos_edge_index, num_nodes=num_nodes)
-            except:
-                pass
-        if neg_edge_index is not None:
-
-            neg_loss = -torch.log(1 -
-                                  self.decoder(z, neg_edge_index, sigmoid=True) +
-                                  EPS).mean()
+    def forward(self, data):
+        if isinstance(data, Batch):
+            x_in, edge_index, batch = data.x, data.edge_index, data.batch
+        elif isinstance(data, tuple):
+            x_in, edge_index, batch = data
         else:
-            neg_loss = 0
+            raise TypeError('Unsupported data type!')
 
-        return pos_loss + neg_loss
-
-    def forward(self, data, routine_step):
-
-
-        if routine_step == 0:
-            self.eps = None
-            return self.forward_routine_step_1(data)
-        elif routine_step == 1:
-            return self.forward_routine_step_2(data)
-        elif routine_step == 2:
-            return self.forward_routine_step_3(data)
+        if x_in.dtype == torch.int64:
+            x = self.encoder_atom(x_in)
         else:
-            return self.forward_routine_step_test(data)
-
-
-    def forward_adj_mat(self, data):
-        x, edge_index, batch = data.x, data.edge_index, data.batch
-
-        #vector_size = x.size()
-        #x = Variable(torch.zeros(vector_size)).to('cuda:0')
-
-        if x.dtype == torch.int64:
-            x = self.encoder_atom(x)
-        else:
-            x = self.encoder(x)
-
-        kld_loss_encoder = self.kld_loss(x)
-
-        h_encoder = x
-        # x_local_enc = self.local_gnn((x, edge_index))
-        # x_interm_enc = self.interm_gnn((x, edge_index))
-        x_global_enc = self.global_gnn((x, edge_index))
-        x_global_enc_mu = self.global_gnn_mu((x_global_enc, edge_index))
-        x_global_enc_std = self.global_gnn_std((x_global_enc, edge_index))
-        x_global_enc = torch.concat([x_global_enc_mu, x_global_enc_std], dim=-1)
-        # x_local_enc, kld_local = self.reparametrize_from_x(x_local_enc)
-        # x_interm_enc, kld_interm = self.reparametrize_from_x(x_interm_enc)
-
-        x_global_enc, kld_global = self.reparametrize_from_x(x_global_enc)
-
-
-
-        sizes = degree(batch, dtype=torch.long).tolist()
-
-        unbatched_enc = x_global_enc.split(sizes, 0)
-        unbatched_edge_index = unbatch_edge_index(edge_index, batch)
-        rec_loss = None
-        for i in range(len(unbatched_enc)):
-            # A_pred = dot_product_decode(unbatched_enc_pr[i] + unbatched_enc[i])
-            if rec_loss is None:
-                rec_loss = self.recon_loss_adj(unbatched_enc[i], unbatched_enc[i].size(dim=0),
-                                           unbatched_edge_index[i], neg_edge_index=None, )
-            else:
-                rec_loss += self.recon_loss_adj(unbatched_enc[i], unbatched_enc[i].size(dim=0),
-                                            unbatched_edge_index[i], neg_edge_index=None, )
-
-        rec_loss = rec_loss / len(unbatched_enc)
-
-
-
-
-
-        # x_local_pooled = self.pooling(x_local_enc, batch)
-        # x_interm_pooled = self.pooling(x_interm_enc, batch)
-        x_global_enc_pooled = self.pooling(x_global_enc, batch)
-
-        # x_local = self.local_linear_out1(x_local_pooled).relu()
-        # x_interm = self.interm_linear_out1(x_interm_pooled).relu()
-        x_global = self.global_linear_out1(x_global_enc_pooled).relu()
-
-        # diff_local_interm = self.diff_loss(x_local_pooled, x_interm_pooled)
-        # sim_global_interm = self.similarity_loss(x_interm_pooled, x_global_enc_pooled)
-
-        # x_local_interm = x_local + x_interm
-
-        # x_local_interm = F.dropout(x_local_interm, self.dropout, training=self.training)
-        # x_interm = F.dropout(x_interm, self.dropout, training=self.training)
-        x_global = F.dropout(x_global, self.dropout, training=self.training)
-
-        # out_local_interm = self.clf(x_local_interm)
-        # out_interm = self.clf(x_interm)
-        out_global = self.clf(x_global)
-
-        #decoder_out = self.decoder_gnn((x_global_enc, edge_index))
-        #recon_loss_node_features = self.node_recon_loss(decoder_out, h_encoder)
-
-        # recon loss adjacency matrix
-
-        #rec_loss = recon_loss_node_features
-        # return x, mi
-        # return out_global, torch.Tensor([[0.1, 0.9]]*out_global.size(0)).float().to('cuda:0'), torch.Tensor([[0.1, 0.9]]*out_global.size(0)).float().to('cuda:0'), kld_loss_encoder, kld_global, torch.Tensor([0.]).float().to('cuda:0'), torch.Tensor([0.]).float().to('cuda:0'), torch.Tensor([0.]).float().to('cuda:0'), torch.Tensor([0.]).float().to('cuda:0'), torch.Tensor([0.]).float().to('cuda:0')
-
-        return out_global, torch.Tensor([[0.1, 0.9]] * out_global.size(0)).float().to('cuda:0'), torch.Tensor(
-            [[0.1, 0.9]] * out_global.size(0)).float().to('cuda:0'), kld_loss_encoder, kld_global, torch.Tensor(
-            [0.]).float().to('cuda:0'), torch.Tensor([0.]).float().to('cuda:0'), rec_loss, torch.Tensor(
-            [0.]).float().to('cuda:0'), torch.Tensor([0.]).float().to('cuda:0')
-
-    def forward_routine_step_1(self, data):
-        x, edge_index, batch = data.x, data.edge_index, data.batch
-
-        if x.dtype == torch.int64:
-            x = self.encoder_atom(x)
-        else:
-            x = self.encoder(x)
-
-        kld_loss_encoder = self.kld_loss(x)
-
-        h_encoder = x
-        x_local_enc = self.local_gnn((x, edge_index))
-        #x_interm_enc = self.interm_gnn((x, edge_index))
-        x_global_enc = self.global_gnn((x, edge_index))
-
-        x_local_enc, kld_local = self.reparametrize_from_x(x_local_enc, return_mu=True)
-        #x_interm_enc, kld_interm = self.reparametrize_from_x(x_interm_enc)
-
-        x_global_enc, kld_global = self.reparametrize_from_x(x_global_enc, return_mu=True)
-
-
-        x_local_pooled = self.pooling(x_local_enc, batch)
-        #x_interm_pooled = self.pooling(x_interm_enc, batch)
-        x_global_enc_pooled = self.pooling(x_global_enc, batch)
-
-        x_local = self.local_linear_out1(x_local_pooled).relu()
-        #x_interm = self.interm_linear_out1(x_interm_pooled).relu()
-        x_global = self.global_linear_out1(x_global_enc_pooled).relu()
-
-        #diff_local_interm = self.diff_loss(x_local_pooled, x_interm_pooled)
-        #sim_global_interm = self.similarity_loss(x_interm_pooled, x_global_enc_pooled)
-
-        #x_local_interm = x_local + x_interm
-        x_local_global = x_local + x_global
-
-        #x_local_interm = F.dropout(x_local_interm, self.dropout, training=self.training)
-        #x_interm = F.dropout(x_interm, self.dropout, training=self.training)
-        x_local_global = F.dropout(x_local_global, self.dropout, training=self.training)
-
-        #out_local_interm = self.clf(x_local_interm)
-        #out_interm = self.clf(x_interm)
-        out_local_global = self.clf(x_local_global)
-
-        #decoder_out = self.decoder_gnn((x_global_enc, edge_index))
-        #recon_loss_node_features = self.node_recon_loss(decoder_out, h_encoder)
-
-        # recon loss adjacency matrix
-
-        #rec_loss = recon_loss_node_features
-        # return x, mi
-        # return out_global, torch.Tensor([[0.1, 0.9]]*out_global.size(0)).float().to('cuda:0'), torch.Tensor([[0.1, 0.9]]*out_global.size(0)).float().to('cuda:0'), kld_loss_encoder, kld_global, torch.Tensor([0.]).float().to('cuda:0'), torch.Tensor([0.]).float().to('cuda:0'), torch.Tensor([0.]).float().to('cuda:0'), torch.Tensor([0.]).float().to('cuda:0'), torch.Tensor([0.]).float().to('cuda:0')
-
-        return out_local_global, torch.Tensor([[0.1, 0.9]]*out_local_global.size(0)).float().to('cuda:0'), kld_loss_encoder, kld_global, torch.Tensor([0.]).float().to('cuda:0'), torch.Tensor([0.]).float().to('cuda:0'), torch.Tensor([0.]).float().to('cuda:0'), torch.Tensor([0.]).float().to('cuda:0'), torch.Tensor([0.]).float().to('cuda:0')
-
-
-    def forward_routine_step_2(self, data):
-        x, edge_index, batch = data.x, data.edge_index, data.batch
-
-        if x.dtype == torch.int64:
-            x = self.encoder_atom(x)
-        else:
-            x = self.encoder(x)
-
-        kld_loss_encoder = self.kld_loss(x)
-
-        h_encoder = x
-        x_local_enc = self.local_gnn((x, edge_index))
-        x_interm_enc = self.interm_gnn((x, edge_index))
-        #x_global_enc = self.global_gnn((x, edge_index))
-
-        x_local_enc, kld_local = self.reparametrize_from_x(x_local_enc, return_mu=True)
-        x_interm_enc_repara, kld_interm = self.reparametrize_from_x(x_interm_enc)
-        x_interm_enc_mu, _ = self.reparametrize_from_x(x_interm_enc, return_mu=True)
-        #x_global_enc, kld_global = self.reparametrize_from_x(x_global_enc)
-
-        x_local_pooled = self.pooling(x_local_enc, batch)
-        x_interm_pooled = self.pooling(x_interm_enc_mu, batch)
-        #x_global_enc_pooled = self.pooling(x_global_enc, batch)
-
-        x_local = self.local_linear_out1(x_local_pooled).relu()
-        x_interm = self.interm_linear_out1(x_interm_pooled).relu()
-
-        #x_global = self.global_linear_out1(x_global_enc_pooled).relu()
-        diff_local_interm = self.diff_loss(x_local, x_interm)
-        #diff_local_interm = self.diff_loss(x_local_pooled, x_interm_pooled)
-        #sim_global_interm = self.similarity_loss(x_interm_pooled, x_global_enc_pooled)
-
-        x_local_interm = x_local + x_interm
-        #x_local_interm = F.dropout(x_local_interm, self.dropout, training=self.training)
-        x_local_interm = F.dropout(x_local_interm, self.dropout, training=self.training)
-        #x_global = F.dropout(x_global, self.dropout, training=self.training)
-
-        #out_local_interm = self.clf(x_local_interm)
-        out_local_interm = self.clf(x_local_interm)
-        #out_global = self.clf(x_global)
-
-        decoder_out = self.decoder_gnn((x_interm_enc_repara, edge_index))
-        recon_loss_node_features = self.node_recon_loss(decoder_out, h_encoder)
-
-        # recon loss adjacency matrix
-
-        rec_loss = recon_loss_node_features
-        # return x, mi
-        # return out_global, torch.Tensor([[0.1, 0.9]]*out_global.size(0)).float().to('cuda:0'), torch.Tensor([[0.1, 0.9]]*out_global.size(0)).float().to('cuda:0'), kld_loss_encoder, kld_global, torch.Tensor([0.]).float().to('cuda:0'), torch.Tensor([0.]).float().to('cuda:0'), torch.Tensor([0.]).float().to('cuda:0'), torch.Tensor([0.]).float().to('cuda:0'), torch.Tensor([0.]).float().to('cuda:0')
-
-        return torch.Tensor([[0.1, 0.9]]*out_local_interm.size(0)).float().to('cuda:0'), out_local_interm, kld_loss_encoder, torch.Tensor([0.]).float().to('cuda:0'), kld_interm, torch.Tensor([0.]).float().to('cuda:0'), rec_loss, diff_local_interm, torch.Tensor([0.]).float().to('cuda:0'),
-
-
-    def forward_routine_step_3(self, data):
-
-        x, edge_index, batch = data.x, data.edge_index, data.batch
-
-        if x.dtype == torch.int64:
-            x = self.encoder_atom(x)
-        else:
-            x = self.encoder(x)
-
-        kld_loss_encoder = self.kld_loss(x)
-
-        #h_encoder = x
-        x_local_enc = self.local_gnn((x, edge_index))
-        x_interm_enc = self.interm_gnn((x, edge_index))
-        x_global_enc = self.global_gnn((x, edge_index))
-
-        x_local_enc, kld_local = self.reparametrize_from_x(x_local_enc, return_mu=True)
-        x_interm_enc, kld_interm = self.reparametrize_from_x(x_interm_enc, return_mu=True)
-        x_global_enc, kld_global = self.reparametrize_from_x(x_global_enc, return_mu=True)
-
-        x_local_pooled = self.pooling(x_local_enc, batch)
-        x_interm_pooled = self.pooling(x_interm_enc, batch)
-        x_global_enc_pooled = self.pooling(x_global_enc, batch)
-
-        x_local = self.local_linear_out1(x_local_pooled).relu()
-        x_global = self.global_linear_out1(x_global_enc_pooled).relu()
-        x_interm = self.interm_linear_out1(x_interm_pooled).relu()
-
-        sim_global_interm = self.similarity_loss(x_interm, x_global)
-
-        x_local_global = x_local + x_global
-        x_local_interm = x_local + x_interm
-
-        x_local_global = F.dropout(x_local_global, self.dropout, training=self.training)
-
-        out_local_global = self.clf(x_local_global)
-
-        #decoder_out = self.decoder_gnn((x_interm_enc, edge_index))
-        #recon_loss_node_features = self.node_recon_loss(decoder_out, h_encoder)
-
-        # recon loss adjacency matrix
-
-        #rec_loss = recon_loss_node_features
-        # return x, mi
-        # return out_global, torch.Tensor([[0.1, 0.9]]*out_global.size(0)).float().to('cuda:0'), torch.Tensor([[0.1, 0.9]]*out_global.size(0)).float().to('cuda:0'), kld_loss_encoder, kld_global, torch.Tensor([0.]).float().to('cuda:0'), torch.Tensor([0.]).float().to('cuda:0'), torch.Tensor([0.]).float().to('cuda:0'), torch.Tensor([0.]).float().to('cuda:0'), torch.Tensor([0.]).float().to('cuda:0')
-
-        return out_local_global, torch.Tensor([[0.1, 0.9]]*out_local_global.size(0)).float().to('cuda:0'), kld_loss_encoder, kld_global, kld_interm, kld_local, torch.Tensor([0.]).float().to('cuda:0'), torch.Tensor([0.]).float().to('cuda:0'), sim_global_interm
-
-    def forward_routine_step_test(self, data):
-
-        x, edge_index, batch = data.x, data.edge_index, data.batch
-
-        if x.dtype == torch.int64:
-            x = self.encoder_atom(x)
-        else:
-            x = self.encoder(x)
-
-        kld_loss_encoder = self.kld_loss(x)
-
-        h_encoder = x
-        x_local_enc = self.local_gnn((x, edge_index))
-        x_interm_enc = self.interm_gnn((x, edge_index))
-        x_global_enc = self.global_gnn((x, edge_index))
-
-        x_local_enc, kld_local = self.reparametrize_from_x(x_local_enc, return_mu=True)
-        x_interm_enc, kld_interm = self.reparametrize_from_x(x_interm_enc, return_mu=True)
-        x_global_enc, kld_global = self.reparametrize_from_x(x_global_enc, return_mu=True)
-
-        x_local_pooled = self.pooling(x_local_enc, batch)
-        x_interm_pooled = self.pooling(x_interm_enc, batch)
-        x_global_enc_pooled = self.pooling(x_global_enc, batch)
-
-        x_local = self.local_linear_out1(x_local_pooled).relu()
-        x_interm = self.interm_linear_out1(x_interm_pooled).relu()
-        x_global = self.global_linear_out1(x_global_enc_pooled).relu()
-
-        diff_local_interm = self.diff_loss(x_local, x_interm)
-        sim_global_interm = self.similarity_loss(x_interm, x_global)
-
-        x_local_interm = x_local + x_interm
-        x_global_local = x_global + x_local
-
-        x_local_interm = F.dropout(x_local_interm, self.dropout, training=self.training)
-        x_global_local = F.dropout(x_global_local, self.dropout, training=self.training)
-
-        out_local_interm = self.clf(x_local_interm)
-        out_global_local = self.clf(x_global_local)
-
-        decoder_out = self.decoder_gnn((x_interm_enc, edge_index))
-        recon_loss_node_features = self.node_recon_loss(decoder_out, h_encoder)
-
-        # recon loss adjacency matrix
-
-        rec_loss = recon_loss_node_features
-        # return x, mi
-        # return out_global, torch.Tensor([[0.1, 0.9]]*out_global.size(0)).float().to('cuda:0'), torch.Tensor([[0.1, 0.9]]*out_global.size(0)).float().to('cuda:0'), kld_loss_encoder, kld_global, torch.Tensor([0.]).float().to('cuda:0'), torch.Tensor([0.]).float().to('cuda:0'), torch.Tensor([0.]).float().to('cuda:0'), torch.Tensor([0.]).float().to('cuda:0'), torch.Tensor([0.]).float().to('cuda:0')
-
-        return out_global_local, out_local_interm, kld_loss_encoder, kld_global, kld_interm, kld_local, rec_loss, diff_local_interm, sim_global_interm
-
-
-def dot_product_decode(Z):
-    A_pred = torch.sigmoid(torch.matmul(Z, Z.t()))
-    return A_pred
-
-
-def glorot_init(input_dim, output_dim):
-    init_range = np.sqrt(6.0 / (input_dim + output_dim))
-    initial = torch.rand(input_dim, output_dim) * 2 * init_range - init_range
-    return torch.nn.Parameter(initial)
-
-
-class InnerProductDecoder(torch.nn.Module):
-    """The inner product decoder from the `"Variational Graph Auto-Encoders"
-    <https://arxiv.org/abs/1611.07308>`_ paper
-    .. math::
-        \sigma(\mathbf{Z}\mathbf{Z}^{\top})
-    where :math:`\mathbf{Z} \in \mathbb{R}^{N \times d}` denotes the latent
-    space produced by the encoder."""
-
-    def __init__(self):
-        super().__init__()
-
-    def forward(self, z, edge_index, sigmoid=True, neg_print=False):
-        r"""Decodes the latent variables :obj:`z` into edge probabilities for
-        the given node-pairs :obj:`edge_index`.
-        Args:
-            z (Tensor): The latent space :math:`\mathbf{Z}`.
-            sigmoid (bool, optional): If set to :obj:`False`, does not apply
-                the logistic sigmoid function to the output.
-                (default: :obj:`True`)
-        """
-        value = (z[edge_index[0]] * z[edge_index[1]]).sum(dim=1)
-
-        return torch.sigmoid(value) if sigmoid else value
-
-    def forward_all(self, z, sigmoid=True):
-        r"""Decodes the latent variables :obj:`z` into a probabilistic dense
-        adjacency matrix.
-        Args:
-            z (Tensor): The latent space :math:`\mathbf{Z}`.
-            sigmoid (bool, optional): If set to :obj:`False`, does not apply
-                the logistic sigmoid function to the output.
-                (default: :obj:`True`)
-        """
-        adj = torch.matmul(z, z.t())
-        return torch.sigmoid(adj) if sigmoid else adj
-
-
-def unbatch_edge_index(edge_index: Tensor, batch: Tensor) -> List[Tensor]:
-    r"""Splits the :obj:`edge_index` according to a :obj:`batch` vector.
-    Args:
-        edge_index (Tensor): The edge_index tensor. Must be ordered.
-        batch (LongTensor): The batch vector
-            :math:`\mathbf{b} \in {\{ 0, \ldots, B-1\}}^N`, which assigns each
-            node to a specific example. Must be ordered.
-    :rtype: :class:`List[Tensor]`
-    Example:
-        >>> edge_index = torch.tensor([[0, 1, 1, 2, 2, 3, 4, 5, 5, 6],
-        ...                            [1, 0, 2, 1, 3, 2, 5, 4, 6, 5]])
-        >>> batch = torch.tensor([0, 0, 0, 0, 1, 1, 1])
-        >>> unbatch_edge_index(edge_index, batch)
-        (tensor([[0, 1, 1, 2, 2, 3],
-                [1, 0, 2, 1, 3, 2]]),
-        tensor([[0, 1, 1, 2],
-                [1, 0, 2, 1]]))
-    """
-    deg = degree(batch, dtype=torch.int64)
-    ptr = torch.cat([deg.new_zeros(1), deg.cumsum(dim=0)[:-1]], dim=0)
-
-    edge_batch = batch[edge_index[0]]
-    edge_index = edge_index - ptr[edge_batch]
-    sizes = degree(edge_batch, dtype=torch.int64).cpu().tolist()
-    return edge_index.split(sizes, dim=1)
+            x = self.encoder(x_in)
+
+
+        kld_loss = self.kld_loss(x)
+        x = self.gnn((x, edge_index))
+        x = self.pooling(x, batch)
+        x = self.linear(x)
+        x = F.dropout(x, self.dropout, training=self.training)
+        x = self.clf(x)
+        return x, kld_loss
