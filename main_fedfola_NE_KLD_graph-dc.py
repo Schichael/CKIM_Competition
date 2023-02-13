@@ -1,9 +1,10 @@
 import os
 import sys
 
-from contrib.metrics.custom_losses import call_kld_loss_encoder_metric
+from federatedscope.contrib.metrics.custom_losses import call_kld_loss_encoder_metric
 from federatedscope.contrib.trainer.laplacian_trainer_NE_KLD import call_laplacian_trainer
 from federatedscope.contrib.workers.laplacian_client import LaplacianClient
+from federatedscope.contrib.workers.laplacian_client_NE_KLD import LaplacianClient_NE_KLD
 from federatedscope.contrib.workers.laplacian_server import LaplacianServer
 from federatedscope.register import register_trainer
 
@@ -76,7 +77,7 @@ def train(lr, csd_imp, kld_imp):
         cfg_client = CfgNode.load_cfg(open(cfg_client, 'r')).clone()
     runner = FedRunner(data=data,
                    server_class=LaplacianServer,
-                   client_class=LaplacianClient,
+                   client_class=LaplacianClient_NE_KLD,
                    config=init_cfg.clone(),
                    client_config=cfg_client)
     _ = runner.run()
@@ -85,7 +86,7 @@ def train(lr, csd_imp, kld_imp):
 if __name__ == '__main__':
     num_trainings = 1
     csd_imps = [10]
-    kld_imps = [10, 20, 50, 100]
+    kld_imps = [50]
     # lrs = [0.001, 0.005, 0.01, 0.05, 0.1, 0.5]
     lrs = [0.1]
     for lr in lrs:

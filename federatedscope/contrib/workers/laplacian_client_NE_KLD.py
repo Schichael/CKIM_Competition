@@ -4,7 +4,7 @@ import copy
 
 import torch
 
-from contrib.trainer.laplacian_trainer_NE_KLD import LaplacianTrainer_NE_KLD
+from federatedscope.contrib.trainer.laplacian_trainer_NE_KLD import LaplacianTrainer_NE_KLD
 from federatedscope.contrib.trainer.laplacian_trainer import LaplacianTrainer
 from federatedscope.contrib.workers.client import Client
 from federatedscope.core.message import Message
@@ -12,7 +12,7 @@ from federatedscope.core.message import Message
 logger = logging.getLogger(__name__)
 
 
-class LaplacianClient(Client):
+class LaplacianClient_NE_KLD(Client):
     def __init__(self,
                  ID=-1,
                  server_id=None,

@@ -163,7 +163,7 @@ class LaplacianTrainer_NE_KLD(GraphMiniBatchTrainer):
         ctx.optimizer.step()
         """
         ctx.optimizer.zero_grad()
-        loss = ctx.loss_batch_ce + self.config.kld_importance * ctx.kld_loss
+        loss = ctx.loss_batch_ce + self.config.params.kld_imp * ctx.kld_loss
         loss.backward(retain_graph=True)
         for name, param in ctx.model.named_parameters():
             if param.grad is not None:
