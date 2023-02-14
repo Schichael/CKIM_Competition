@@ -5,14 +5,15 @@ from multiprocessing import set_start_method
 import torch
 from torch import multiprocessing
 
-from federatedscope.contrib.trainer.laplacian_trainer_dom_sep_2_out_only_diff_proxLoss_NEW import \
-    call_laplacian_trainer
+from federatedscope.contrib.trainer.laplacian_trainer_dom_sep_1_out_only_diff_proxLoss_NEW import call_laplacian_trainer
 #from federatedscope.contrib.trainer.laplacian_trainer import call_laplacian_trainer
 from federatedscope.contrib.workers.laplacian_client import LaplacianClient
 from federatedscope.contrib.workers.laplacian_diff_global_out_client import LaplacianDiffGlobalOutClient
 from federatedscope.contrib.workers.laplacian_server import LaplacianServer
 from federatedscope.contrib.workers.laplacian_server_dom_sep_VAE_1_out import LaplacianServerDomSepVAE_1_out
 from federatedscope.contrib.workers.laplacian_server_dom_sep_without_fixed import LaplacianServerDomSepWithoutFixed
+from federatedscope.contrib.workers.laplacian_with_domain_separation_1_out_onlyDiffProxLoss_NEW_client import \
+    LaplacianDomainSeparationVAE_1_out_onlyDiffProxLoss_NEW_Client
 from federatedscope.contrib.workers.laplacian_with_domain_separation_VAE_1_out_client import \
     LaplacianDomainSeparationVAE_1_out_Client
 from federatedscope.contrib.workers.laplacian_with_domain_separation_VAE_2_out_NEW_client import \
@@ -39,7 +40,7 @@ except RuntimeError:
 metrics = [
     ('kld_loss_encoder', call_kld_loss_encoder_metric),
     ('diff_local_interm', call_diff_local_interm_metric), ('sim_global_interm', call_sim_global_interm_metric),
-    ('loss_out_local_interm', call_loss_out_local_interm_metric),
+    ('loss_out_local_interm', call_loss_out_local_interm_metric), ('loss_out_interm', call_loss_out_interm_metric),
     ('loss_batch_csd', call_loss_batch_csd_metric),
     ('prox_loss', call_prox_loss_metric)
            ]
@@ -81,7 +82,7 @@ def train(lr, kld_ne_imp, diff_interm_imp, diff_local_imp, prox_loss_imp, csd_im
     init_cfg.merge_from_file(cfg_file)
     # init_cfg.data.subdirectory = 'graph_dt_backup/processed'
     # init_cfg.merge_from_list(args.opts)
-    init_cfg.data.save_dir = 'Graph-DC_FedVAE_2_out_only_DiffProx_global_private_NEW_sim_loss_lr_' + str(lr).replace('.', '_') + '_A'+ str(kld_ne_imp).replace('.', '_') + \
+    init_cfg.data.save_dir = 'Graph-DC_FedVAE_1_out_only_DiffProx_global_private_NEW_sim_loss_lr_' + str(lr).replace('.', '_') + '_A'+ str(kld_ne_imp).replace('.', '_') + \
     '_F' + str(diff_interm_imp).replace('.', '_') + \
     '_G' + str(diff_local_imp).replace('.', '_') + '_H' + str(csd_imp).replace('.', '_') + '_I' + str(prox_loss_imp).replace('.', '_') + 'sim_loss_'+ 'prox_loss'
     """
@@ -131,7 +132,7 @@ def train(lr, kld_ne_imp, diff_interm_imp, diff_local_imp, prox_loss_imp, csd_im
         cfg_client = CfgNode.load_cfg(open(cfg_client, 'r')).clone()
     runner = FedRunner(data=data,
                    server_class = LaplacianServerDomSepVAE_1_out,
-                   client_class = LaplacianDomainSeparationVAE_2_out_onlyDiffProxLoss_NEW_Client,
+                   client_class = LaplacianDomainSeparationVAE_1_out_onlyDiffProxLoss_NEW_Client,
                    config=init_cfg.clone(),
                    client_config=cfg_client)
     _ = runner.run()
@@ -153,7 +154,7 @@ if __name__ == '__main__':
 
     # lrs = [0.001, 0.005, 0.01, 0.05, 0.1, 0.5]
     lrs = [0.1]
-    pool = multiprocessing.Pool(6)
+    pool = multiprocessing.Pool(1)
     processes = []
     for lr in lrs:
         for prox_loss_imp in prox_loss_imps:
