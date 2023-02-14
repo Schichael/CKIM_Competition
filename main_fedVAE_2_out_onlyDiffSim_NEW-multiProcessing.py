@@ -1,5 +1,9 @@
 import os
 import sys
+from multiprocessing import set_start_method
+
+import torch
+from torch import multiprocessing
 
 from federatedscope.contrib.trainer.laplacian_trainer_dom_sep_2_out_only_diff_sim_NEW import call_laplacian_trainer
 #from federatedscope.contrib.trainer.laplacian_trainer import call_laplacian_trainer
@@ -22,6 +26,12 @@ from federatedscope.contrib.metrics.custom_losses import call_recon_loss_metric,
     call_kld_loss_encoder_metric, call_kld_global_metric, call_kld_interm_metric, call_kld_local_metric, \
     call_diff_local_interm_metric, call_sim_global_interm_metric, call_loss_out_interm_metric, \
     call_loss_out_local_interm_metric, call_loss_batch_csd_metric
+
+try:
+    torch.multiprocessing.set_start_method('spawn', force=True)
+except RuntimeError:
+    pass
+
 
 metrics = [
     ('kld_loss_encoder', call_kld_loss_encoder_metric),
@@ -123,6 +133,9 @@ def train(lr, kld_ne_imp, diff_interm_imp, diff_local_imp, sim_global_interm_imp
                    client_config=cfg_client)
     _ = runner.run()
 
+def tmp(a):
+    print(a)
+    return a
 
 if __name__ == '__main__':
 
@@ -137,12 +150,16 @@ if __name__ == '__main__':
 
     # lrs = [0.001, 0.005, 0.01, 0.05, 0.1, 0.5]
     lrs = [0.1]
+    pool = multiprocessing.Pool(1)
+    processes = []
     for lr in lrs:
         for sim in sims:
             for diff_imp in diff_imps:
                 for sim_loss in sim_losses:
                     for kld_ne_imp in kld_ne_imps:
-                            train(lr, kld_ne_imp, diff_imp, diff_imp, sim, csd_imp, sim_loss)
+                        processes.append(pool.apply_async(train, args=(lr, kld_ne_imp, diff_imp, diff_imp, sim, csd_imp, sim_loss)))
+    result = [p.get() for p in processes]
+    print(result)
 
     """
     noch kombinationen zu machen:
