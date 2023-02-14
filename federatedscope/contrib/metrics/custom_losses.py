@@ -29,9 +29,17 @@ def loss_out_local_interm_metric(ctx, **kwargs):
 def loss_batch_csd_metric(ctx, **kwargs):
     return ctx.loss_batch_csd_metric
 
+def prox_loss_metric(ctx, **kwargs):
+    return ctx.prox_loss_metric
+
+def call_prox_loss_metric(types):
+    if "prox_loss" in types:
+        return "prox_loss", prox_loss_metric
+
 def call_recon_loss_metric(types):
     if "recon_loss" in types:
         return "recon_loss", recon_loss_metric
+
 
 def call_kld_loss_encoder_metric(types):
     if "kld_loss_encoder" in types:
