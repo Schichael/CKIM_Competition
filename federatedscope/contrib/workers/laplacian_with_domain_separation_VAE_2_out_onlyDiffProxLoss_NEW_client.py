@@ -4,14 +4,15 @@ from copy import deepcopy
 
 import torch
 
+from federatedscope.contrib.trainer.laplacian_trainer_dom_sep_2_out_only_diff_proxLoss_NEW import \
+    LaplacianDomainSeparationVAE_2Out_OnlyDiffProxLoss_NEW_Trainer
 from federatedscope.contrib.trainer.laplacian_trainer_dom_sep_2_out_only_diff_sim_NEW import \
     LaplacianDomainSeparationVAE_2Out_OnlyDiffSim_NEW_Trainer
 from federatedscope.contrib.trainer.laplacian_trainer_dom_sep_VAE_1_out import LaplacianDomainSeparationVAE_1Out_Trainer
 from federatedscope.contrib.trainer.laplacian_trainer_dom_sep_VAE_2_out import LaplacianDomainSeparationVAE_2Out_Trainer
 from federatedscope.contrib.trainer.laplacian_trainer_dom_sep_VAE_2_out_NEW import \
     LaplacianDomainSeparationVAE_2Out_NEW_Trainer
-from federatedscope.contrib.trainer.laplacian_trainer_dom_sep_VAE_2_out_only_diff_proxLoss_NEW import \
-    LaplacianDomainSeparationVAE_2Out_OnlyDiffProxLoss_NEW_Trainer
+
 from federatedscope.contrib.trainer.laplacian_trainer_with_domain_separation_with_summation import \
     LaplacianDomainSeparationWithSummationTrainer
 from federatedscope.contrib.workers.client import Client

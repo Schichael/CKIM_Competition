@@ -399,11 +399,11 @@ class ProxLoss(torch.nn.Module):
         for name, param in ctx.model.named_parameters():
             if name not in trainable_params:
                 continue
-            if name.startswith('global'):
-                stripped_name = name[len('global'):]
-                interm_name = 'interm' + stripped_name
-                interm_param = [x for x in list(ctx.model.named_parameters()) if x[0].startswith(interm_name)][0]
-                norm += torch.pow(torch.norm(param - interm_param[1], 2), 2)
+            if name.startswith('interm'):
+                stripped_name = name[len('interm'):]
+                global_name = 'global' + stripped_name
+                global_param = [x for x in list(ctx.model.named_parameters()) if x[0].startswith(global_name)][0]
+                norm += torch.pow(torch.norm(global_param[1] - param, 2), 2)
 
         return norm * 1. / float(2)
 
