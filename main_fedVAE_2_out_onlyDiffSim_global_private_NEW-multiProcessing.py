@@ -1,5 +1,9 @@
 import os
 import sys
+from multiprocessing import set_start_method
+
+import torch
+from torch import multiprocessing
 
 from federatedscope.contrib.trainer.laplacian_trainer_dom_sep_2_out_only_diff_sim_NEW import call_laplacian_trainer
 #from federatedscope.contrib.trainer.laplacian_trainer import call_laplacian_trainer
@@ -22,6 +26,12 @@ from federatedscope.contrib.metrics.custom_losses import call_recon_loss_metric,
     call_kld_loss_encoder_metric, call_kld_global_metric, call_kld_interm_metric, call_kld_local_metric, \
     call_diff_local_interm_metric, call_sim_global_interm_metric, call_loss_out_interm_metric, \
     call_loss_out_local_interm_metric, call_loss_batch_csd_metric
+
+try:
+    torch.multiprocessing.set_start_method('spawn', force=True)
+except RuntimeError:
+    pass
+
 
 metrics = [
     ('kld_loss_encoder', call_kld_loss_encoder_metric),
@@ -56,7 +66,7 @@ def train(lr, kld_ne_imp, diff_interm_imp, diff_local_imp, sim_global_interm_imp
 
 
 
-    cfg_file = 'scripts/B-FHTL_exp_scripts/Graph-DC/fedDomSep_VAE_1out.yaml'
+    cfg_file = 'scripts/B-FHTL_exp_scripts/Graph-DC/fedDomSep_VAE_global_private.yaml'
     cfg_client = 'scripts/B-FHTL_exp_scripts/Graph-DC/cfg_per_client.yaml'
     # cfg_per_Client_ours_lr
     # cfg_per_client_ours_lr_local_steps
@@ -67,9 +77,9 @@ def train(lr, kld_ne_imp, diff_interm_imp, diff_local_imp, sim_global_interm_imp
     init_cfg.merge_from_file(cfg_file)
     # init_cfg.data.subdirectory = 'graph_dt_backup/processed'
     # init_cfg.merge_from_list(args.opts)
-    init_cfg.data.save_dir = 'Graph-DC_FedVAE_2_out_NEW_sim_loss_lr_' + str(lr).replace('.', '_') + '_A'+ str(kld_ne_imp).replace('.', '_') + \
+    init_cfg.data.save_dir = 'TEST_Graph-DC_FedVAE_2_out_NEW_sim_loss_lr_' + str(lr).replace('.', '_') + '_A'+ str(kld_ne_imp).replace('.', '_') + \
     '_F' + str(diff_interm_imp).replace('.', '_') + \
-    '_G' + str(diff_local_imp).replace('.', '_') + '_H' + str(csd_imp).replace('.', '_') + '_I' + str(sim_global_interm_imp).replace('.', '_') +  'sim_loss_'+ sim_loss
+    '_G' + str(diff_local_imp).replace('.', '_') + '_H' + str(csd_imp).replace('.', '_') + '_I' + str(sim_global_interm_imp).replace('.', '_') + 'sim_loss_'+ sim_loss
     """
         kld_ne_imps = [1] #A
         kld_local_imp = 1 #B
@@ -123,6 +133,9 @@ def train(lr, kld_ne_imp, diff_interm_imp, diff_local_imp, sim_global_interm_imp
                    client_config=cfg_client)
     _ = runner.run()
 
+def tmp(a):
+    print(a)
+    return a
 
 if __name__ == '__main__':
 
@@ -132,23 +145,21 @@ if __name__ == '__main__':
     diff_interm_imp = 0.001 #F    HERE  [0.0001, 0.001]
     diff_local_imp = 0.001 #G
     csd_imp = 10 #H
-    sims = [0.1] #I    HERE   [0.1, 1]
+    sims = [0.1, 1] #I    HERE   [0.1, 1]
     sim_losses = ["mse", "cosine"]
 
     # lrs = [0.001, 0.005, 0.01, 0.05, 0.1, 0.5]
     lrs = [0.1]
+    pool = multiprocessing.Pool(6)
+    processes = []
     for lr in lrs:
         for sim in sims:
             for diff_imp in diff_imps:
                 for sim_loss in sim_losses:
                     for kld_ne_imp in kld_ne_imps:
-                            train(lr, kld_ne_imp, diff_imp, diff_imp, sim, csd_imp, sim_loss)
+                        processes.append(pool.apply_async(train, args=(lr, kld_ne_imp, diff_imp, diff_imp, sim, csd_imp, sim_loss)))
+    result = [p.get() for p in processes]
 
-    """
-    noch kombinationen zu machen:
-    diff: und sim die 4 Kombinaationen. Eins ist dann doppelt, aber ist ja egal. (
-    0.001 und 01 
-    """
     #kld=0 mit repara: ~1.00 - 1.05
     #kld=0.01 mit repara: ~1.00 - 1.05
     # kld=0.01 mit repara: ~1.37
