@@ -145,7 +145,7 @@ if __name__ == '__main__':
 
     num_trainings = 1
     kld_ne_imps = [0] #A
-    diff_imps = [0.001, 0.0001, 0.00001]
+    diff_imps = [0.001]  # [0.001, 0.0001, 0.00001]
     diff_interm_imp = 0.001 #F    HERE  [0.0001, 0.001]
     diff_local_imp = 0.001 #G
     csd_imp = 10 #H
@@ -154,7 +154,7 @@ if __name__ == '__main__':
 
     # lrs = [0.001, 0.005, 0.01, 0.05, 0.1, 0.5]
     lrs = [0.1]
-    pool = multiprocessing.Pool(1)
+    pool = multiprocessing.Pool(2)
     processes = []
     for lr in lrs:
         for prox_loss_imp in prox_loss_imps:
