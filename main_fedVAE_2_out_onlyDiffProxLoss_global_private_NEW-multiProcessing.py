@@ -81,7 +81,7 @@ def train(lr, kld_ne_imp, diff_interm_imp, diff_local_imp, prox_loss_imp, csd_im
     init_cfg.merge_from_file(cfg_file)
     # init_cfg.data.subdirectory = 'graph_dt_backup/processed'
     # init_cfg.merge_from_list(args.opts)
-    init_cfg.data.save_dir = 'Graph-DC_FedVAE_2_out_only_DiffProx_global_private_NEW_sim_loss_lr_' + str(lr).replace('.', '_') + '_A'+ str(kld_ne_imp).replace('.', '_') + \
+    init_cfg.data.save_dir = 'TEST_Graph-DC_FedVAE_2_out_only_DiffProx_global_private_NEW_sim_loss_lr_' + str(lr).replace('.', '_') + '_A'+ str(kld_ne_imp).replace('.', '_') + \
     '_F' + str(diff_interm_imp).replace('.', '_') + \
     '_G' + str(diff_local_imp).replace('.', '_') + '_H' + str(csd_imp).replace('.', '_') + '_I' + str(prox_loss_imp).replace('.', '_') + 'sim_loss_'+ 'prox_loss'
     """
@@ -153,7 +153,7 @@ if __name__ == '__main__':
 
     # lrs = [0.001, 0.005, 0.01, 0.05, 0.1, 0.5]
     lrs = [0.1]
-    pool = multiprocessing.Pool(6)
+    pool = multiprocessing.Pool(1)
     processes = []
     for lr in lrs:
         for prox_loss_imp in prox_loss_imps:
