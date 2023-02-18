@@ -359,6 +359,11 @@ class LaplacianDomainSeparationVAE_2Out_OnlyDiffMINE_Sim_NEW_Trainer(GraphMiniBa
         #else:
         loss = (self.config.params.mine_lr / self.config.train.optimizer.lr) * ctx.diff_local_interm
         loss.backward()
+
+        if ctx.grad_clip > 0:
+            torch.nn.utils.clip_grad_norm_(ctx.model.parameters(),
+                                           ctx.grad_clip)
+
         ctx.optimizer.step()
 
         # Reset requires_grad
