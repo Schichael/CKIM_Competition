@@ -126,7 +126,7 @@ class LaplacianDomainSeparationVAE_2Out_OnlyDiffMINE_ProxLoss_NEW_Trainer(GraphM
         if ctx.cur_data_split == "train" and not self.in_finetune:
             # print("in train")
             self.round_num += 1
-            self.in_finetune = True
+            # self.in_finetune = True
             """
             self.kld_imp = self.config.params.kld_importance
             if self.round_num > 30 and self.round_num <= 39:
@@ -173,7 +173,7 @@ class LaplacianDomainSeparationVAE_2Out_OnlyDiffMINE_ProxLoss_NEW_Trainer(GraphM
 
         ctx.prox_loss = self.proxLoss(ctx)
         ctx.prox_loss_metric = ctx.prox_loss.detach().item()
-
+        #print(diff_local_interm)
         # ctx.kld_global = kld_global
         # ctx.kld_global_metric = kld_global.detach().item()
 
@@ -354,7 +354,10 @@ class LaplacianDomainSeparationVAE_2Out_OnlyDiffMINE_ProxLoss_NEW_Trainer(GraphM
         for param in ctx.model.named_parameters():
             if not (param[0].startswith("mine")):
                 param[1].requires_grad = False
-        loss = ctx.diff_local_interm
+        #if self.round_num < 20:
+        #    loss = 10*(self.config.params.mine_lr/self.config.train.optimizer.lr) * ctx.diff_local_interm
+        #else:
+        loss = (self.config.params.mine_lr / self.config.train.optimizer.lr) * ctx.diff_local_interm
         loss.backward()
         ctx.optimizer.step()
 
@@ -464,14 +467,16 @@ class LaplacianDomainSeparationVAE_2Out_OnlyDiffMINE_ProxLoss_NEW_Trainer(GraphM
 
 
             self.ctx.cur_epoch_i = epoch_i
+            if self.ctx.cur_mode == 'train':
+                if epoch_i == 0 and self.first_round:
+                    mine_pretrain_epochs = self.ctx.cfg.params.mine_pre_train_epochs
+                    self._routine_loop_mine(hooks_set, mine_pretrain_epochs, dataset_name)
 
-            if epoch_i == 0:
-                mine_pretrain_epochs = self.ctx.cfg.params.mine_pre_train_epochs
-                self._routine_loop_mine(hooks_set, mine_pretrain_epochs, dataset_name)
-
-            if epoch_i != 0 and self.ctx.cfg.params.mine_epoch_steps > 0:
-                mine_pretrain_epochs = self.ctx.cfg.params.mine_epoch_steps
-                self._routine_loop_mine(hooks_set, mine_pretrain_epochs, dataset_name)
+                if epoch_i == 0 and self.ctx.cfg.params.mine_epoch_steps > 0:
+                    mine_epoch_steps = self.ctx.cfg.params.mine_epoch_steps
+                    if self.round_num < 20:
+                        mine_epoch_steps = mine_epoch_steps*5
+                    self._routine_loop_mine(hooks_set, mine_epoch_steps, dataset_name)
 
             for hook in hooks_set["on_epoch_start"]:
                 hook(self.ctx)
@@ -514,6 +519,7 @@ class LaplacianDomainSeparationVAE_2Out_OnlyDiffMINE_ProxLoss_NEW_Trainer(GraphM
     def _routine_loop_mine(self, hooks_set, mine_epochs, dataset_name=None):
         self.mineTrainMode = True
         for epoch_i in range(mine_epochs):
+            print(f"epoch mine: {epoch_i}")
             for hook in hooks_set["on_epoch_start"]:
                 hook(self.ctx)
 
