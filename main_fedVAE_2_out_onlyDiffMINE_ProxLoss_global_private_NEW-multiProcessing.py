@@ -154,7 +154,7 @@ if __name__ == '__main__':
     diff_local_imp = 0.1 #G
     csd_imp = 10 #H
     prox_loss_imps = [0.1] #I    HERE   [0.1, 1]
-    mine_pre_train_epochs = 20 #J
+    mine_pre_train_epochs = 100 #J
     mine_epoch_steps = 5 #K
     #sim_losses = ["mse", "cosine"]
 
