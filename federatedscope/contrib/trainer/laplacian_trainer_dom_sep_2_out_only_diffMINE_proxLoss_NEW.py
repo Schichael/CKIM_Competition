@@ -358,6 +358,11 @@ class LaplacianDomainSeparationVAE_2Out_OnlyDiffMINE_ProxLoss_NEW_Trainer(GraphM
         loss.backward()
         ctx.optimizer.step()
 
+        # Reset requires_grad
+        for param in ctx.model.named_parameters():
+            if param[0] in self.grad_params:
+                param[1].requires_grad = True
+
 
     def _hook_on_batch_backward(self, ctx):
         # Get all model parameters with reuqires_grad = True

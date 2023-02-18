@@ -68,7 +68,7 @@ if os.environ.get('http_proxy'):
 register_trainer('laplacian_trainer', call_laplacian_trainer)
 
 
-def train(lr, kld_ne_imp, diff_interm_imp, diff_local_imp, prox_loss_imp, csd_imp, mine_pre_train_epochs, mine_epoch_steps):
+def train(lr, kld_ne_imp, diff_interm_imp, diff_local_imp, prox_loss_imp, csd_imp, mine_pre_train_epochs, mine_epoch_steps, mine_lr):
 
 
 
@@ -86,7 +86,7 @@ def train(lr, kld_ne_imp, diff_interm_imp, diff_local_imp, prox_loss_imp, csd_im
     init_cfg.data.save_dir = 'Graph-DC_FedVAE_2_out_only_DiffMINE_Prox_global_private_NEW_sim_loss_lr_' + str(lr).replace('.', '_') + '_A'+ str(kld_ne_imp).replace('.', '_') + \
     '_F' + str(diff_interm_imp).replace('.', '_') + \
     '_G' + str(diff_local_imp).replace('.', '_') + '_H' + str(csd_imp).replace('.', '_') + '_I' + str(prox_loss_imp).replace('.', '_') + '_J' + \
-                             str(mine_pre_train_epochs).replace('.', '_') + '_K' + str(mine_epoch_steps).replace('.', '_') + 'sim_loss_'+ 'prox_loss'
+                             str(mine_pre_train_epochs).replace('.', '_') + '_K' + str(mine_epoch_steps).replace('.', '_') + '_L' + str(mine_lr).replace('.', '_')+ 'sim_loss_'+ 'prox_loss'
     """
         kld_ne_imps = [1] #A
         kld_local_imp = 1 #B
@@ -108,6 +108,7 @@ def train(lr, kld_ne_imp, diff_interm_imp, diff_local_imp, prox_loss_imp, csd_im
     init_cfg.params.sim_loss = "mse"
     init_cfg.params.mine_pre_train_epochs = mine_pre_train_epochs
     init_cfg.params.mine_epoch_steps = mine_epoch_steps
+    init_cfg.params.mine_lr = mine_lr
 
     init_cfg.federate.client_num = 13
     init_cfg.params.eps = 1e-15
@@ -153,9 +154,10 @@ if __name__ == '__main__':
     diff_interm_imp = 0.1 #F    HERE  [0.0001, 0.001]
     diff_local_imp = 0.1 #G
     csd_imp = 10 #H
-    prox_loss_imps = [0.01] #I    HERE   [0.1, 1]
+    prox_loss_imps = [0.1] #I    HERE   [0.1, 1]
     mine_pre_train_epochs = 100 #J
     mine_epoch_steps = 5 #K
+    mine_lr = 0.1  #Ö
     #sim_losses = ["mse", "cosine"]
 
     # lrs = [0.001, 0.005, 0.01, 0.05, 0.1, 0.5]
@@ -166,7 +168,7 @@ if __name__ == '__main__':
         for prox_loss_imp in prox_loss_imps:
             for diff_imp in diff_imps:
                     for kld_ne_imp in kld_ne_imps:
-                        processes.append(pool.apply_async(train, args=(lr, kld_ne_imp, diff_imp, diff_imp, prox_loss_imp, csd_imp, mine_pre_train_epochs, mine_epoch_steps)))
+                        processes.append(pool.apply_async(train, args=(lr, kld_ne_imp, diff_imp, diff_imp, prox_loss_imp, csd_imp, mine_pre_train_epochs, mine_epoch_steps, mine_lr)))
     result = [p.get() for p in processes]
 
     #kld=0 mit repara: ~1.00 - 1.05
