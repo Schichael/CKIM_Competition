@@ -72,7 +72,7 @@ def train(lr, kld_ne_imp, diff_interm_imp, diff_local_imp, prox_loss_imp, csd_im
 
 
 
-    cfg_file = 'scripts/B-FHTL_exp_scripts/Graph-DC/fedDomSep_VAE_global_private.yaml'
+    cfg_file = 'scripts/B-FHTL_exp_scripts/Graph-DC/fedDomSep_VAE_global_private_MINE.yaml'
     cfg_client = 'scripts/B-FHTL_exp_scripts/Graph-DC/cfg_per_client.yaml'
     # cfg_per_Client_ours_lr
     # cfg_per_client_ours_lr_local_steps
