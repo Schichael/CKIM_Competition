@@ -22,7 +22,7 @@ from federatedscope.gfl.model.gat import GAT_Net
 from federatedscope.gfl.model.gin import GIN_Net
 from federatedscope.gfl.model.gpr import GPR_Net
 
-# graph_level_Dom_Sep_2out_only_diff(MINE)_sim_NEW
+# graph_level_Dom_Sep_2out_only_diff_sim_NEW
 
 EPS = 1e-15
 EMD_DIM = 200
@@ -123,7 +123,6 @@ class GNN_Net_Graph(torch.nn.Module):
         self.cos_loss = torch.nn.CosineEmbeddingLoss()
         self.decoder = InnerProductDecoder()
         self.eps = None
-        self.mine = MutualInformationEstimator(hidden, hidden, loss='mine')
 
         # GNN layer
         if gnn == 'gcn':
@@ -335,7 +334,7 @@ class GNN_Net_Graph(torch.nn.Module):
         x_interm = self.interm_linear_out1(x_interm_pooled).relu()
         x_global = self.global_linear_out1(x_global_enc_pooled).relu()
 
-        diff_local_interm = self.mine(x_local, x_interm)
+        diff_local_interm = self.diff_loss(x_local, x_interm)
         if sim_loss == "cosine":
             sim_global_interm = self.similarity_loss(x_interm, x_global)
         else:
