@@ -83,7 +83,7 @@ def train(lr, kld_ne_imp, diff_interm_imp, diff_local_imp, prox_loss_imp, csd_im
     init_cfg.merge_from_file(cfg_file)
     # init_cfg.data.subdirectory = 'graph_dt_backup/processed'
     # init_cfg.merge_from_list(args.opts)
-    init_cfg.data.save_dir = 'TEST_Graph-DC_FedVAE_2_out_only_DiffMINE_Prox_global_private_NEW_sim_loss_lr_' + str(lr).replace('.', '_') + '_A'+ str(kld_ne_imp).replace('.', '_') + \
+    init_cfg.data.save_dir = 'Graph-DC_FedVAE_2_out_only_DiffMINE_Prox_global_private_NEW_sim_loss_lr_' + str(lr).replace('.', '_') + '_A'+ str(kld_ne_imp).replace('.', '_') + \
     '_F' + str(diff_interm_imp).replace('.', '_') + \
     '_G' + str(diff_local_imp).replace('.', '_') + '_H' + str(csd_imp).replace('.', '_') + '_I' + str(prox_loss_imp).replace('.', '_') + '_J' + \
                              str(mine_pre_train_epochs).replace('.', '_') + '_K' + str(mine_epoch_steps).replace('.', '_') + 'sim_loss_'+ 'prox_loss'
@@ -149,11 +149,11 @@ if __name__ == '__main__':
 
     num_trainings = 1
     kld_ne_imps = [0] #A
-    diff_imps = [0.1]   #Now 0.0001
+    diff_imps = [0.01, 0.1, 1]   #Now 0.0001
     diff_interm_imp = 0.1 #F    HERE  [0.0001, 0.001]
     diff_local_imp = 0.1 #G
     csd_imp = 10 #H
-    prox_loss_imps = [0.1] #I    HERE   [0.1, 1]
+    prox_loss_imps = [0.01] #I    HERE   [0.1, 1]
     mine_pre_train_epochs = 100 #J
     mine_epoch_steps = 5 #K
     #sim_losses = ["mse", "cosine"]
