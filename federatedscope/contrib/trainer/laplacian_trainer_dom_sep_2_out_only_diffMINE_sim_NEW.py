@@ -474,7 +474,6 @@ class LaplacianDomainSeparationVAE_2Out_OnlyDiffMINE_Sim_NEW_Trainer(GraphMiniBa
 
                 if epoch_i == 0 and self.ctx.cfg.params.mine_epoch_steps > 0:
                     mine_epoch_steps = self.ctx.cfg.params.mine_epoch_steps * max(0, (int(2500/self.ctx.num_train_data)-1))  # self.ctx.cfg.params.mine_epoch_steps * min(max(1,int(2500/self.ctx.num_train_data)), 10)
-                    print(f"mine_epoch_steps: {mine_epoch_steps}")
                     #if self.round_num < 20:
                     #    mine_epoch_steps = mine_epoch_steps*5
                     self._routine_loop_mine(hooks_set, mine_epoch_steps, dataset_name)
@@ -520,7 +519,6 @@ class LaplacianDomainSeparationVAE_2Out_OnlyDiffMINE_Sim_NEW_Trainer(GraphMiniBa
     def _routine_loop_mine(self, hooks_set, mine_epochs, dataset_name=None):
         self.mineTrainMode = True
         for epoch_i in range(mine_epochs):
-            print(f"epoch mine: {epoch_i}")
             for hook in hooks_set["on_epoch_start"]:
                 hook(self.ctx)
 
