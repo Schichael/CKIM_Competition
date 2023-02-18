@@ -14,7 +14,7 @@ from federatedscope.gfl.trainer import GraphMiniBatchTrainer
 logger = logging.getLogger(__name__)
 
 
-class LaplacianDomainSeparationVAE_2Out_OnlyDiffMINE_ProxLoss_NEW_Trainer(GraphMiniBatchTrainer):
+class LaplacianDomainSeparationVAE_2Out_OnlyDiffMINE_Sim_NEW_Trainer(GraphMiniBatchTrainer):
     def __init__(self,
                  model,
                  omega,
@@ -171,8 +171,8 @@ class LaplacianDomainSeparationVAE_2Out_OnlyDiffMINE_ProxLoss_NEW_Trainer(GraphM
         ctx.kld_loss_encoder = kld_loss_encoder
         ctx.kld_loss_encoder_metric = kld_loss_encoder.detach().item()
 
-        ctx.prox_loss = self.proxLoss(ctx)
-        ctx.prox_loss_metric = ctx.prox_loss.detach().item()
+        #ctx.prox_loss = self.proxLoss(ctx)
+        #ctx.prox_loss_metric = ctx.prox_loss.detach().item()
         #print(diff_local_interm)
         # ctx.kld_global = kld_global
         # ctx.kld_global_metric = kld_global.detach().item()
@@ -289,7 +289,7 @@ class LaplacianDomainSeparationVAE_2Out_OnlyDiffMINE_ProxLoss_NEW_Trainer(GraphM
                 param[1].requires_grad = False
 
         loss = ctx.loss_out_global - self.config.params.diff_local_imp * ctx.diff_local_interm + \
-               self.config.params.kld_ne_imp * ctx.kld_loss_encoder + self.config.params.prox_loss_imp * ctx.prox_loss
+               self.config.params.kld_ne_imp * ctx.kld_loss_encoder + self.config.params.sim_global_interm_imp * ctx.sim_global_interm
 
         loss.backward(retain_graph=True)
 
@@ -625,5 +625,5 @@ class CSDLoss(torch.nn.Module):
 
 def call_laplacian_trainer(trainer_type):
     if trainer_type == 'laplacian_trainer':
-        trainer_builder = LaplacianDomainSeparationVAE_2Out_OnlyDiffMINE_ProxLoss_NEW_Trainer
+        trainer_builder = LaplacianDomainSeparationVAE_2Out_OnlyDiffMINE_Sim_NEW_Trainer
         return trainer_builder
