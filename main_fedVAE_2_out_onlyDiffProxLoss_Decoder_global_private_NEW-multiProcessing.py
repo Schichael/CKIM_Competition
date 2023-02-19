@@ -152,8 +152,8 @@ if __name__ == '__main__':
     diff_local_imp = 0.001 #G
     csd_imp = 10 #H
     prox_loss_imps = [0.1] #I    HERE   [0.1, 1]
-    recon_imps = [0.01, 0.1] # J
-    kld_recon_imps = [0.01, 0.1] # K
+    recon_imps = [0.01] # J
+    kld_recon_imps = [0.01, 0.05] # K
     #sim_losses = ["mse", "cosine"]
 
     # lrs = [0.001, 0.005, 0.01, 0.05, 0.1, 0.5]
