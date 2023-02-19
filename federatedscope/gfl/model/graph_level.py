@@ -144,18 +144,18 @@ class GNN_Net_Graph(torch.nn.Module):
                                dropout=dropout)
         elif gnn == 'gin':
             self.local_gnn = GIN_Net(in_channels=hidden,
-                                     out_channels=hidden,
+                                     out_channels=2*hidden,
                                      hidden=hidden,
                                      max_depth=max_depth,
                                      dropout=dropout)
             self.interm_gnn = GIN_Net(in_channels=hidden,
-                                     out_channels=hidden,
+                                     out_channels=2*hidden,
                                      hidden=hidden,
                                      max_depth=max_depth,
                                      dropout=dropout)
 
             self.global_gnn = GIN_Net(in_channels=hidden,
-                                      out_channels=hidden,
+                                      out_channels=2*hidden,
                                       hidden=hidden,
                                       max_depth=max_depth,
                                       dropout=dropout)
@@ -308,7 +308,7 @@ class GNN_Net_Graph(torch.nn.Module):
 
 
     def forward(self, data, sim_loss):
-
+        self.eps = None
         x, edge_index, batch = data.x, data.edge_index, data.batch
 
         if x.dtype == torch.int64:
@@ -324,8 +324,10 @@ class GNN_Net_Graph(torch.nn.Module):
         x_interm_enc = self.interm_gnn((x, edge_index))
         x_global_enc = self.global_gnn((x, edge_index))
 
+        x_local_enc, _ = self.reparametrize_from_x(x_local_enc, return_mu=True)
         x_interm_enc_repara, kld_interm = self.reparametrize_from_x(x_interm_enc)
         x_interm_enc_mu, _ = self.reparametrize_from_x(x_interm_enc, return_mu=True)
+        x_global_enc, _ = self.reparametrize_from_x(x_global_enc, return_mu=True)
 
         x_local_pooled = self.pooling(x_local_enc, batch)
         x_interm_pooled = self.pooling(x_interm_enc_mu, batch)

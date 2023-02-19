@@ -256,13 +256,25 @@ class LaplacianDomainSeparationVAE_2Out_OnlyDiffProxLoss_Decoder_NEW_Trainer(Gra
 
         ctx.optimizer.zero_grad()
 
+        for param in ctx.model.named_parameters():
+            if not (param[0].startswith("vae_decoder")):
+                param[1].requires_grad = False
+
+        loss = ctx.rec_loss
+        loss.backward(retain_graph=True)
+
+        # Reset requires_grad
+        for param in ctx.model.named_parameters():
+            if param[0] in self.grad_params:
+                param[1].requires_grad = True
+
         # backward through the local and interm branch. Only backward interm branch
         for param in ctx.model.named_parameters():
-            if not (param[0].startswith("interm") or param[0].startswith("vae_decoder")):
+            if not (param[0].startswith("interm")):
                 param[1].requires_grad = False
 
         loss = ctx.loss_out_local_interm + self.config.params.diff_interm_imp * ctx.diff_local_interm + \
-               self.config.params.kld_interm_imp * ctx.kld_interm + self.config.params.rec_loss_imp * ctx.rec_loss
+               self.config.params.kld_interm_imp * ctx.kld_interm + self.config.params.recon_imp * ctx.rec_loss
         # loss = ctx.loss_out_global
 
         loss.backward(retain_graph=True)
