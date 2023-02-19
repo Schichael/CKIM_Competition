@@ -32,7 +32,7 @@ def train():
 
     # init_cfg.data.subdirectory = 'graph_dt_backup/processed'
     # init_cfg.merge_from_list(args.opts)
-    init_cfg.data.save_dir = 'FedDitto_our_baseline_their_lrs_dropout_0_5_regular_weight_0.01'
+    init_cfg.data.save_dir = 'TEST_FedDitto_our_baseline_their_lrs_dropout_0_5_regular_weight_0.01'
     init_cfg.model.dropout = 0.5
     update_logger(init_cfg)
     setup_seed(init_cfg.seed)

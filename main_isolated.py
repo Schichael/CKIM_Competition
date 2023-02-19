@@ -19,8 +19,8 @@ if os.environ.get('http_proxy'):
 
 
 def train(client, lr):
-    cfg_file = 'scripts/B-FHTL_exp_scripts/Graph-DT/isolated.yaml'
-    cfg_client = 'scripts/B-FHTL_exp_scripts/Graph-DT/cfg_per_client_isolated.yaml'
+    cfg_file = 'scripts/B-FHTL_exp_scripts/Graph-DC/isolated.yaml'
+    cfg_client = 'scripts/B-FHTL_exp_scripts/Graph-DC/cfg_per_client.yaml'
     #'scripts/B-FHTL_exp_scripts/Graph-DT/cfg_per_client.yaml'
 
     init_cfg = global_cfg.clone()
@@ -28,8 +28,9 @@ def train(client, lr):
 
     # init_cfg.data.subdirectory = 'graph_dt_backup/processed'
     # init_cfg.merge_from_list(args.opts)
-    init_cfg.data.save_dir = 'isolated_ours_without_last_lin_layer'
+    init_cfg.data.save_dir = 'isolated_graph_dc_client_13'
     init_cfg.data.client = client
+    init_cfg.federate.client_num = 1
     init_cfg.train.optimizer.lr = lr
     update_logger(init_cfg)
     setup_seed(init_cfg.seed)
@@ -56,8 +57,8 @@ def train(client, lr):
 
 
 if __name__ == '__main__':
-    clients = range(1, 16 + 1)
-    lrs = [0.05, 0.01, 0.005, 0.001]
+    clients = range(12, 12 + 1)
+    lrs = [0.5, 0.1, 0.05]
     num_trainings = 3
     for client in clients:
         for lr in lrs:
