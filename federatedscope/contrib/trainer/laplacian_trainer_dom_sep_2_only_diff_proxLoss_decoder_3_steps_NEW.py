@@ -14,7 +14,7 @@ from federatedscope.gfl.trainer import GraphMiniBatchTrainer
 logger = logging.getLogger(__name__)
 
 
-class LaplacianDomainSeparationVAE_2Out_NEW_Trainer(GraphMiniBatchTrainer):
+class LaplacianDomainSeparationVAE_2Out_OnlyDiffProxLoss_Decoder_3_steps_NEW_Trainer(GraphMiniBatchTrainer):
     def __init__(self,
                  model,
                  omega,
@@ -338,8 +338,9 @@ class LaplacianDomainSeparationVAE_2Out_NEW_Trainer(GraphMiniBatchTrainer):
         """
         ctx.optimizer.zero_grad()
 
+        # decoder
         for param in ctx.model.named_parameters():
-            if not (param[0].startswith("vae_decoder")):
+            if not (param[0].startswith("decoder_gnn")):
                 param[1].requires_grad = False
 
         loss = ctx.rec_loss
@@ -361,17 +362,6 @@ class LaplacianDomainSeparationVAE_2Out_NEW_Trainer(GraphMiniBatchTrainer):
 
         loss.backward(retain_graph=True)
 
-        # Train decoder
-        for param in ctx.model.named_parameters():
-            if not (param[0].startswith("decoder")):
-                param[1].requires_grad = False
-            else:
-                param[1].requires_grad = True
-
-        loss = ctx.rec_loss
-
-        loss.backward(retain_graph=True)
-
         # Reset requires_grad
         for param in ctx.model.named_parameters():
             if param[0] in self.grad_params:
@@ -386,7 +376,7 @@ class LaplacianDomainSeparationVAE_2Out_NEW_Trainer(GraphMiniBatchTrainer):
         # L_prior
         # only the interm layers
         for param in ctx.model.named_parameters():
-            if not (param[0].startswith("interm") or param[0].startswith("decoder")):
+            if not (param[0].startswith("interm")):
                 param[1].requires_grad = False
             else:
                 param[1].requires_grad = True
@@ -423,7 +413,7 @@ class LaplacianDomainSeparationVAE_2Out_NEW_Trainer(GraphMiniBatchTrainer):
             if not (param[0].startswith("global") or param[0].startswith("clf") or param[0].startswith("local")):
                 param[1].requires_grad = False
 
-        loss = ctx.loss_out_global + self.config.params.sim_global_interm_imp * ctx.sim_global_interm
+        loss = ctx.loss_out_global + self.config.params.prox_loss_imp * ctx.sim_global_interm
         # loss = ctx.loss_out_global
 
         loss.backward(retain_graph=False)
@@ -689,5 +679,5 @@ class ProxLoss(torch.nn.Module):
 
 def call_laplacian_trainer(trainer_type):
     if trainer_type == 'laplacian_trainer':
-        trainer_builder = LaplacianDomainSeparationVAE_2Out_NEW_Trainer
+        trainer_builder = LaplacianDomainSeparationVAE_2Out_OnlyDiffProxLoss_Decoder_3_steps_NEW_Trainer
         return trainer_builder
