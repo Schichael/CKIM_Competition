@@ -47,7 +47,7 @@ def train(lr, kld_imp):
 
     # init_cfg.data.subdirectory = 'graph_dt_backup/processed'
     # init_cfg.merge_from_list(args.opts)
-    init_cfg.data.save_dir = 'Graph-DC_FedAvg_NE_KLD_withRepara_newRepara_lr_' + str(
+    init_cfg.data.save_dir = 'TEST_Graph-DC_FedAvg_NE_KLD_withRepara_newRepara_lr_' + str(
         lr).replace(
         '.', '_')+ '_local_update_steps_1_KLD_imp_' + str(kld_imp).replace('.', '_')
     init_cfg.train.optimizer.lr = lr
@@ -57,7 +57,7 @@ def train(lr, kld_imp):
 
     init_cfg.model.dropout = 0.5
 
-    init_cfg.federate.client_num = 13
+    init_cfg.federate.client_num = 1
 
     update_logger(init_cfg)
     setup_seed(init_cfg.seed)
@@ -86,7 +86,7 @@ def train(lr, kld_imp):
 if __name__ == '__main__':
 
     lrs = [0.1]
-    kld_imps = [0.01,10,20,50,100]
+    kld_imps = [100]
     num_trainings = 1
     for lr in lrs:
         for kld_imp in kld_imps:

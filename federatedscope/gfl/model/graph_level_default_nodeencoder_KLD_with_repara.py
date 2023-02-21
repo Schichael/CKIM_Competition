@@ -139,6 +139,7 @@ class GNN_Net_Graph(torch.nn.Module):
             #eps = torch.randn_like(std)
             vector_size = log_var.size()
             eps = Variable(torch.FloatTensor(vector_size).normal_()).to('cuda:0')
+            tmp = eps.mul(std).add_(mu)
             return eps.mul(std).add_(mu)
         else:
             return mu
