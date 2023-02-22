@@ -17,6 +17,9 @@ def kld_local_metric(ctx, **kwargs):
 def diff_local_interm_metric(ctx, **kwargs):
     return ctx.diff_local_interm_metric
 
+def diff_local_global_metric(ctx, **kwargs):
+    return ctx.diff_local_global_metric
+
 def sim_global_interm_metric(ctx, **kwargs):
     return ctx.sim_global_interm_metric
 
@@ -60,6 +63,10 @@ def call_kld_local_metric(types):
 def call_diff_local_interm_metric(types):
     if "diff_local_interm" in types:
         return "diff_local_interm", diff_local_interm_metric
+
+def call_diff_local_global_metric(types):
+    if "diff_local_global" in types:
+        return "diff_local_global", diff_local_interm_metric
 
 def call_sim_global_interm_metric(types):
     if "sim_global_interm" in types:
