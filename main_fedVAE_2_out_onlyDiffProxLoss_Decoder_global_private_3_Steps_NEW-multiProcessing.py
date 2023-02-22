@@ -160,12 +160,12 @@ if __name__ == '__main__':
     csd_imp = 10 #H
     prox_loss_imps = [0.1] #I    HERE   [0.1, 1]
     recon_imps = [0.01] # J
-    kld_interm_imps = [0.01, 0.05] # K
+    kld_interm_imps = [0.01] # K
     #sim_losses = ["mse", "cosine"]
 
     # lrs = [0.001, 0.005, 0.01, 0.05, 0.1, 0.5]
     lrs = [0.1]
-    pool = multiprocessing.Pool(1)
+    pool = multiprocessing.Pool(3)
     processes = []
     for lr in lrs:
         for prox_loss_imp in prox_loss_imps:
