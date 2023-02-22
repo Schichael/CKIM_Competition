@@ -162,8 +162,7 @@ class LaplacianDomainSeparationVAE_2Out_OnlyDiffSim_only2branches_NEW_Trainer(Gr
     def _hook_on_batch_forward(self, ctx):
         self.tmp += 1
         batch = ctx.data_batch.to(ctx.device)
-        out_global_local, kld_loss_encoder, diff_local_global = ctx.model(batch,
-                                                                                                               self.config.params.sim_loss)
+        out_global_local, kld_loss_encoder, diff_local_global = ctx.model(batch)
 
         #ctx.sim_interm_fixed = sim_interm_fixed
 
@@ -206,7 +205,6 @@ class LaplacianDomainSeparationVAE_2Out_OnlyDiffSim_only2branches_NEW_Trainer(Gr
 
         ctx.loss_batch = ctx.criterion(out_global_local, label)
         ctx.loss_out_global = ctx.loss_batch
-        ctx.loss_out_local_interm_metric = ctx.loss_out_local_interm.detach().item()
 
         #ctx.loss_batch_csd = self.get_csd_loss(ctx.model.state_dict(), ctx.new_mu, ctx.new_omega, ctx.cur_epoch_i + 1)
         ctx.loss_batch_csd = csd_loss(ctx.model.state_dict(), ctx.new_mu,
@@ -253,7 +251,7 @@ class LaplacianDomainSeparationVAE_2Out_OnlyDiffSim_only2branches_NEW_Trainer(Gr
         """
         ctx.optimizer.zero_grad()
 
-        loss = ctx.loss_out_global + self.config.params.diff_imp * ctx.diff_local_interm + \
+        loss = ctx.loss_out_global + self.config.params.diff_imp * ctx.diff_local_global + \
                self.config.params.kld_ne_imp * ctx.kld_loss_encoder
 
         loss.backward(retain_graph=True)

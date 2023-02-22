@@ -299,7 +299,7 @@ class GNN_Net_Graph(torch.nn.Module):
         return pos_loss + neg_loss
 
 
-    def forward(self, data, sim_loss):
+    def forward(self, data):
 
         x, edge_index, batch = data.x, data.edge_index, data.batch
 

@@ -159,8 +159,7 @@ class LaplacianDomainSeparationVAE_2Out_OnlyDiffProxLoss_NEW_Trainer(GraphMiniBa
     def _hook_on_batch_forward(self, ctx):
         self.tmp += 1
         batch = ctx.data_batch.to(ctx.device)
-        out_global_local, out_local_interm, kld_loss_encoder, diff_local_interm, sim_global_interm = ctx.model(batch,
-                                                                                                               self.config.params.sim_loss)
+        out_global_local, out_local_interm, kld_loss_encoder, diff_local_interm, sim_global_interm = ctx.model(batch)
 
         # ctx.sim_interm_fixed = sim_interm_fixed
 

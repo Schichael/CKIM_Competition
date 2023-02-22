@@ -13,6 +13,8 @@ from federatedscope.contrib.workers.laplacian_diff_global_out_client import Lapl
 from federatedscope.contrib.workers.laplacian_server import LaplacianServer
 from federatedscope.contrib.workers.laplacian_server_dom_sep_VAE_1_out import LaplacianServerDomSepVAE_1_out
 from federatedscope.contrib.workers.laplacian_server_dom_sep_without_fixed import LaplacianServerDomSepWithoutFixed
+from federatedscope.contrib.workers.laplacian_with_domain_separation_2_out_onlyDiff_only2branches_NEW_client import \
+    LaplacianDomainSeparationVAE_2_out_onlyDiff_only2branches_NEW_Client
 from federatedscope.contrib.workers.laplacian_with_domain_separation_VAE_1_out_client import \
     LaplacianDomainSeparationVAE_1_out_Client
 from federatedscope.contrib.workers.laplacian_with_domain_separation_VAE_2_out_NEW_client import \
@@ -39,7 +41,6 @@ except RuntimeError:
 metrics = [
     ('kld_loss_encoder', call_kld_loss_encoder_metric),
     ('diff_local_global', call_diff_local_global_metric),
-    ('loss_out_local_interm', call_loss_out_local_interm_metric),
     ('loss_batch_csd', call_loss_batch_csd_metric)
 ]
 for metric in metrics:
@@ -126,7 +127,7 @@ def train(lr, kld_ne_imp, diff_imp, csd_imp):
         cfg_client = CfgNode.load_cfg(open(cfg_client, 'r')).clone()
     runner = FedRunner(data=data,
                    server_class = LaplacianServerDomSepVAE_1_out,
-                   client_class = LaplacianDomainSeparationVAE_2_out_onlyDiffProxLoss_NEW_Client,
+                   client_class = LaplacianDomainSeparationVAE_2_out_onlyDiff_only2branches_NEW_Client,
                    config=init_cfg.clone(),
                    client_config=cfg_client)
     _ = runner.run()
@@ -147,13 +148,13 @@ if __name__ == '__main__':
 
     # lrs = [0.001, 0.005, 0.01, 0.05, 0.1, 0.5]
     lrs = [0.1]
-    pool = multiprocessing.Pool(6)
+    pool = multiprocessing.Pool(1)
     processes = []
     for lr in lrs:
         for diff_imp in diff_imps:
                 for kld_ne_imp in kld_ne_imps:
                     processes.append(pool.apply_async(train, args=(lr, kld_ne_imp, diff_imp, csd_imp)))
-result = [p.get() for p in processes]
+    result = [p.get() for p in processes]
 
     #kld=0 mit repara: ~1.00 - 1.05
     #kld=0.01 mit repara: ~1.00 - 1.05

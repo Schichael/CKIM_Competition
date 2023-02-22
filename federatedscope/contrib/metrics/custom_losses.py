@@ -66,7 +66,7 @@ def call_diff_local_interm_metric(types):
 
 def call_diff_local_global_metric(types):
     if "diff_local_global" in types:
-        return "diff_local_global", diff_local_interm_metric
+        return "diff_local_global", diff_local_global_metric
 
 def call_sim_global_interm_metric(types):
     if "sim_global_interm" in types:
