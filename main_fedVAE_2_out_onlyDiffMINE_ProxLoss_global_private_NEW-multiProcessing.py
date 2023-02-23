@@ -150,11 +150,11 @@ if __name__ == '__main__':
 
     num_trainings = 1
     kld_ne_imps = [0] #A
-    diff_imps = [0.01, 0.1]   #Now 0.0001
+    diff_imps = [0.0001, 0.001]   #Now 0.0001
     diff_interm_imp = 0.1 #F    HERE  [0.0001, 0.001]
     diff_local_imp = 0.1 #G
     csd_imp = 10 #H
-    prox_loss_imps = [0.01, 0.1] #I    HERE   [0.1, 1]
+    prox_loss_imps = [0.01, 0.001] #I    HERE   [0.1, 1]
     mine_pre_train_epochs = 0 #J
     mine_epoch_steps = 0 #K
     mine_lr = 0.1  #L
