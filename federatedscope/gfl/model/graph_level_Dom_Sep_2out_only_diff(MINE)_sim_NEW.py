@@ -22,7 +22,7 @@ from federatedscope.gfl.model.gat import GAT_Net
 from federatedscope.gfl.model.gin import GIN_Net
 from federatedscope.gfl.model.gpr import GPR_Net
 
-# graph_level_Dom_Sep_2out_only_diff_sim_decoder_NEW
+# graph_level_Dom_Sep_2out_only_diff(MINE)_sim_NEW
 
 EPS = 1e-15
 EMD_DIM = 200
@@ -121,7 +121,9 @@ class GNN_Net_Graph(torch.nn.Module):
         self.encoder_atom = AtomEncoder(in_channels, hidden)
         self.encoder = Linear(in_channels, hidden)
         self.cos_loss = torch.nn.CosineEmbeddingLoss()
+        # self.decoder = InnerProductDecoder()
         self.eps = None
+        self.mine = MutualInformationEstimator(hidden, hidden, loss='mine')
 
         # GNN layer
         if gnn == 'gcn':
@@ -144,18 +146,18 @@ class GNN_Net_Graph(torch.nn.Module):
                                dropout=dropout)
         elif gnn == 'gin':
             self.local_gnn = GIN_Net(in_channels=hidden,
-                                     out_channels=2*hidden,
+                                     out_channels=hidden,
                                      hidden=hidden,
                                      max_depth=max_depth,
                                      dropout=dropout)
             self.interm_gnn = GIN_Net(in_channels=hidden,
-                                     out_channels=2*hidden,
+                                     out_channels=hidden,
                                      hidden=hidden,
                                      max_depth=max_depth,
                                      dropout=dropout)
 
             self.global_gnn = GIN_Net(in_channels=hidden,
-                                      out_channels=2*hidden,
+                                      out_channels=hidden,
                                       hidden=hidden,
                                       max_depth=max_depth,
                                       dropout=dropout)
@@ -234,10 +236,13 @@ class GNN_Net_Graph(torch.nn.Module):
 
     def reparametrize_from_x(self, x, return_mu = False):
         """ x is just the normal output of the encoder
+
         Args:
             x:
             return_mu: If True, just return mu
+
         Returns:
+
         """
         mu_logvar = x.view(-1, 2, self.hidden)
         mu = mu_logvar[:, 0, :]
@@ -308,7 +313,7 @@ class GNN_Net_Graph(torch.nn.Module):
 
 
     def forward(self, data, sim_loss):
-        self.eps = None
+
         x, edge_index, batch = data.x, data.edge_index, data.batch
 
         if x.dtype == torch.int64:
@@ -316,30 +321,21 @@ class GNN_Net_Graph(torch.nn.Module):
         else:
             x = self.encoder(x)
 
-        h_encoder = x
-
         kld_loss_encoder = self.kld_loss(x)
 
         x_local_enc = self.local_gnn((x, edge_index))
         x_interm_enc = self.interm_gnn((x, edge_index))
         x_global_enc = self.global_gnn((x, edge_index))
 
-        x_local_enc, _ = self.reparametrize_from_x(x_local_enc, return_mu=True)
-        x_interm_enc_repara, kld_interm = self.reparametrize_from_x(x_interm_enc)
-        x_interm_enc_mu, _ = self.reparametrize_from_x(x_interm_enc, return_mu=True)
-        x_global_enc, _ = self.reparametrize_from_x(x_global_enc, return_mu=True)
-
         x_local_pooled = self.pooling(x_local_enc, batch)
-        x_interm_pooled = self.pooling(x_interm_enc_mu, batch)
+        x_interm_pooled = self.pooling(x_interm_enc, batch)
         x_global_enc_pooled = self.pooling(x_global_enc, batch)
-
-
 
         x_local = self.local_linear_out1(x_local_pooled).relu()
         x_interm = self.interm_linear_out1(x_interm_pooled).relu()
         x_global = self.global_linear_out1(x_global_enc_pooled).relu()
 
-        diff_local_interm = self.diff_loss(x_local, x_interm)
+        diff_local_interm = self.mine(x_local, x_interm)
         if sim_loss == "cosine":
             sim_global_interm = self.similarity_loss(x_interm, x_global)
         else:
@@ -354,15 +350,13 @@ class GNN_Net_Graph(torch.nn.Module):
         out_local_interm = self.clf(x_local_interm)
         out_global_local = self.clf(x_global_local)
 
-        decoder_out = self.decoder_gnn((x_interm_enc_repara, edge_index))
-        recon_loss_node_features = self.node_recon_loss(decoder_out, h_encoder)
-        rec_loss = recon_loss_node_features
+
         # recon loss adjacency matrix
 
         # return x, mi
         # return out_global, torch.Tensor([[0.1, 0.9]]*out_global.size(0)).float().to('cuda:0'), torch.Tensor([[0.1, 0.9]]*out_global.size(0)).float().to('cuda:0'), kld_loss_encoder, kld_global, torch.Tensor([0.]).float().to('cuda:0'), torch.Tensor([0.]).float().to('cuda:0'), torch.Tensor([0.]).float().to('cuda:0'), torch.Tensor([0.]).float().to('cuda:0'), torch.Tensor([0.]).float().to('cuda:0')
 
-        return out_global_local, out_local_interm, kld_loss_encoder, diff_local_interm, sim_global_interm, rec_loss, kld_interm
+        return out_global_local, out_local_interm, kld_loss_encoder, diff_local_interm, sim_global_interm
 
 
 def dot_product_decode(Z):

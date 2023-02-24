@@ -121,7 +121,6 @@ def train(lr, kld_ne_imp, diff_interm_imp, diff_local_imp, prox_loss_imp, csd_im
 
     init_cfg.model.dropout = 0.5
     update_logger(init_cfg)
-    setup_seed(init_cfg.seed)
 
     # federated dataset might change the number of clients
     # thus, we allow the creation procedure of dataset to modify the global cfg object
@@ -170,7 +169,9 @@ if __name__ == '__main__':
                 for recon_imp in recon_imps:
                     for kld_interm_imp in kld_interm_imps:
                         for kld_ne_imp in kld_ne_imps:
-                            processes.append(pool.apply_async(train, args=(lr, kld_ne_imp, diff_imp, diff_imp, prox_loss_imp, csd_imp, recon_imp, kld_interm_imp)))
+                            for i in range(num_trainings):
+                                setup_seed(num_trainings)
+                                processes.append(pool.apply_async(train, args=(lr, kld_ne_imp, diff_imp, diff_imp, prox_loss_imp, csd_imp, recon_imp, kld_interm_imp)))
     result = [p.get() for p in processes]
 
     #kld=0 mit repara: ~1.00 - 1.05

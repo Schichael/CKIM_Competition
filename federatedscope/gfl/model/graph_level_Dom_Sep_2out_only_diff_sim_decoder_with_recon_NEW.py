@@ -22,7 +22,7 @@ from federatedscope.gfl.model.gat import GAT_Net
 from federatedscope.gfl.model.gin import GIN_Net
 from federatedscope.gfl.model.gpr import GPR_Net
 
-# graph_level_Dom_Sep_2out_only_diff_sim_decoder_NEW
+# graph_level_Dom_Sep_2out_only_diff_sim_decoder_with_recon_NEW
 
 EPS = 1e-15
 EMD_DIM = 200
@@ -326,11 +326,11 @@ class GNN_Net_Graph(torch.nn.Module):
 
         x_local_enc, _ = self.reparametrize_from_x(x_local_enc, return_mu=True)
         x_interm_enc_repara, kld_interm = self.reparametrize_from_x(x_interm_enc)
-        x_interm_enc_mu, _ = self.reparametrize_from_x(x_interm_enc, return_mu=True)
+        # x_interm_enc_mu, _ = self.reparametrize_from_x(x_interm_enc, return_mu=True)
         x_global_enc, _ = self.reparametrize_from_x(x_global_enc, return_mu=True)
 
         x_local_pooled = self.pooling(x_local_enc, batch)
-        x_interm_pooled = self.pooling(x_interm_enc_mu, batch)
+        x_interm_pooled = self.pooling(x_interm_enc_repara, batch)
         x_global_enc_pooled = self.pooling(x_global_enc, batch)
 
 

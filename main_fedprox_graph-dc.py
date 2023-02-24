@@ -39,7 +39,6 @@ def train(lr):
 
     init_cfg.model.dropout = 0.5
     update_logger(init_cfg)
-    setup_seed(init_cfg.seed)
 
     # federated dataset might change the number of clients
     # thus, we allow the creation procedure of dataset to modify the global cfg object
@@ -67,5 +66,6 @@ if __name__ == '__main__':
     lrs = [0.1, 0.5]
     for lr in lrs:
         for i in range(num_trainings):
+            setup_seed(i)
             print(f"training run: {i + 1}")
             train(lr)

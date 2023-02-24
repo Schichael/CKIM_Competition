@@ -85,7 +85,6 @@ def train(lr, kld_ne_imp, kld_local_imp, kld_interm_imp, kld_global_imp, recon_i
     init_cfg.model.dropout = 0.5
     init_cfg.train.optimizer.lr = lr
     update_logger(init_cfg)
-    setup_seed(init_cfg.seed)
 
     # federated dataset might change the number of clients
     # thus, we allow the creation procedure of dataset to modify the global cfg object
@@ -127,8 +126,10 @@ if __name__ == '__main__':
         for sim_global_interm_imp in sim_global_interm_imps:
             for kld_ne_imp in kld_ne_imps:
                 for kld_global_imp in kld_global_imps:
-                    train(lr, kld_ne_imp, kld_local_imp, kld_interm_imp, kld_global_imp, recon_imp, diff_interm_imp,
-                          diff_local_imp, sim_global_interm_imp, csd_interm_imp)
+                    for i in range(num_trainings):
+                        setup_seed(num_trainings)
+                        train(lr, kld_ne_imp, kld_local_imp, kld_interm_imp, kld_global_imp, recon_imp, diff_interm_imp,
+                              diff_local_imp, sim_global_interm_imp, csd_interm_imp)
 
 
     #kld=0 mit repara: ~1.00 - 1.05

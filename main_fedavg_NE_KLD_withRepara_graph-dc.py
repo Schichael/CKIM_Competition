@@ -60,7 +60,6 @@ def train(lr, kld_imp):
     init_cfg.federate.client_num = 1
 
     update_logger(init_cfg)
-    setup_seed(init_cfg.seed)
 
     # federated dataset might change the number of clients
     # thus, we allow the creation procedure of dataset to modify the global cfg object
@@ -91,5 +90,6 @@ if __name__ == '__main__':
     for lr in lrs:
         for kld_imp in kld_imps:
             for i in range(num_trainings):
+                setup_seed(i)
                 print(f"training run: {i + 1}")
                 train(lr, kld_imp)

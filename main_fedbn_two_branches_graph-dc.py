@@ -67,5 +67,6 @@ if __name__ == '__main__':
     num_trainings = 3
     for lr in lrs:
         for i in range(num_trainings):
+            setup_seed(i)
             print(f"training run: {i + 1}")
             train(lr)

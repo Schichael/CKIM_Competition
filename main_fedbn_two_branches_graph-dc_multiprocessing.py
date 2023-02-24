@@ -1,6 +1,9 @@
 import os
 import sys
 
+import torch
+from torch import multiprocessing
+
 # sys.path = ['~/Master-Thesis/CKIM_Competition/federatedscope', '~/Master-Thesis/CKIM_Competition',] + sys.path
 sys.path = ['/home/michael/Projects/CKIM_Competition/federatedscope', '/home/michael/Projects/CKIM_Competition',] + sys.path
 
@@ -13,6 +16,13 @@ from federatedscope.core.configs.config import global_cfg
 from federatedscope.core.fed_runner import FedRunner
 from yacs.config import CfgNode
 
+
+try:
+    torch.multiprocessing.set_start_method('spawn', force=True)
+except RuntimeError:
+    pass
+
+
 if os.environ.get('https_proxy'):
     del os.environ['https_proxy']
 if os.environ.get('http_proxy'):
@@ -20,7 +30,7 @@ if os.environ.get('http_proxy'):
 
 
 def train(lr):
-    cfg_file = 'scripts/B-FHTL_exp_scripts/Graph-DC/fedavg.yaml'
+    cfg_file = 'scripts/B-FHTL_exp_scripts/Graph-DC/fedbn.yaml'
     cfg_client = 'scripts/B-FHTL_exp_scripts/Graph-DC/cfg_per_client.yaml'
     # cfg_per_Client_ours_lr
     # cfg_per_client_ours_lr_local_steps
@@ -32,9 +42,10 @@ def train(lr):
 
     # init_cfg.data.subdirectory = 'graph_dt_backup/processed'
     # init_cfg.merge_from_list(args.opts)
-    init_cfg.data.save_dir = 'Graph-DC_FedAvg_lr_' + str(lr).replace('.', '_') + '_local_update_steps_2_PAPER'
-    init_cfg.train.lr = lr
-
+    init_cfg.data.save_dir = 'Graph-DC_FedBN_two_branches_lr_' + str(lr).replace('.',
+                                                                     '_') + '_local_update_steps_1'
+    init_cfg.train.optimizer.lr = lr
+    init_cfg.federate.client_num = 13
 
     init_cfg.model.dropout = 0.5
     update_logger(init_cfg)
@@ -61,10 +72,15 @@ def train(lr):
 
 
 if __name__ == '__main__':
-    lrs = [0.005, 0.001]
-    num_trainings = 1
+    lrs = [0.1]
+    num_trainings = 3
+
+    pool = multiprocessing.Pool(3)
+    processes = []
+
     for lr in lrs:
         for i in range(num_trainings):
             setup_seed(i)
             print(f"training run: {i + 1}")
-            train(lr)
+            processes.append(pool.apply_async(train, args=(lr,)))
+    result = [p.get() for p in processes]
