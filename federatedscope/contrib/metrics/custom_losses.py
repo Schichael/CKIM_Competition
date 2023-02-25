@@ -35,6 +35,12 @@ def loss_batch_csd_metric(ctx, **kwargs):
 def prox_loss_metric(ctx, **kwargs):
     return ctx.prox_loss_metric
 
+def mmd_loss_metric(ctx, **kwargs):
+    return ctx.mmd_loss_metric
+
+def swd_loss_metric(ctx, **kwargs):
+    return ctx.swd_loss_metric
+
 def call_prox_loss_metric(types):
     if "prox_loss" in types:
         return "prox_loss", prox_loss_metric
@@ -83,3 +89,12 @@ def call_loss_out_local_interm_metric(types):
 def call_loss_batch_csd_metric(types):
     if "loss_batch_csd" in types:
         return "loss_batch_csd", loss_batch_csd_metric
+
+def call_mmd_loss_metric(types):
+    if "mmd_loss" in types:
+        return "mmd_loss", mmd_loss_metric
+
+def call_swd_loss_metric(types):
+    if "swd_loss" in types:
+        return "swd_loss", mmd_loss_metric
+
