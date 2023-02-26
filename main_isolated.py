@@ -33,6 +33,7 @@ def train(client, lr):
     init_cfg.federate.client_num = 1
     init_cfg.train.optimizer.lr = lr
     update_logger(init_cfg)
+
     setup_seed(init_cfg.seed)
 
     # federated dataset might change the number of clients

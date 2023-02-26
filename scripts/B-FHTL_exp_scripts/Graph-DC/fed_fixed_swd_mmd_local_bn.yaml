@@ -27,7 +27,7 @@ model:
   out_channels: 0
   task: graphClassification
 personalization:
-  local_param: ['encoder_atom', 'encoder', 'clf', 'fixed_gnn', 'fixed_linear']   # to handle size-different pre & post layers
+  local_param: ['encoder_atom', 'encoder', 'clf', 'fixed_gnn', 'fixed_linear', 'norm']   # to handle size-different pre & post layers
 
 criterion:
   type: CrossEntropyLoss

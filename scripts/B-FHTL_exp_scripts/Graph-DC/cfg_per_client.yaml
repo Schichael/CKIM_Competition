@@ -1,39 +1,39 @@
 client_1:
   eval:
-    base: 0.86
+    base: 0.894737
 client_2:
   eval:
-    base: 0.823
+    base: 0.814815
 client_3:
   eval:
-    base: 0.830
+    base: 0.84397166
 client_4:
   eval:
-    base: 0.667
+    base: 0.756579
 client_5:
   eval:
-    base: 0.541
+    base: 0.59420299
 client_6:
   eval:
-    base: 0.853
+    base: 0.9433333
 client_7:
   eval:
-    base: 0.531
+    base: 0.76723466
 client_8:
   eval:
-    base: 0.663
+    base: 0.793779
 client_9:
   eval:
-    base: 0.567
+    base: 0.78127533
 client_10:
   eval:
-    base: 0.657
+    base: 0.647059
 client_11:
   eval:
-    base: 0.709
+    base: 0.66666633
 client_12:
   eval:
-    base: 0.985
+    base: 0.949999
 client_13:
   eval:
-    base: 0.703
+    base: 0.7933333

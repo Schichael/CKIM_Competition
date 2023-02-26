@@ -80,7 +80,7 @@ def train(lr, mmd_imp, swd_imp):
     init_cfg.merge_from_file(cfg_file)
     # init_cfg.data.subdirectory = 'graph_dt_backup/processed'
     # init_cfg.merge_from_list(args.opts)
-    init_cfg.data.save_dir = 'Graph-DC_fixed_mmd_swd_lr_' + str(lr).replace('.', '_') + '_mmd_'+ str(mmd_imp).replace('.', '_') + \
+    init_cfg.data.save_dir = 'TEST_Graph-DC_fixed_mmd_swd_lr_' + str(lr).replace('.', '_') + '_mmd_'+ str(mmd_imp).replace('.', '_') + \
     '_swd_' + str(swd_imp).replace('.', '_')
     """
         kld_ne_imps = [1] #A
@@ -136,8 +136,8 @@ def tmp(a):
 if __name__ == '__main__':
 
     num_trainings = 1
-    mmd_imps = [1, 0.1, 0.01, 0.001, 0.0001]
-    swd_imps = [1, 0.1, 0.01, 0.001, 0.0001]
+    mmd_imps = [0.1]
+    swd_imps = [0.1]
     #sim_losses = ["mse", "cosine"]
 
     # lrs = [0.001, 0.005, 0.01, 0.05, 0.1, 0.5]

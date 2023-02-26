@@ -96,5 +96,5 @@ def call_mmd_loss_metric(types):
 
 def call_swd_loss_metric(types):
     if "swd_loss" in types:
-        return "swd_loss", mmd_loss_metric
+        return "swd_loss", swd_loss_metric
 
