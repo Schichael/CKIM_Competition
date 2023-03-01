@@ -138,7 +138,7 @@ def tmp(a):
 
 if __name__ == '__main__':
 
-    num_trainings = 3
+    num_trainings = 4
     kld_ne_imps = [0] #A
     diff_imps = [0.001]   #NOW 0.0001, 0
     diff_interm_imp = 0.001 #F    HERE  [0.0001, 0.001]
@@ -149,7 +149,7 @@ if __name__ == '__main__':
 
     # lrs = [0.001, 0.005, 0.01, 0.05, 0.1, 0.5]
     lrs = [0.1]
-    pool = multiprocessing.Pool(3)
+    pool = multiprocessing.Pool(4)
     processes = []
     for lr in lrs:
         for sim in sims:
@@ -157,6 +157,7 @@ if __name__ == '__main__':
                 for sim_loss in sim_losses:
                     for kld_ne_imp in kld_ne_imps:
                         for i in range(num_trainings):
+                            setup_seed(i)
                             processes.append(pool.apply_async(train, args=(lr, kld_ne_imp, diff_imp, diff_imp, sim, csd_imp, sim_loss)))
     result = [p.get() for p in processes]
 
