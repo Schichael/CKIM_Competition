@@ -161,6 +161,8 @@ class LaplacianTrainer_SWD_MMD(GraphMiniBatchTrainer):
                     ctx.data['train'].dataset)) * param.grad.data.clone() ** 2
 
         loss = self.config.params.mmd_imp * ctx.mmd_loss + self.config.params.swd_imp * ctx.swd_loss
+        mmd_loss = ctx.mmd_loss
+        swd_loss = ctx.swd_loss
         loss.backward(retain_graph=False)
         if ctx.grad_clip > 0:
             torch.nn.utils.clip_grad_norm_(ctx.model.parameters(),

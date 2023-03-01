@@ -14,7 +14,7 @@ from federatedscope.gfl.model.gpr import GPR_Net
 from federatedscope.gfl.model.swd import swd
 
 EMD_DIM = 200
-#graph_level_fixed_sim
+#graph_level_fixed_sim_mmd_swd
 
 class AtomEncoder(torch.nn.Module):
     def __init__(self, in_channels, hidden):
