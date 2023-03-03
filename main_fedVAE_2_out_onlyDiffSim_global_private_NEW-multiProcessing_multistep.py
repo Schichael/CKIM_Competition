@@ -148,7 +148,7 @@ if __name__ == '__main__':
     sim_losses = ["mse"]
 
     # lrs = [0.001, 0.005, 0.01, 0.05, 0.1, 0.5]
-    lrs = [0.1]
+    lrs = [0.05]
     pool = multiprocessing.Pool(4)
     processes = []
     for lr in lrs:
