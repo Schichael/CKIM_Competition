@@ -22,7 +22,7 @@ from federatedscope.gfl.model.gat import GAT_Net
 from federatedscope.gfl.model.gin import GIN_Net
 from federatedscope.gfl.model.gpr import GPR_Net
 
-# graph_level_Dom_Sep_2out_only_diff(MINE)_sim_NEW
+# graph_level_Dom_Sep_2out_only_cosine_diff_sim_NEW
 
 EPS = 1e-15
 EMD_DIM = 200
@@ -121,9 +121,8 @@ class GNN_Net_Graph(torch.nn.Module):
         self.encoder_atom = AtomEncoder(in_channels, hidden)
         self.encoder = Linear(in_channels, hidden)
         self.cos_loss = torch.nn.CosineEmbeddingLoss()
-        # self.decoder = InnerProductDecoder()
+        self.decoder = InnerProductDecoder()
         self.eps = None
-        self.mine = MutualInformationEstimator(hidden, hidden, loss='mine')
 
         # GNN layer
         if gnn == 'gcn':
@@ -236,13 +235,10 @@ class GNN_Net_Graph(torch.nn.Module):
 
     def reparametrize_from_x(self, x, return_mu = False):
         """ x is just the normal output of the encoder
-
         Args:
             x:
             return_mu: If True, just return mu
-
         Returns:
-
         """
         mu_logvar = x.view(-1, 2, self.hidden)
         mu = mu_logvar[:, 0, :]
@@ -271,6 +267,13 @@ class GNN_Net_Graph(torch.nn.Module):
         y = torch.ones(x1.size(0)).to('cuda:0')
         recon_loss = self.cos_loss(x1, x2, y)
         return recon_loss
+
+    def cosine_diff_loss(self, x1, x2):
+        # cosine embedding loss: 1-cos(x1, x2). The 1 defines this loss function.
+        y = torch.ones(x1.size(0)).to('cuda:0')
+        y = -y
+        diff_loss = self.cos_loss(x1, x2, y)
+        return diff_loss
 
     def mse_loss(self, x1, x2):
         return torch.nn.functional.mse_loss(x1, x2, reduction='mean')
@@ -335,7 +338,7 @@ class GNN_Net_Graph(torch.nn.Module):
         x_interm = self.interm_linear_out1(x_interm_pooled).relu()
         x_global = self.global_linear_out1(x_global_enc_pooled).relu()
 
-        diff_local_interm = self.mine(x_local, x_interm)
+        diff_local_interm = self.cosine_diff_loss(x_local, x_interm)
         if sim_loss == "cosine":
             sim_global_interm = self.similarity_loss(x_interm, x_global)
         else:
