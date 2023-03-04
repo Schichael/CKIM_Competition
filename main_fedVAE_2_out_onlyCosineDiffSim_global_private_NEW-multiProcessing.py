@@ -101,7 +101,7 @@ def train(lr, kld_ne_imp, diff_interm_imp, diff_local_imp, sim_global_interm_imp
     init_cfg.params.sim_loss = sim_loss
 
 
-    init_cfg.federate.client_num = 1
+    init_cfg.federate.client_num = 13
     init_cfg.params.eps = 1e-15
 
 
