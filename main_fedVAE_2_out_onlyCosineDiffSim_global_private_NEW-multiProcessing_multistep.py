@@ -159,7 +159,7 @@ if __name__ == '__main__':
                     for kld_ne_imp in kld_ne_imps:
                         for i in range(num_trainings):
                             time.sleep(10)
-                            setup_seed(i+3)
+                            setup_seed(i)
                             processes.append(pool.apply_async(train, args=(lr, kld_ne_imp, diff_imp, diff_imp, sim, csd_imp, sim_loss)))
     result = [p.get() for p in processes]
 
