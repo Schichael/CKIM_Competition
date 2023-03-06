@@ -1,6 +1,5 @@
 import os
 import sys
-import time
 from multiprocessing import set_start_method
 
 import torch
@@ -63,7 +62,7 @@ if os.environ.get('http_proxy'):
 register_trainer('laplacian_trainer', call_laplacian_trainer)
 
 
-def train(lr, kld_ne_imp, diff_interm_imp, diff_local_imp, sim_global_interm_imp, csd_imp, sim_loss, local_steps):
+def train(lr, kld_ne_imp, diff_interm_imp, diff_local_imp, sim_global_interm_imp, csd_imp, sim_loss):
 
 
 
@@ -78,9 +77,9 @@ def train(lr, kld_ne_imp, diff_interm_imp, diff_local_imp, sim_global_interm_imp
     init_cfg.merge_from_file(cfg_file)
     # init_cfg.data.subdirectory = 'graph_dt_backup/processed'
     # init_cfg.merge_from_list(args.opts)
-    init_cfg.data.save_dir = 'Graph-DC_FedVAE_2_out_global_private_NEW_cosineDifF_sim_loss_multistep_lr_' + str(lr).replace('.', '_') + '_A'+ str(kld_ne_imp).replace('.', '_') + \
+    init_cfg.data.save_dir = 'Graph-DC_FedVAE_2_out_global_private_NEW_sim_loss_multistep_lr_' + str(lr).replace('.', '_') + '_A'+ str(kld_ne_imp).replace('.', '_') + \
     '_F' + str(diff_interm_imp).replace('.', '_') + \
-    '_G' + str(diff_local_imp).replace('.', '_') + '_H' + str(csd_imp).replace('.', '_') + '_I' + str(sim_global_interm_imp).replace('.', '_')+ '_J' + str(local_steps).replace('.', '_') + 'sim_loss_'+ sim_loss
+    '_G' + str(diff_local_imp).replace('.', '_') + '_H' + str(csd_imp).replace('.', '_') + '_I' + str(sim_global_interm_imp).replace('.', '_') + 'sim_loss_'+ sim_loss
     """
         kld_ne_imps = [1] #A
         kld_local_imp = 1 #B
@@ -101,7 +100,6 @@ def train(lr, kld_ne_imp, diff_interm_imp, diff_local_imp, sim_global_interm_imp
     init_cfg.params.csd_imp = csd_imp
     init_cfg.params.sim_loss = sim_loss
 
-    init_cfg.train.local_update_steps = local_steps
 
     init_cfg.federate.client_num = 13
     init_cfg.params.eps = 1e-15
@@ -140,18 +138,18 @@ def tmp(a):
 
 if __name__ == '__main__':
 
-    num_trainings = 1
+    num_trainings = 5
     kld_ne_imps = [0] #A
-    diff_imps = [0.1]   #NOW 0.0001, 0
+    diff_imps = [0.001]   #NOW 0.0001, 0
     diff_interm_imp = 0.001 #F    HERE  [0.0001, 0.001]
     diff_local_imp = 0.001 #G
     csd_imp = 10 #H
-    sims = [1] #I    HERE   [0, 1]   #NOW 0., 1
+    sims = [5] #I    HERE   [0, 1]   #NOW 0., 1
     sim_losses = ["mse"]
-
+    local_steps = 2
     # lrs = [0.001, 0.005, 0.01, 0.05, 0.1, 0.5]
     lrs = [0.1]
-    pool = multiprocessing.Pool(1)
+    pool = multiprocessing.Pool(5)
     processes = []
     for lr in lrs:
         for sim in sims:
@@ -159,9 +157,8 @@ if __name__ == '__main__':
                 for sim_loss in sim_losses:
                     for kld_ne_imp in kld_ne_imps:
                         for i in range(num_trainings):
-                            time.sleep(10)
-                            setup_seed(i+4)
-                            processes.append(pool.apply_async(train, args=(lr, kld_ne_imp, diff_imp, diff_imp, sim, csd_imp, sim_loss)))
+                            setup_seed(i)
+                            processes.append(pool.apply_async(train, args=(lr, kld_ne_imp, diff_imp, diff_imp, sim, csd_imp, sim_loss, local_steps)))
     result = [p.get() for p in processes]
 
     #kld=0 mit repara: ~1.00 - 1.05
