@@ -20,8 +20,15 @@ def diff_local_interm_metric(ctx, **kwargs):
 def diff_local_global_metric(ctx, **kwargs):
     return ctx.diff_local_global_metric
 
+def diff_local_fixed_metric(ctx, **kwargs):
+    return ctx.diff_local_fixed_metric
+
 def sim_global_interm_metric(ctx, **kwargs):
     return ctx.sim_global_interm_metric
+
+def sim_global_fixed_metric(ctx, **kwargs):
+    return ctx.sim_global_fixed_metric
+
 
 def loss_out_interm_metric(ctx, **kwargs):
     return ctx.loss_out_interm_metric
@@ -74,9 +81,17 @@ def call_diff_local_global_metric(types):
     if "diff_local_global" in types:
         return "diff_local_global", diff_local_global_metric
 
+def call_diff_local_fixed_metric(types):
+    if "diff_local_fixed" in types:
+        return "diff_local_fixed", diff_local_fixed_metric
+
 def call_sim_global_interm_metric(types):
     if "sim_global_interm" in types:
         return "sim_global_interm", sim_global_interm_metric
+
+def call_sim_global_fixed_metric(types):
+    if "sim_global_fixed" in types:
+        return "sim_global_fixed", sim_global_fixed_metric
 
 def call_loss_out_interm_metric(types):
     if "loss_out_interm" in types:

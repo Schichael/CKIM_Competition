@@ -1,16 +1,15 @@
 import os
 import sys
-import time
 from multiprocessing import set_start_method
 
 import torch
 from torch import multiprocessing
 
-from federatedscope.contrib.trainer.laplacian_trainer_dom_sep_2_out_only_diff_sim_only2branches_NEW import \
-    call_laplacian_trainer
+from federatedscope.contrib.trainer.laplacian_trainer_fixed_only_sim_diff import call_laplacian_trainer
 #from federatedscope.contrib.trainer.laplacian_trainer import call_laplacian_trainer
 from federatedscope.contrib.workers.laplacian_client import LaplacianClient
 from federatedscope.contrib.workers.laplacian_diff_global_out_client import LaplacianDiffGlobalOutClient
+from federatedscope.contrib.workers.laplacian_fixed_only_sim_diff_client import Laplacian_fixed_ONLY_SIM_DIFF_Client
 from federatedscope.contrib.workers.laplacian_server import LaplacianServer
 from federatedscope.contrib.workers.laplacian_server_dom_sep_VAE_1_out import LaplacianServerDomSepVAE_1_out
 from federatedscope.contrib.workers.laplacian_server_dom_sep_without_fixed import LaplacianServerDomSepWithoutFixed
@@ -31,7 +30,8 @@ from federatedscope.register import register_metric
 from federatedscope.contrib.metrics.custom_losses import call_recon_loss_metric, \
     call_kld_loss_encoder_metric, call_kld_global_metric, call_kld_interm_metric, call_kld_local_metric, \
     call_diff_local_interm_metric, call_sim_global_interm_metric, call_loss_out_interm_metric, \
-    call_loss_out_local_interm_metric, call_loss_batch_csd_metric, call_prox_loss_metric, call_diff_local_global_metric
+    call_loss_out_local_interm_metric, call_loss_batch_csd_metric, call_prox_loss_metric, call_diff_local_global_metric, \
+    call_diff_local_fixed_metric, call_sim_global_fixed_metric
 
 try:
     torch.multiprocessing.set_start_method('spawn', force=True)
@@ -41,8 +41,8 @@ except RuntimeError:
 
 metrics = [
     ('kld_loss_encoder', call_kld_loss_encoder_metric),
-    ('diff_local_global', call_diff_local_global_metric),
-    ('loss_batch_csd', call_loss_batch_csd_metric)
+    ('diff_local_fixed', call_diff_local_fixed_metric),
+    ('sim_global_fixed', call_sim_global_fixed_metric),
 ]
 for metric in metrics:
     register_metric(metric[0], metric[1])
@@ -67,11 +67,11 @@ if os.environ.get('http_proxy'):
 register_trainer('laplacian_trainer', call_laplacian_trainer)
 
 
-def train(lr, kld_ne_imp, diff_imp, csd_imp):
+def train(lr, kld_ne_imp, diff_imp, sim_imp, csd_imp, sim_loss):
 
 
 
-    cfg_file = 'scripts/B-FHTL_exp_scripts/Graph-DC/fedDomSep_VAE_only2branches.yaml'
+    cfg_file = 'scripts/B-FHTL_exp_scripts/Graph-DC/fedFOLA_with_fixed.yaml'
     cfg_client = 'scripts/B-FHTL_exp_scripts/Graph-DC/cfg_per_client.yaml'
     # cfg_per_Client_ours_lr
     # cfg_per_client_ours_lr_local_steps
@@ -82,8 +82,8 @@ def train(lr, kld_ne_imp, diff_imp, csd_imp):
     init_cfg.merge_from_file(cfg_file)
     # init_cfg.data.subdirectory = 'graph_dt_backup/processed'
     # init_cfg.merge_from_list(args.opts)
-    init_cfg.data.save_dir = 'Graph-DC_2_out_only_Diff_global_private_only_2_branches_NEW_sim_loss_multistep_lr_' + str(lr).replace('.', '_') + '_A'+ str(kld_ne_imp).replace('.', '_') + \
-    '_F' + str(diff_imp).replace('.', '_') + '_H' + str(csd_imp).replace('.', '_')
+    init_cfg.data.save_dir = 'Graph-DC_2_out_only_Diff_global_private_only_sim_diff_with_fixed_lr_' + str(lr).replace('.', '_') + '_A'+ str(kld_ne_imp).replace('.', '_') + \
+    '_B' + str(diff_imp).replace('.', '_') + '_C' + str(sim_imp).replace('.', '_') + '_D' + str(csd_imp).replace('.', '_') + 'sim_loss_' + sim_loss
     """
         kld_ne_imps = [1] #A
         kld_local_imp = 1 #B
@@ -99,6 +99,7 @@ def train(lr, kld_ne_imp, diff_imp, csd_imp):
     init_cfg.params = CN()
     init_cfg.params.kld_ne_imp = kld_ne_imp
     init_cfg.params.diff_imp = diff_imp
+    init_cfg.params.sim_imp = sim_imp
     init_cfg.params.csd_imp = csd_imp
 
     init_cfg.federate.client_num = 13
@@ -107,6 +108,7 @@ def train(lr, kld_ne_imp, diff_imp, csd_imp):
 
     init_cfg.params.p = 0.
     init_cfg.params.alpha = 0.1
+    init_cfg.params.sim_loss = sim_loss
 
     init_cfg.model.dropout = 0.5
     init_cfg.train.optimizer.lr = lr
@@ -127,24 +129,20 @@ def train(lr, kld_ne_imp, diff_imp, csd_imp):
         cfg_client = CfgNode.load_cfg(open(cfg_client, 'r')).clone()
     runner = FedRunner(data=data,
                    server_class = LaplacianServerDomSepVAE_1_out,
-                   client_class = LaplacianDomainSeparationVAE_2_out_onlyDiff_only2branches_NEW_Client,
+                   client_class = Laplacian_fixed_ONLY_SIM_DIFF_Client,
                    config=init_cfg.clone(),
                    client_config=cfg_client)
     _ = runner.run()
 
-def tmp(a):
-    print(a)
-    return a
 
 if __name__ == '__main__':
 
-    num_trainings = 4
-    kld_ne_imps = [0.1] #A
-    diff_imps = [0.0001]   #Now 0.0001
-    diff_interm_imp = 0.001 #F    HERE  [0.0001, 0.001]
-    diff_local_imp = 0.001 #G
-    csd_imp = 10 #H
-    #sim_losses = ["mse", "cosine"]
+    num_trainings = 1
+    kld_ne_imps = [0] #A
+    diff_imps = [0.01, 0.001, 0.0001, 0.00001]   # B
+    sim_imps = [1]  # C
+    csd_imp = 10  # D
+    sim_losses = ["mse"]
 
     # lrs = [0.001, 0.005, 0.01, 0.05, 0.1, 0.5]
     lrs = [0.1]
@@ -152,11 +150,12 @@ if __name__ == '__main__':
     processes = []
     for lr in lrs:
         for diff_imp in diff_imps:
-                for kld_ne_imp in kld_ne_imps:
-                    for i in range(num_trainings):
-                        time.sleep(10)
-                        setup_seed(i)
-                        processes.append(pool.apply_async(train, args=(lr, kld_ne_imp, diff_imp, csd_imp)))
+            for sim_imp in sim_imps:
+                for sim_loss in sim_losses:
+                    for kld_ne_imp in kld_ne_imps:
+                        for i in range(num_trainings):
+                            setup_seed(i)
+                            processes.append(pool.apply_async(train, args=(lr, kld_ne_imp, diff_imp, sim_imp, csd_imp, sim_loss)))
     result = [p.get() for p in processes]
 
     #kld=0 mit repara: ~1.00 - 1.05
