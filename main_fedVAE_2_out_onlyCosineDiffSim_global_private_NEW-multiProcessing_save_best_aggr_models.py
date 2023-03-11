@@ -42,7 +42,7 @@ metrics = [
 for metric in metrics:
     register_metric(metric[0], metric[1])
 
-#sys.path = ['~/Master-Thesis/CKIM_Competition/federatedscope',
+# sys.path = ['~/Master-Thesis/CKIM_Competition/federatedscope',
 # '~/Master-Thesis/CKIM_Competition',] + sys.path
 sys.path = ['/home/michael/Projects/CKIM_Competition/federatedscope', '/home/michael/Projects/CKIM_Competition',] + sys.path
 
@@ -78,7 +78,7 @@ def train(lr, kld_ne_imp, diff_interm_imp, diff_local_imp, sim_global_interm_imp
     init_cfg.merge_from_file(cfg_file)
     # init_cfg.data.subdirectory = 'graph_dt_backup/processed'
     # init_cfg.merge_from_list(args.opts)
-    init_cfg.data.save_dir = 'SAVED_MODEL_Graph-DC_FedVAE_2_out_global_private_NEW_sim_loss_lr_' + str(lr).replace('.', '_') + '_A'+ str(kld_ne_imp).replace('.', '_') + \
+    init_cfg.data.save_dir = 'SAVED_MODEL_Graph-DC_FedVAE_2_out_global_private_NEW_cosineDifF_sim_loss_lr_' + str(lr).replace('.', '_') + '_A'+ str(kld_ne_imp).replace('.', '_') + \
     '_F' + str(diff_interm_imp).replace('.', '_') + \
     '_G' + str(diff_local_imp).replace('.', '_') + '_H' + str(csd_imp).replace('.', '_') + '_I' + str(sim_global_interm_imp).replace('.', '_') + 'sim_loss_'+ sim_loss
     """
@@ -141,11 +141,11 @@ if __name__ == '__main__':
 
     num_trainings = 1
     kld_ne_imps = [0] #A
-    diff_imps = [0]   #NOW 0.0001, 0
+    diff_imps = [0.1]   #NOW 0.0001, 0
     diff_interm_imp = 0.001 #F    HERE  [0.0001, 0.001]
     diff_local_imp = 0.001 #G
     csd_imp = 10 #H
-    sims = [5] #I    HERE   [0, 1]   #NOW 0., 1
+    sims = [1] #I    HERE   [0, 1]   #NOW 0., 1
     sim_losses = ["mse"]
 
     # lrs = [0.001, 0.005, 0.01, 0.05, 0.1, 0.5]
