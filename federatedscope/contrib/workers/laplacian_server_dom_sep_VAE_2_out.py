@@ -212,6 +212,10 @@ class LaplacianServerDomSepVAE_1_out(Server):
         else:
             move_on_flag = False
 
+        if self._monitor.should_save:
+            print("HHEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEERRRRRRRRRREEEEEEEEEEEEEEEEEEEE")
+            self.aggregator.save_model(self._cfg.federate.save_to, self.state)
+
         return move_on_flag
 
 

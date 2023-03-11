@@ -341,6 +341,10 @@ class Server(Worker):
         else:
             move_on_flag = False
 
+        if self._monitor.should_save:
+            print("HHEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEERRRRRRRRRREEEEEEEEEEEEEEEEEEEE")
+            self.aggregator.save_model(self._cfg.federate.save_to, self.state)
+
         return move_on_flag
 
     def check_and_save(self):
@@ -398,7 +402,7 @@ class Server(Worker):
         To Save the best evaluation results.
         """
 
-        self.aggregator.save_model(self._cfg.federate.save_to, self.state)
+        # self.aggregator.save_model(self._cfg.federate.save_to, self.state)
         formatted_best_res = self._monitor.format_eval_res(
             results=self.best_results,
             rnd="Final",

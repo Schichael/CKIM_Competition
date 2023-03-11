@@ -1,4 +1,5 @@
 import os
+import shutil
 import time
 
 import torch
@@ -28,6 +29,14 @@ class LaplacianAggregator(Aggregator):
 
         ckpt = {'cur_round': cur_round, 'model': self.model.state_dict()}
         torch.save(ckpt, self.cfg.outdir + '/aggregated_model.pt')
+
+
+        if self.cfg.params.save_client_always:
+            for c in range(1, self.cfg.federate.sample_client_num+1):
+                print(f"saved model of client {c}")
+                path = self.cfg.outdir + f'/model{str(c)}.pth'
+                new_path = self.cfg.outdir + f'/best_aggr_model{str(c)}.pth'
+                shutil.copyfile(path, new_path)
 
     def aggregate(self, agg_info):
         # alpha, model_params, omega
