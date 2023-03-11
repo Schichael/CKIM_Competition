@@ -82,7 +82,7 @@ def train(lr, kld_ne_imp, diff_imp, sim_imp, csd_imp, sim_loss):
     init_cfg.merge_from_file(cfg_file)
     # init_cfg.data.subdirectory = 'graph_dt_backup/processed'
     # init_cfg.merge_from_list(args.opts)
-    init_cfg.data.save_dir = 'Graph-DC_2_out_only_Diff_global_private_only_sim_diff_with_fixed_lr_' + str(lr).replace('.', '_') + '_A'+ str(kld_ne_imp).replace('.', '_') + \
+    init_cfg.data.save_dir = 'AAAAATEST___Graph-DC_2_out_only_Diff_global_private_only_sim_diff_with_fixed_lr_' + str(lr).replace('.', '_') + '_A'+ str(kld_ne_imp).replace('.', '_') + \
     '_B' + str(diff_imp).replace('.', '_') + '_C' + str(sim_imp).replace('.', '_') + '_D' + str(csd_imp).replace('.', '_') + 'sim_loss_' + sim_loss
     """
         kld_ne_imps = [1] #A
@@ -105,13 +105,13 @@ def train(lr, kld_ne_imp, diff_imp, sim_imp, csd_imp, sim_loss):
     init_cfg.federate.client_num = 13
     init_cfg.params.eps = 1e-15
 
-
+    init_cfg.train.local_update_steps = 1
     init_cfg.params.p = 0.
     init_cfg.params.alpha = 0.1
     init_cfg.params.sim_loss = sim_loss
 
     init_cfg.model.dropout = 0.5
-    init_cfg.train.optimizer.lr = lr
+    init_cfg.train.optimizer.lr = 0
     update_logger(init_cfg)
 
     # federated dataset might change the number of clients
@@ -127,6 +127,7 @@ def train(lr, kld_ne_imp, diff_imp, sim_imp, csd_imp, sim_loss):
         cfg_client = None
     else:
         cfg_client = CfgNode.load_cfg(open(cfg_client, 'r')).clone()
+    print(init_cfg)
     runner = FedRunner(data=data,
                    server_class = LaplacianServerDomSepVAE_1_out,
                    client_class = Laplacian_fixed_ONLY_SIM_DIFF_Client,
@@ -139,14 +140,14 @@ if __name__ == '__main__':
 
     num_trainings = 1
     kld_ne_imps = [0] #A
-    diff_imps = [0.01, 0.001, 0.0001, 0.00001]   # B
+    diff_imps = [0.0001, 0.00001]   # B
     sim_imps = [1]  # C
     csd_imp = 10  # D
     sim_losses = ["mse"]
 
     # lrs = [0.001, 0.005, 0.01, 0.05, 0.1, 0.5]
     lrs = [0.1]
-    pool = multiprocessing.Pool(4)
+    pool = multiprocessing.Pool(1)
     processes = []
     for lr in lrs:
         for diff_imp in diff_imps:

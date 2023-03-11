@@ -22,7 +22,7 @@ from federatedscope.gfl.model.gat import GAT_Net
 from federatedscope.gfl.model.gin import GIN_Net
 from federatedscope.gfl.model.gpr import GPR_Net
 
-# graph_level_Dom_Sep_2out_only_diff_sim_with_fixed_NEW
+# graph_level_Dom_Sep_2out_only_diff_sim_NEW
 
 EPS = 1e-15
 EMD_DIM = 200
@@ -149,7 +149,7 @@ class GNN_Net_Graph(torch.nn.Module):
                                      hidden=hidden,
                                      max_depth=max_depth,
                                      dropout=dropout)
-            self.fixed_gnn = GIN_Net(in_channels=hidden,
+            self.interm_gnn = GIN_Net(in_channels=hidden,
                                      out_channels=hidden,
                                      hidden=hidden,
                                      max_depth=max_depth,
@@ -172,13 +172,11 @@ class GNN_Net_Graph(torch.nn.Module):
                                          max_depth=1,
                                          dropout=dropout)
             """
-            """
             self.decoder_gnn = GIN_Net(in_channels=hidden,
                                        out_channels=hidden,
                                        hidden=hidden,
                                        max_depth=max_depth,
                                        dropout=dropout)
-            """
 
 
         elif gnn == 'gpr':
@@ -205,7 +203,7 @@ class GNN_Net_Graph(torch.nn.Module):
 
         # Output layer
         self.global_linear_out1 = Linear(hidden, hidden)
-        self.fixed_linear_out1 = Linear(hidden, hidden)
+        self.interm_linear_out1 = Linear(hidden, hidden)
         self.local_linear_out1 = Linear(hidden, hidden)
 
 
@@ -214,12 +212,6 @@ class GNN_Net_Graph(torch.nn.Module):
         self.emb = Linear(edge_dim, hidden)
         self.vae_decoder = VAE_Decoder(hidden, hidden)
         # torch.nn.init.xavier_normal_(self.emb.weight.data)
-
-        for param in self.fixed_gnn.named_parameters():
-            param[1].requires_grad = False
-
-        for param in self.fixed_linear_out1.named_parameters():
-            param[1].requires_grad = False
 
     def kld_loss(self, x):
         mu = torch.mean(x, dim=-2)
@@ -328,27 +320,30 @@ class GNN_Net_Graph(torch.nn.Module):
         kld_loss_encoder = self.kld_loss(x)
 
         x_local_enc = self.local_gnn((x, edge_index))
-        x_fixed_enc = self.fixed_gnn((x, edge_index))
+        x_interm_enc = self.interm_gnn((x, edge_index))
         x_global_enc = self.global_gnn((x, edge_index))
 
         x_local_pooled = self.pooling(x_local_enc, batch)
-        x_fixed_pooled = self.pooling(x_fixed_enc, batch)
+        x_interm_pooled = self.pooling(x_interm_enc, batch)
         x_global_enc_pooled = self.pooling(x_global_enc, batch)
 
         x_local = self.local_linear_out1(x_local_pooled).relu()
-        x_fixed = self.fixed_linear_out1(x_fixed_pooled).relu()
+        x_interm = self.interm_linear_out1(x_interm_pooled).relu()
         x_global = self.global_linear_out1(x_global_enc_pooled).relu()
 
-        diff_local_fixed = self.diff_loss(x_local, x_fixed)
+        diff_local_interm = self.diff_loss(x_local, x_interm)
         if sim_loss == "cosine":
-            sim_global_fixed = self.similarity_loss(x_fixed, x_global)
+            sim_global_interm = self.similarity_loss(x_interm, x_global)
         else:
-            sim_global_fixed = self.mse_loss(x_fixed, x_global)
+            sim_global_interm = self.mse_loss(x_interm, x_global)
 
+        x_local_interm = x_local + x_interm
         x_global_local = x_global + x_local
 
+        x_local_interm = F.dropout(x_local_interm, self.dropout, training=self.training)
         x_global_local = F.dropout(x_global_local, self.dropout, training=self.training)
 
+        out_local_interm = self.clf(x_local_interm)
         out_global_local = self.clf(x_global_local)
 
 
@@ -357,7 +352,7 @@ class GNN_Net_Graph(torch.nn.Module):
         # return x, mi
         # return out_global, torch.Tensor([[0.1, 0.9]]*out_global.size(0)).float().to('cuda:0'), torch.Tensor([[0.1, 0.9]]*out_global.size(0)).float().to('cuda:0'), kld_loss_encoder, kld_global, torch.Tensor([0.]).float().to('cuda:0'), torch.Tensor([0.]).float().to('cuda:0'), torch.Tensor([0.]).float().to('cuda:0'), torch.Tensor([0.]).float().to('cuda:0'), torch.Tensor([0.]).float().to('cuda:0')
 
-        return out_global_local, kld_loss_encoder, diff_local_fixed, sim_global_fixed
+        return out_global_local, out_local_interm, kld_loss_encoder, diff_local_interm, sim_global_interm
 
 
 def dot_product_decode(Z):

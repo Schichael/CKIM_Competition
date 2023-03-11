@@ -1,4 +1,7 @@
+import os
 import time
+
+import torch
 
 from federatedscope.core.aggregator import Aggregator
 import copy
@@ -10,6 +13,21 @@ class LaplacianAggregator(Aggregator):
         self.omega=copy.deepcopy(omega)
         self.device = device
         self.cfg = config
+
+    def load_model(self, path):
+        assert self.model is not None
+
+        if os.path.exists(path):
+            ckpt = torch.load(path, map_location=self.device)
+            self.model.load_state_dict(ckpt['model'])
+            return ckpt['cur_round']
+        else:
+            raise ValueError("The file {} does NOT exist".format(path))
+    def save_model(self, path, cur_round=-1):
+        assert self.model is not None
+
+        ckpt = {'cur_round': cur_round, 'model': self.model.state_dict()}
+        torch.save(ckpt, self.cfg.outdir + '/aggregated_model.pt')
 
     def aggregate(self, agg_info):
         # alpha, model_params, omega

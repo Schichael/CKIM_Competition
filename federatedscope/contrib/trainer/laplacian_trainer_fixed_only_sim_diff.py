@@ -166,7 +166,7 @@ class LaplacianTrainer_fixed_ONLY_SIM_DIFF(GraphMiniBatchTrainer):
     def _hook_on_batch_backward(self, ctx):
 
         ctx.optimizer.zero_grad()
-        loss = ctx.loss_batch_ce + self.config.params.sim_imp * ctx.sim_global_fixed + self.config.params.diff_imp
+        loss = ctx.loss_batch_ce + self.config.params.sim_imp * ctx.sim_global_fixed + self.config.params.diff_imp * ctx.diff_local_fixed
         loss.backward(retain_graph=False)
         for name, param in ctx.model.named_parameters():
             if param.grad is not None:

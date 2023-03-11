@@ -398,8 +398,7 @@ class Server(Worker):
         To Save the best evaluation results.
         """
 
-        if self._cfg.federate.save_to != '':
-            self.aggregator.save_model(self._cfg.federate.save_to, self.state)
+        self.aggregator.save_model(self._cfg.federate.save_to, self.state)
         formatted_best_res = self._monitor.format_eval_res(
             results=self.best_results,
             rnd="Final",
