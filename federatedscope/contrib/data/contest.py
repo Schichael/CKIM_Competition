@@ -103,11 +103,12 @@ def load_fs_contest_data(config):
 
     # Build data
     dataset = FSContestDataset(config.data.root)
-    config.merge_from_list(['federate.client_num', len(dataset)])
+    # config.merge_from_list(['federate.client_num', len(dataset)])
 
     data_dict = {}
     # Build DataLoader dict
-    for client_idx in range(1, config.federate.client_num + 1):
+    i = 1
+    for client_idx in range(config.data.client, config.data.client + 1):
         dataloader_dict = {}
         tmp_dataset = []
         if 'train' in dataset[client_idx - 1]:
@@ -131,7 +132,7 @@ def load_fs_contest_data(config):
             # TODO: specific by the task
             # dataloader_dict['num_label'] = 0 # todo: set to 0, used in gfl/model_builder.py line74
             dataloader_dict['num_label'] = get_numGraphLabels(tmp_dataset)
-        data_dict[client_idx] = dataloader_dict
+        data_dict[i] = dataloader_dict
 
     return data_dict, config
 
