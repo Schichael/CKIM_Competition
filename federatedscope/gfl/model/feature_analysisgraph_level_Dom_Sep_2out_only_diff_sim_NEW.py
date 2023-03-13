@@ -22,7 +22,7 @@ from federatedscope.gfl.model.gat import GAT_Net
 from federatedscope.gfl.model.gin import GIN_Net
 from federatedscope.gfl.model.gpr import GPR_Net
 
-# graph_level_Dom_Sep_2out_only_cosine_diff_sim_NEW
+# feature_analysisgraph_level_Dom_Sep_2out_only_diff_sim_NEW
 
 EPS = 1e-15
 EMD_DIM = 200
@@ -268,13 +268,6 @@ class GNN_Net_Graph(torch.nn.Module):
         recon_loss = self.cos_loss(x1, x2, y)
         return recon_loss
 
-    def cosine_diff_loss(self, x1, x2):
-        # cosine embedding loss: 1-cos(x1, x2). The 1 defines this loss function.
-        y = torch.ones(x1.size(0)).to('cuda:0')
-        y = -y
-        diff_loss = self.cos_loss(x1, x2, y)
-        return diff_loss
-
     def mse_loss(self, x1, x2):
         return torch.nn.functional.mse_loss(x1, x2, reduction='mean')
 
@@ -338,7 +331,7 @@ class GNN_Net_Graph(torch.nn.Module):
         x_interm = self.interm_linear_out1(x_interm_pooled).relu()
         x_global = self.global_linear_out1(x_global_enc_pooled).relu()
 
-        diff_local_interm = self.cosine_diff_loss(x_local, x_interm)
+        diff_local_interm = self.diff_loss(x_local, x_interm)
         if sim_loss == "cosine":
             sim_global_interm = self.similarity_loss(x_interm, x_global)
         else:
@@ -359,7 +352,7 @@ class GNN_Net_Graph(torch.nn.Module):
         # return x, mi
         # return out_global, torch.Tensor([[0.1, 0.9]]*out_global.size(0)).float().to('cuda:0'), torch.Tensor([[0.1, 0.9]]*out_global.size(0)).float().to('cuda:0'), kld_loss_encoder, kld_global, torch.Tensor([0.]).float().to('cuda:0'), torch.Tensor([0.]).float().to('cuda:0'), torch.Tensor([0.]).float().to('cuda:0'), torch.Tensor([0.]).float().to('cuda:0'), torch.Tensor([0.]).float().to('cuda:0')
 
-        return out_global_local, out_local_interm, kld_loss_encoder, diff_local_interm, sim_global_interm
+        return out_global_local, out_local_interm, kld_loss_encoder, diff_local_interm, sim_global_interm, x_local, x_interm, x_global
 
 
 def dot_product_decode(Z):
