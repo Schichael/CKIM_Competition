@@ -5,7 +5,10 @@ from multiprocessing import set_start_method
 import torch
 from torch import multiprocessing
 
-from federatedscope.contrib.trainer.laplacian_trainer_dom_sep_2_out_only_diff_sim_NEW import call_laplacian_trainer
+from federatedscope.contrib.trainer.feature_analysis_laplacian_trainer_dom_sep_2_out_only_diff_sim_NEW import \
+    call_laplacian_trainer
+from federatedscope.contrib.workers.feature_analysis_laplacian_with_domain_separation_VAE_2_out_onlyDiffSim_NEW_client import \
+    FeatureAnalysis_LaplacianDomainSeparationVAE_2_out_onlyDiffSim_NEW_Client
 #from federatedscope.contrib.trainer.laplacian_trainer import call_laplacian_trainer
 from federatedscope.contrib.workers.laplacian_client import LaplacianClient
 from federatedscope.contrib.workers.laplacian_diff_global_out_client import LaplacianDiffGlobalOutClient
@@ -37,8 +40,8 @@ metrics = [
     ('kld_loss_encoder', call_kld_loss_encoder_metric),
     ('diff_local_interm', call_diff_local_interm_metric), ('sim_global_interm', call_sim_global_interm_metric),
     ('loss_out_local_interm', call_loss_out_local_interm_metric),
-    ('loss_batch_csd', call_loss_batch_csd_metric)
            ]
+
 for metric in metrics:
     register_metric(metric[0], metric[1])
 
@@ -62,11 +65,11 @@ if os.environ.get('http_proxy'):
 register_trainer('laplacian_trainer', call_laplacian_trainer)
 
 
-def train(lr, kld_ne_imp, diff_interm_imp, diff_local_imp, sim_global_interm_imp, csd_imp, sim_loss):
+def train(lr, kld_ne_imp, diff_interm_imp, diff_local_imp, sim_global_interm_imp, csd_imp, sim_loss, model_path):
 
 
 
-    cfg_file = 'scripts/B-FHTL_exp_scripts/Graph-DC/fedDomSep_VAE_global_private.yaml'
+    cfg_file = 'scripts/B-FHTL_exp_scripts/Graph-DC/fedDomSep_VAE_global_private_feature_analysis.yaml'
     cfg_client = 'scripts/B-FHTL_exp_scripts/Graph-DC/cfg_per_client.yaml'
     # cfg_per_Client_ours_lr
     # cfg_per_client_ours_lr_local_steps
@@ -77,7 +80,7 @@ def train(lr, kld_ne_imp, diff_interm_imp, diff_local_imp, sim_global_interm_imp
     init_cfg.merge_from_file(cfg_file)
     # init_cfg.data.subdirectory = 'graph_dt_backup/processed'
     # init_cfg.merge_from_list(args.opts)
-    init_cfg.data.save_dir = 'TEST_Graph-DC_FedVAE_2_out_global_private_NEW_sim_loss_lr_' + str(lr).replace('.', '_') + '_A'+ str(kld_ne_imp).replace('.', '_') + \
+    init_cfg.data.save_dir = 'Feature_Analysis_Graph-DC_FedVAE_2_out_global_private_NEW_sim_loss_lr_' + str(lr).replace('.', '_') + '_A'+ str(kld_ne_imp).replace('.', '_') + \
     '_F' + str(diff_interm_imp).replace('.', '_') + \
     '_G' + str(diff_local_imp).replace('.', '_') + '_H' + str(csd_imp).replace('.', '_') + '_I' + str(sim_global_interm_imp).replace('.', '_') + 'sim_loss_'+ sim_loss
     """
@@ -103,7 +106,7 @@ def train(lr, kld_ne_imp, diff_interm_imp, diff_local_imp, sim_global_interm_imp
 
     init_cfg.federate.client_num = 13
     init_cfg.params.eps = 1e-15
-
+    init_cfg.params.model_path = model_path
 
     init_cfg.params.p = 0.
     init_cfg.params.alpha = 0.1
@@ -127,7 +130,7 @@ def train(lr, kld_ne_imp, diff_interm_imp, diff_local_imp, sim_global_interm_imp
         cfg_client = CfgNode.load_cfg(open(cfg_client, 'r')).clone()
     runner = FedRunner(data=data,
                    server_class = LaplacianServerDomSepVAE_1_out,
-                   client_class = LaplacianDomainSeparationVAE_2_out_onlyDiffSim_NEW_Client,
+                   client_class = FeatureAnalysis_LaplacianDomainSeparationVAE_2_out_onlyDiffSim_NEW_Client,
                    config=init_cfg.clone(),
                    client_config=cfg_client)
     _ = runner.run()
@@ -140,13 +143,13 @@ if __name__ == '__main__':
 
     num_trainings = 1
     kld_ne_imps = [0] #A
-    diff_imps = [0.001]   #NOW 0.0001, 0
+    diff_imps = [0]   #NOW 0.0001, 0
     diff_interm_imp = 0.001 #F    HERE  [0.0001, 0.001]
     diff_local_imp = 0.001 #G
     csd_imp = 10 #H
     sims = [5] #I    HERE   [0, 1]   #NOW 0., 1
     sim_losses = ["mse"]
-
+    model_path = '/home/michael/Dropbox/Master thesis/results_graph-dc/save_models/normal_sim_diff_global_private/frobenius/SAVED_MODEL_Graph-DC_FedVAE_2_out_global_private_NEW_sim_loss_lr_0_1_A0_F0_G0_H10_I5sim_loss_mse/FedDomSep_GraphDC_gin_on_fs_contest_data_lr0.1_lstep1_/sub_exp_20230311213506'
     # lrs = [0.001, 0.005, 0.01, 0.05, 0.1, 0.5]
     lrs = [0.1]
     pool = multiprocessing.Pool(1)
@@ -158,7 +161,7 @@ if __name__ == '__main__':
                     for kld_ne_imp in kld_ne_imps:
                         for i in range(num_trainings):
                             setup_seed(i)
-                            processes.append(pool.apply_async(train, args=(lr, kld_ne_imp, diff_imp, diff_imp, sim, csd_imp, sim_loss)))
+                            processes.append(pool.apply_async(train, args=(lr, kld_ne_imp, diff_imp, diff_imp, sim, csd_imp, sim_loss, model_path)))
     result = [p.get() for p in processes]
 
     #kld=0 mit repara: ~1.00 - 1.05

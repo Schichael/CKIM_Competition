@@ -1,5 +1,6 @@
 import os
 import sys
+import time
 from multiprocessing import set_start_method
 
 import torch
@@ -99,7 +100,7 @@ def train(lr, kld_ne_imp, diff_interm_imp, diff_local_imp, sim_global_interm_imp
     init_cfg.params.sim_global_interm_imp = sim_global_interm_imp
     init_cfg.params.csd_imp = csd_imp
     init_cfg.params.sim_loss = sim_loss
-
+    init_cfg.params.save_client_always = False
 
     init_cfg.federate.client_num = 13
     init_cfg.params.eps = 1e-15
@@ -138,9 +139,9 @@ def tmp(a):
 
 if __name__ == '__main__':
 
-    num_trainings = 5
+    num_trainings = 4
     kld_ne_imps = [0] #A
-    diff_imps = [0.001]   #NOW 0.0001, 0
+    diff_imps = [0.0001]   #NOW 0.0001, 0
     diff_interm_imp = 0.001 #F    HERE  [0.0001, 0.001]
     diff_local_imp = 0.001 #G
     csd_imp = 10 #H
@@ -148,8 +149,8 @@ if __name__ == '__main__':
     sim_losses = ["mse"]
 
     # lrs = [0.001, 0.005, 0.01, 0.05, 0.1, 0.5]
-    lrs = [0.05]
-    pool = multiprocessing.Pool(5)
+    lrs = [0.1]
+    pool = multiprocessing.Pool(4)
     processes = []
     for lr in lrs:
         for sim in sims:
@@ -157,6 +158,7 @@ if __name__ == '__main__':
                 for sim_loss in sim_losses:
                     for kld_ne_imp in kld_ne_imps:
                         for i in range(num_trainings):
+                            time.sleep(10)
                             setup_seed(i)
                             processes.append(pool.apply_async(train, args=(lr, kld_ne_imp, diff_imp, diff_imp, sim, csd_imp, sim_loss)))
     result = [p.get() for p in processes]
