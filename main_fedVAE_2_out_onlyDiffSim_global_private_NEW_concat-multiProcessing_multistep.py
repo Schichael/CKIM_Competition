@@ -34,11 +34,17 @@ except RuntimeError:
     pass
 
 
+metrics = [
+    ('kld_loss_encoder', call_kld_loss_encoder_metric),
+    ('diff_local_interm', call_diff_local_interm_metric), ('sim_global_interm', call_sim_global_interm_metric),
+    ('loss_out_local_interm', call_loss_out_local_interm_metric),
+    ('loss_batch_csd', call_loss_batch_csd_metric)
+           ]
+for metric in metrics:
+    register_metric(metric[0], metric[1])
 
-
-#sys.path = ['~/Master-Thesis/CKIM_Competition/federatedscope',
-# '~/Master-Thesis/CKIM_Competition',] + sys.path
-sys.path = ['/home/michael/Projects/CKIM_Competition/federatedscope', '/home/michael/Projects/CKIM_Competition',] + sys.path
+sys.path = ['~/Master-Thesis/CKIM_Competition/federatedscope', '~/Master-Thesis/CKIM_Competition',] + sys.path
+# sys.path = ['/home/michael/Projects/CKIM_Competition/federatedscope', '/home/michael/Projects/CKIM_Competition',] + sys.path
 
 print(sys.path)
 from federatedscope.core.cmd_args import parse_args
@@ -54,11 +60,14 @@ if os.environ.get('https_proxy'):
 if os.environ.get('http_proxy'):
     del os.environ['http_proxy']
 
-def train(lr):
+register_trainer('laplacian_trainer', call_laplacian_trainer)
+
+
+def train(lr, kld_ne_imp, diff_interm_imp, diff_local_imp, sim_global_interm_imp, csd_imp, sim_loss):
 
 
 
-    cfg_file = 'scripts/B-FHTL_exp_scripts/Graph-DC/isolated.yaml'
+    cfg_file = 'scripts/B-FHTL_exp_scripts/Graph-DC/fedDomSep_VAE_global_private.yaml'
     cfg_client = 'scripts/B-FHTL_exp_scripts/Graph-DC/cfg_per_client.yaml'
     # cfg_per_Client_ours_lr
     # cfg_per_client_ours_lr_local_steps
@@ -69,10 +78,11 @@ def train(lr):
     init_cfg.merge_from_file(cfg_file)
     # init_cfg.data.subdirectory = 'graph_dt_backup/processed'
     # init_cfg.merge_from_list(args.opts)
-    init_cfg.data.save_dir = 'Graph-DC_isolated_2_branches_lr_' + str(lr).replace('.',
-                                                                                '_')
+    init_cfg.data.save_dir = 'Graph-DC_FedVAE_2_out_global_private_NEW_sim_loss_multistep_concat_lr_' + str(lr).replace('.', '_') + '_A'+ str(kld_ne_imp).replace('.', '_') + \
+    '_F' + str(diff_interm_imp).replace('.', '_') + \
+    '_G' + str(diff_local_imp).replace('.', '_') + '_H' + str(csd_imp).replace('.', '_') + '_I' + str(sim_global_interm_imp).replace('.', '_') + 'sim_loss_'+ sim_loss
     """
-        kld_ne_imps- = [1] #A
+        kld_ne_imps = [1] #A
         kld_local_imp = 1 #B
         kld_interm_imp = 1 #C
         kld_global_imps = [0.1] #D
@@ -84,11 +94,18 @@ def train(lr):
     """
 
     init_cfg.params = CN()
+    init_cfg.params.kld_ne_imp = kld_ne_imp
+    init_cfg.params.diff_interm_imp = diff_interm_imp
+    init_cfg.params.diff_local_imp = diff_local_imp
+    init_cfg.params.sim_global_interm_imp = sim_global_interm_imp
+    init_cfg.params.csd_imp = csd_imp
+    init_cfg.params.sim_loss = sim_loss
+    init_cfg.params.save_client_always = False
 
     init_cfg.federate.client_num = 13
     init_cfg.params.eps = 1e-15
 
-    init_cfg.params.save_client_always=False
+
     init_cfg.params.p = 0.
     init_cfg.params.alpha = 0.1
 
@@ -110,8 +127,8 @@ def train(lr):
     else:
         cfg_client = CfgNode.load_cfg(open(cfg_client, 'r')).clone()
     runner = FedRunner(data=data,
-                       server_class=get_server_cls(init_cfg),
-                       client_class=get_client_cls(init_cfg),
+                   server_class = LaplacianServerDomSepVAE_1_out,
+                   client_class = LaplacianDomainSeparationVAE_2_out_onlyDiffSim_NEW_Client,
                    config=init_cfg.clone(),
                    client_config=cfg_client)
     _ = runner.run()
@@ -121,15 +138,29 @@ def tmp(a):
     return a
 
 if __name__ == '__main__':
-    num_trainings = 4
+
+    num_trainings = 5
+    kld_ne_imps = [0] #A
+    diff_imps = [0.001]   #NOW 0.0001, 0
+    diff_interm_imp = 0.001 #F    HERE  [0.0001, 0.001]
+    diff_local_imp = 0.001 #G
+    csd_imp = 10 #H
+    sims = [5] #I    HERE   [0, 1]   #NOW 0., 1
+    sim_losses = ["mse"]
+
+    # lrs = [0.001, 0.005, 0.01, 0.05, 0.1, 0.5]
     lrs = [0.1]
-    pool = multiprocessing.Pool(4)
+    pool = multiprocessing.Pool(5)
     processes = []
     for lr in lrs:
-        for i in range(num_trainings):
-            setup_seed(i)
-            time.sleep(5)
-            processes.append(pool.apply_async(train, args=(lr,)))
+        for sim in sims:
+            for diff_imp in diff_imps:
+                for sim_loss in sim_losses:
+                    for kld_ne_imp in kld_ne_imps:
+                        for i in range(num_trainings):
+                            time.sleep(10)
+                            setup_seed(i+5)
+                            processes.append(pool.apply_async(train, args=(lr, kld_ne_imp, diff_imp, diff_imp, sim, csd_imp, sim_loss)))
     result = [p.get() for p in processes]
 
     #kld=0 mit repara: ~1.00 - 1.05

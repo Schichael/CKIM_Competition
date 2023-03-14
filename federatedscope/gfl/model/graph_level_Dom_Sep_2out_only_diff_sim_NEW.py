@@ -22,7 +22,7 @@ from federatedscope.gfl.model.gat import GAT_Net
 from federatedscope.gfl.model.gin import GIN_Net
 from federatedscope.gfl.model.gpr import GPR_Net
 
-# graph_level_Dom_Sep_2out_only_diff_sim_NEW_concat
+# graph_level_Dom_Sep_2out_only_diff_sim_NEW
 
 EPS = 1e-15
 EMD_DIM = 200
@@ -208,7 +208,7 @@ class GNN_Net_Graph(torch.nn.Module):
 
 
         # local
-        self.clf = Linear(2*hidden, out_channels)
+        self.clf = Linear(hidden, out_channels)
         self.emb = Linear(edge_dim, hidden)
         self.vae_decoder = VAE_Decoder(hidden, hidden)
         # torch.nn.init.xavier_normal_(self.emb.weight.data)
@@ -337,8 +337,8 @@ class GNN_Net_Graph(torch.nn.Module):
         else:
             sim_global_interm = self.mse_loss(x_interm, x_global)
 
-        x_local_interm = torch.concat((x_interm, x_local))
-        x_global_local = torch.concat((x_global, x_local))
+        x_local_interm = x_local + x_interm
+        x_global_local = x_global + x_local
 
         x_local_interm = F.dropout(x_local_interm, self.dropout, training=self.training)
         x_global_local = F.dropout(x_global_local, self.dropout, training=self.training)

@@ -1,0 +1,47 @@
+use_gpu: True
+device: 0
+early_stop:
+  patience: 1000
+  improve_indicator_mode: mean
+  the_smaller_the_better: False
+federate:
+
+  mode: 'standalone'
+  make_global_eval: False
+  method: 'FedDomSep_GraphDC'
+
+  total_round_num: 1000
+  share_local_model: False
+train:
+  local_update_steps: 1
+  batch_or_epoch: 'epoch'
+  optimizer:
+    lr: 0.5
+    weight_decay: 0.0005
+    type: SGD
+data:
+  root: data/
+  type: fs_contest_data
+  splitter: ooxx
+model:
+  type: gin
+  hidden: 64
+  out_channels: 0
+  task: graphClassification
+personalization:
+  local_param: [ 'encoder_atom', 'encoder', 'clf', 'local', 'decoder', 'global']  # pre, post + FedBN
+
+gcflplus:
+  EPS_1: 0.05 #0.05
+  EPS_2: 0.1
+  seq_length: 20
+  standardize: False
+
+criterion:
+  type: CrossEntropyLoss
+trainer:
+  type: graphminibatch_trainer
+eval:
+  report: ['avg']
+  freq: 1
+  metrics: ['imp_ratio', 'acc']

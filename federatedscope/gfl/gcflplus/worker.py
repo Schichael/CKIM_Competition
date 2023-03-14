@@ -89,6 +89,9 @@ class GCFLPlusServer(Server):
                     cluster_indices_new = []
                     for cluster in self.cluster_indices:
                         max_norm, mean_norm = self.compute_update_norm(cluster)
+                        if self.state == 300:
+                            mean_norm = 0
+                        logger.info(f"max_norm: {max_norm}, mean_norm: {mean_norm}")
                         # create new cluster
                         if mean_norm < self._cfg.gcflplus.EPS_1 and max_norm\
                                 > self._cfg.gcflplus.EPS_2 and len(
@@ -175,6 +178,7 @@ class GCFLPlusServer(Server):
                 self.history_results = merge_dict(self.history_results,
                                                   formatted_eval_res)
                 self.check_and_save()
+        logger.info(f"client clusters: {self.client_clusters}")
 
 
 class GCFLPlusClient(Client):
