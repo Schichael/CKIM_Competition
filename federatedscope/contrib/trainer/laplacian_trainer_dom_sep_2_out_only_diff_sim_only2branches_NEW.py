@@ -251,11 +251,35 @@ class LaplacianDomainSeparationVAE_2Out_OnlyDiffSim_only2branches_NEW_Trainer(Gr
         """
         ctx.optimizer.zero_grad()
 
-        loss = ctx.loss_out_global + self.config.params.diff_imp * ctx.diff_local_global + \
-               self.config.params.kld_ne_imp * ctx.kld_loss_encoder
-
+        # loss for output and KLD
+        loss = ctx.loss_out_global + self.config.params.kld_ne_imp * ctx.kld_loss_encoder
         loss.backward(retain_graph=True)
 
+        # Reset requires_grad
+        for param in ctx.model.named_parameters():
+            if param[0] in self.grad_params:
+                param[1].requires_grad = True
+
+        # loss for diff loss for global branch
+        for param in ctx.model.named_parameters():
+            if not (param[0].startswith("global")):
+                param[1].requires_grad = False
+
+        loss = self.config.params.diff_imp_global * ctx.diff_local_global
+        loss.backward(retain_graph=True)
+
+        # Reset requires_grad
+        for param in ctx.model.named_parameters():
+            if param[0] in self.grad_params:
+                param[1].requires_grad = True
+
+        # loss for diff loss for local branch
+        for param in ctx.model.named_parameters():
+            if not (param[0].startswith("local")):
+                param[1].requires_grad = False
+
+        loss = self.config.params.diff_imp_local * ctx.diff_local_global
+        loss.backward(retain_graph=True)
 
         # Compute omega
         for name, param in ctx.model.named_parameters():
