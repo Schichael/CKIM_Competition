@@ -281,6 +281,11 @@ class LaplacianDomainSeparationVAE_2Out_OnlyDiffSim_only2branches_NEW_Trainer(Gr
         loss = self.config.params.diff_imp_local * ctx.diff_local_global
         loss.backward(retain_graph=True)
 
+        # Reset requires_grad
+        for param in ctx.model.named_parameters():
+            if param[0] in self.grad_params:
+                param[1].requires_grad = True
+
         # Compute omega
         for name, param in ctx.model.named_parameters():
             if param.grad is not None and param.requires_grad is True:

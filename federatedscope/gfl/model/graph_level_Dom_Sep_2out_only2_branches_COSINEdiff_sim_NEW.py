@@ -122,6 +122,8 @@ class GNN_Net_Graph(torch.nn.Module):
         self.encoder = Linear(in_channels, hidden)
         self.eps = None
 
+        self.cos_loss = torch.nn.CosineEmbeddingLoss()
+
         # GNN layer
         if gnn == 'gcn':
             self.gnn = GCN_Net(in_channels=hidden,
@@ -259,6 +261,13 @@ class GNN_Net_Graph(torch.nn.Module):
         recon_loss = self.cos_loss(x1, x2, y)
         return recon_loss
 
+    def cosine_diff_loss(self, x1, x2):
+        # cosine embedding loss: 1-cos(x1, x2). The 1 defines this loss function.
+        y = torch.ones(x1.size(0)).to('cuda:0')
+        y = -y
+        diff_loss = self.cos_loss(x1, x2, y)
+        return diff_loss
+
     def mse_loss(self, x1, x2):
         return torch.nn.functional.mse_loss(x1, x2, reduction='mean')
 
@@ -319,7 +328,7 @@ class GNN_Net_Graph(torch.nn.Module):
         x_local = self.local_linear_out1(x_local_pooled).relu()
         x_global = self.global_linear_out1(x_global_enc_pooled).relu()
 
-        diff_local_global = self.diff_loss(x_local, x_global)
+        diff_local_global = self.cosine_diff_loss(x_local, x_global)
 
         x_local = F.dropout(x_local, self.dropout, training=self.training)
         x_global = F.dropout(x_global, self.dropout, training=self.training)
