@@ -22,7 +22,7 @@ from federatedscope.gfl.model.gat import GAT_Net
 from federatedscope.gfl.model.gin import GIN_Net
 from federatedscope.gfl.model.gpr import GPR_Net
 
-# graph_level_Dom_Sep_2out_only_diff_sim_NEW_concat
+# graph_level_Dom_Sep_1out_only_COSINEdiff_no_global_NEW
 
 EPS = 1e-15
 EMD_DIM = 200
@@ -155,11 +155,6 @@ class GNN_Net_Graph(torch.nn.Module):
                                      max_depth=max_depth,
                                      dropout=dropout)
 
-            self.global_gnn = GIN_Net(in_channels=hidden,
-                                      out_channels=hidden,
-                                      hidden=hidden,
-                                      max_depth=max_depth,
-                                      dropout=dropout)
             """
             self.global_gnn_mu = GIN_Net(in_channels=hidden,
                                       out_channels=hidden,
@@ -208,7 +203,7 @@ class GNN_Net_Graph(torch.nn.Module):
 
 
         # local
-        self.clf = Linear(2*hidden, out_channels)
+        self.clf = Linear(hidden, out_channels)
         self.emb = Linear(edge_dim, hidden)
         self.vae_decoder = VAE_Decoder(hidden, hidden)
         # torch.nn.init.xavier_normal_(self.emb.weight.data)
@@ -235,10 +230,13 @@ class GNN_Net_Graph(torch.nn.Module):
 
     def reparametrize_from_x(self, x, return_mu = False):
         """ x is just the normal output of the encoder
+
         Args:
             x:
             return_mu: If True, just return mu
+
         Returns:
+
         """
         mu_logvar = x.view(-1, 2, self.hidden)
         mu = mu_logvar[:, 0, :]
@@ -261,6 +259,13 @@ class GNN_Net_Graph(torch.nn.Module):
             return self.eps.mul(std).add_(mu)
         else:
             return mu
+
+    def cosine_diff_loss(self, x1, x2):
+        # cosine embedding loss: 1-cos(x1, x2). The 1 defines this loss function.
+        y = torch.ones(x1.size(0)).to('cuda:0')
+        y = -y
+        diff_loss = self.cos_loss(x1, x2, y)
+        return diff_loss
 
     def similarity_loss(self, x1, x2):
         # cosine embedding loss: 1-cos(x1, x2). The 1 defines this loss function.
@@ -321,30 +326,23 @@ class GNN_Net_Graph(torch.nn.Module):
 
         x_local_enc = self.local_gnn((x, edge_index))
         x_interm_enc = self.interm_gnn((x, edge_index))
-        x_global_enc = self.global_gnn((x, edge_index))
 
         x_local_pooled = self.pooling(x_local_enc, batch)
         x_interm_pooled = self.pooling(x_interm_enc, batch)
-        x_global_enc_pooled = self.pooling(x_global_enc, batch)
 
         x_local = self.local_linear_out1(x_local_pooled).relu()
         x_interm = self.interm_linear_out1(x_interm_pooled).relu()
-        x_global = self.global_linear_out1(x_global_enc_pooled).relu()
 
-        diff_local_interm = self.diff_loss(x_local, x_interm)
-        if sim_loss == "cosine":
-            sim_global_interm = self.similarity_loss(x_interm, x_global)
-        else:
-            sim_global_interm = self.mse_loss(x_interm, x_global)
+        diff_local_interm = self.cosine_diff_loss(x_local, x_interm)
 
-        x_local_interm = torch.concat((x_interm, x_local))
-        x_global_local = torch.concat((x_global, x_local))
+
+        x_local_interm = x_local + x_interm
 
         x_local_interm = F.dropout(x_local_interm, self.dropout, training=self.training)
-        x_global_local = F.dropout(x_global_local, self.dropout, training=self.training)
+        x_interm = F.dropout(x_interm, self.dropout, training=self.training)
 
         out_local_interm = self.clf(x_local_interm)
-        out_global_local = self.clf(x_global_local)
+        out_interm = self.clf(x_interm)
 
 
         # recon loss adjacency matrix
@@ -352,7 +350,7 @@ class GNN_Net_Graph(torch.nn.Module):
         # return x, mi
         # return out_global, torch.Tensor([[0.1, 0.9]]*out_global.size(0)).float().to('cuda:0'), torch.Tensor([[0.1, 0.9]]*out_global.size(0)).float().to('cuda:0'), kld_loss_encoder, kld_global, torch.Tensor([0.]).float().to('cuda:0'), torch.Tensor([0.]).float().to('cuda:0'), torch.Tensor([0.]).float().to('cuda:0'), torch.Tensor([0.]).float().to('cuda:0'), torch.Tensor([0.]).float().to('cuda:0')
 
-        return out_global_local, out_local_interm, kld_loss_encoder, diff_local_interm, sim_global_interm
+        return out_local_interm, out_interm, kld_loss_encoder, diff_local_interm
 
 
 def dot_product_decode(Z):

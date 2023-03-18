@@ -262,7 +262,7 @@ class LaplacianDomainSeparationVAE_1Out_OnlyDiffProxLoss_NEW_Trainer(GraphMiniBa
             if not (param[0].startswith("interm")):
                 param[1].requires_grad = False
 
-        loss = ctx.loss_out_local_interm + self.config.params.diff_interm_imp * ctx.diff_local_interm
+        loss = ctx.loss_out_interm + self.config.params.diff_interm_imp * ctx.diff_local_interm
         # loss = ctx.loss_out_global
 
         loss.backward(retain_graph=True)
@@ -274,9 +274,10 @@ class LaplacianDomainSeparationVAE_1Out_OnlyDiffProxLoss_NEW_Trainer(GraphMiniBa
 
         # backward through the global and local branch. Only backward local branch
         for param in ctx.model.named_parameters():
-            if (param[0].startswith("local")):
+            if not param[0].startswith("local"):
                 param[1].requires_grad = False
-        loss = ctx.loss_out_interm + self.config.params.diff_interm_imp * ctx.diff_local_interm
+        loss = ctx.loss_out_local_interm + self.config.params.diff_local_imp * \
+               ctx.diff_local_interm
         loss.backward(retain_graph=True)
 
         # Reset requires_grad

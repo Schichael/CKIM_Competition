@@ -426,8 +426,9 @@ class Client(Worker):
                     state=self.state,
                     content=metrics))
 
-        if (self._monitor.should_save or self._cfg.params.save_client_always) and self._cfg.federate.total_round_num != 2:
-            path = self._cfg.outdir + f'/model{self._ID}.pth'
+        if (self._monitor.should_save or self._cfg.params.save_client_always) and \
+                self._cfg.federate.total_round_num >= 1:
+            path = self._cfg.outdir + f'/model{self._ID}_{self.state%2}.pth'
             logger.info(f"Client: #{self._ID}, val_imp_ratio: {self._monitor.current_best}. model saved at {path}")
             #print("Before saving")
             self.trainer.save_model(path)

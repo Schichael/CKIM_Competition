@@ -31,10 +31,10 @@ class LaplacianAggregator(Aggregator):
         torch.save(ckpt, self.cfg.outdir + '/aggregated_model.pt')
 
 
-        if self.cfg.params.save_client_always:
+        if self.cfg.params.save_client_always and cur_round >= 3:
             for c in range(1, self.cfg.federate.sample_client_num+1):
-                print(f"saved model of client {c}")
-                path = self.cfg.outdir + f'/model{str(c)}.pth'
+                #path = self.cfg.outdir + f'/model{str(c)}.pth'
+                path = self.cfg.outdir + f'/model{str(c)}_{cur_round % 2}.pth'
                 new_path = self.cfg.outdir + f'/best_aggr_model{str(c)}.pth'
                 shutil.copyfile(path, new_path)
 
