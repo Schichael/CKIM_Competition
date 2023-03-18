@@ -93,11 +93,13 @@ class GCFLPlusServer(Server):
                             mean_norm = 0
                         logger.info(f"max_norm: {max_norm}, mean_norm: {mean_norm}")
                         # create new cluster
-                        if mean_norm < self._cfg.gcflplus.EPS_1 and max_norm\
-                                > self._cfg.gcflplus.EPS_2 and len(
-                                cluster) > 2 and self.state > 20 and all(
-                                    len(value) >= self._cfg.gcflplus.seq_length
-                                    for value in self.seqs_grads.values()):
+                        #if mean_norm < self._cfg.gcflplus.EPS_1 and max_norm\
+                        #        > self._cfg.gcflplus.EPS_2 and len(
+                        #        cluster) > 2 and self.state > 20 and all(
+                        #            len(value) >= self._cfg.gcflplus.seq_length
+                        #            for value in self.seqs_grads.values()):
+                        if self.state ==1000 or self.state == 1500:
+
                             _, model_para_cluster, _, _ = self.msg_buffer[
                                 'train'][self.state][cluster[0]]
                             tmp = [

@@ -120,10 +120,16 @@ class GCFL_PLUS_LaplacianServerDomSepVAE_1_out(Server):
             for k in model_para.keys():
                 dW[k] = client_dw[k]
             update_norm = norm(dW)
+            x = torch.cat([v.flatten() for v in dW.values()])
+            size_ = x.size()
             if update_norm > max_norm:
                 max_norm = update_norm
             cluster_dWs.append(
                 torch.cat([value.flatten() for value in dW.values()]))
+        x = torch.mean(torch.stack(cluster_dWs),
+                                          dim=0)
+        y = torch.norm(x)
+        size = x.size()
         mean_norm = torch.norm(torch.mean(torch.stack(cluster_dWs),
                                           dim=0)).item()
         return max_norm, mean_norm
@@ -180,11 +186,9 @@ class GCFL_PLUS_LaplacianServerDomSepVAE_1_out(Server):
                         logger.info(f"max_norm: {max_norm}, mean_norm: {mean_norm}")
                         logger.info(f"max_norm: {max_norm}, mean_norm: {mean_norm}")
                         # create new cluster
-                        if mean_norm < self._cfg.gcflplus.EPS_1 and max_norm \
-                                > self._cfg.gcflplus.EPS_2 and len(
-                            cluster) > 2 and self.state > 20 and all(
-                            len(value) >= self._cfg.gcflplus.seq_length
-                            for value in self.seqs_grads.values()):
+                        #if mean_norm < self._cfg.gcflplus.EPS_1 and max_norm > self._cfg.gcflplus.EPS_2 and len(
+                        #    cluster) > 2 and self.state > 20 and all(len(value) >= self._cfg.gcflplus.seq_length for value in self.seqs_grads.values()):
+                        if self.state == 5:
                             _, model_para_cluster,_, _, _ = self.msg_buffer[
                                 'train'][self.state][cluster[0]]
                             tmp = [
@@ -222,71 +226,69 @@ class GCFL_PLUS_LaplacianServerDomSepVAE_1_out(Server):
                             B_val, rnd=self.state, role='Server #')
                         logger.info(formatted_eval_res)
 
-                    self.state += 1
-                    if self.state % self._cfg.eval.freq == 0 and self.state != \
-                            self.total_round_num:
-                        #  Evaluate
-                        logger.info(
-                            f'Server #{self.ID}: Starting evaluation at the end '
-                            f'of round {self.state - 1}.')
-                        self.eval()
+                self.state += 1
+                if self.state % self._cfg.eval.freq == 0 and self.state != \
+                        self.total_round_num:
+                    #  Evaluate
+                    logger.info(
+                        f'Server #{self.ID}: Starting evaluation at the end '
+                        f'of round {self.state - 1}.')
+                    self.eval()
 
-                    if self.state < self.total_round_num:
-                        for cluster in self.cluster_indices:
-                            msg_list = list()
-                            for key in cluster:
-                                content = self.msg_buffer['train'][self.state -
-                                                                   1][key]
-                                train_data_size, model_para, omega_set, client_dw, \
-                                convGradsNorm = content
-                                msg_list.append((train_data_size, model_para, omega_set))
-
-
-
-                            # Aggregate
-                            agg_info = {
-                                'client_feedback': msg_list,
-                                'recover_fun': self.recover_fun,
-                                'eps': self.eps,
-                                'p': self.p,
-                                'server_omega': self.omega_set
-                            }
-                            with torch.no_grad():
-                                new_param, new_omega = aggregator.aggregate(agg_info)
-                                # for key in result:
-                                #    model.state_dict()[key].data.copy_(result[key])
-                                # model.load_state_dict(new_param, strict=False)
-
-                                #print("load state dict")
-                                #for name, param in model.state_dict:
-                                #    print(name)
-                                #for key in new_param:
-                                #    print(key)
-                                #for name, param in self.model.named_parameters():
-                                #    self.omega_set[name] = copy.deepcopy(new_omega[name])
-                                model.load_state_dict(new_param, strict=False)
-                                for name, param in self.model.named_parameters():
-                                    #model.state_dict()[name].data.copy_(new_param[name])  #
-                                    # https://discuss.pytorch.org/t/how-can-i-modify-certain-layers-weight-and-bias/11638
-                                    self.omega_set[name] = copy.deepcopy(new_omega[name])
+                if self.state < self.total_round_num:
+                    for cluster in self.cluster_indices:
+                        msg_list = list()
+                        for key in cluster:
+                            content = self.msg_buffer['train'][self.state -
+                                                               1][key]
+                            train_data_size, model_para, omega_set, client_dw, \
+                            convGradsNorm = content
+                            msg_list.append((train_data_size, model_para, omega_set))
 
 
-                                model.load_state_dict(new_param, strict=False)
 
-                                self.broadcast_model_para(
-                                    msg_type='model_para',
-                                    sample_client_num=self.sample_client_num)
-                                # aggregator.update(result)
-                                # Send to Clients
+                        # Aggregate
+                        agg_info = {
+                            'client_feedback': msg_list,
+                            'recover_fun': self.recover_fun,
+                            'eps': self.eps,
+                            'p': self.p,
+                            'server_omega': self.omega_set
+                        }
+                        with torch.no_grad():
+                            new_param, new_omega = aggregator.aggregate(agg_info)
+                            # for key in result:
+                            #    model.state_dict()[key].data.copy_(result[key])
+                            # model.load_state_dict(new_param, strict=False)
+
+                            #print("load state dict")
+                            #for name, param in model.state_dict:
+                            #    print(name)
+                            #for key in new_param:
+                            #    print(key)
+                            #for name, param in self.model.named_parameters():
+                            #    self.omega_set[name] = copy.deepcopy(new_omega[name])
+                            model.load_state_dict(new_param, strict=False)
+                            for name, param in self.model.named_parameters():
+                                #model.state_dict()[name].data.copy_(new_param[name])  #
+                                # https://discuss.pytorch.org/t/how-can-i-modify-certain-layers-weight-and-bias/11638
+                                self.omega_set[name] = copy.deepcopy(new_omega[name])
+                            print("HERE")
+                            self.broadcast_model_para_cluster(
+                                cluster=cluster,
+                                msg_type='model_para',
+                                sample_client_num=self.sample_client_num)
+                            # aggregator.update(result)
+                            # Send to Clients
 
 
-                        # Move to next round of training
+                    # Move to next round of training
 
-                        logger.info(
-                            f'----------- Starting a new training round (Round '
-                            f'#{self.state}) -------------')
-                        # Clean the msg_buffer
-                        self.msg_buffer['train'][self.state - 1].clear()
+                    logger.info(
+                        f'----------- Starting a new training round (Round '
+                        f'#{self.state}) -------------')
+                    # Clean the msg_buffer
+                    self.msg_buffer['train'][self.state - 1].clear()
 
 
                 else:
@@ -316,6 +318,66 @@ class GCFL_PLUS_LaplacianServerDomSepVAE_1_out(Server):
             self.aggregator.save_model(self._cfg.federate.save_to, self.state)
 
         return move_on_flag
+
+
+    def broadcast_model_para_cluster(self,
+                             cluster,
+                             msg_type='model_para',
+                             sample_client_num=-1,
+                             filter_unseen_clients=True):
+        """
+        To broadcast the message to all clients or sampled clients
+
+        Arguments:
+            msg_type: 'model_para' or other user defined msg_type
+            sample_client_num: the number of sampled clients in the broadcast
+                behavior. And sample_client_num = -1 denotes to broadcast to
+                all the clients.
+            filter_unseen_clients: whether filter out the unseen clients that
+                do not contribute to FL process by training on their local
+                data and uploading their local model update. The splitting is
+                useful to check participation generalization gap in [ICLR'22,
+                What Do We Mean by Generalization in Federated Learning?]
+                You may want to set it to be False when in evaluation stage
+        """
+        if filter_unseen_clients:
+            # to filter out the unseen clients when sampling
+            self.sampler.change_state(self.unseen_clients_id, 'unseen')
+
+        #if sample_client_num > 0:
+        #    receiver = self.sampler.sample(size=sample_client_num)
+        #else:
+            # broadcast to all clients
+        #    receiver = list(self.comm_manager.neighbors.keys())
+        #    if msg_type == 'model_para':
+        #        self.sampler.change_state(receiver, 'working')
+
+        if self._noise_injector is not None and msg_type == 'model_para':
+            # Inject noise only when broadcast parameters
+            for model_idx_i in range(len(self.models)):
+                num_sample_clients = [
+                    v["num_sample"] for v in self.join_in_info.values()
+                ]
+                self._noise_injector(self._cfg, num_sample_clients,
+                                     self.models[model_idx_i])
+
+        skip_broadcast = self._cfg.federate.method in ["local", "global"]
+        model_para = {} if skip_broadcast else self.model.state_dict()
+        omega_set = {} if skip_broadcast else self.omega_set
+
+        self.comm_manager.send(
+            Message(msg_type=msg_type,
+                    sender=self.ID,
+                    receiver=cluster.tolist(),
+                    state=min(self.state, self.total_round_num),
+                    content=[model_para, omega_set]))
+        if self._cfg.federate.online_aggr:
+            for idx in range(self.model_num):
+                self.aggregators[idx].reset()
+
+        if filter_unseen_clients:
+            # restore the state of the unseen clients within sampler
+            self.sampler.change_state(self.unseen_clients_id, 'seen')
 
 
     def broadcast_model_para(self,

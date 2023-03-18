@@ -34,7 +34,7 @@ personalization:
 gcflplus:
   EPS_1: 0.05 #0.05
   EPS_2: 0.1
-  seq_length: 20
+  seq_length: 5
   standardize: False
 
 criterion:

@@ -70,7 +70,7 @@ def train(lr, kld_ne_imp, diff_interm_imp, diff_local_imp, sim_global_interm_imp
 
 
 
-    cfg_file = 'scripts/B-FHTL_exp_scripts/Graph-DC/gcfl_plus.yaml'
+    cfg_file = 'scripts/B-FHTL_exp_scripts/Graph-DC/gcfl_plus_global_provate_2_out.yaml'
     cfg_client = 'scripts/B-FHTL_exp_scripts/Graph-DC/cfg_per_client.yaml'
     # cfg_per_Client_ours_lr
     # cfg_per_client_ours_lr_local_steps
@@ -106,7 +106,7 @@ def train(lr, kld_ne_imp, diff_interm_imp, diff_local_imp, sim_global_interm_imp
 
     init_cfg.params.save_client_always = False
 
-    init_cfg.federate.client_num = 13
+    init_cfg.federate.client_num = 3
     init_cfg.params.eps = 1e-15
 
 
@@ -154,7 +154,7 @@ if __name__ == '__main__':
 
     # lrs = [0.001, 0.005, 0.01, 0.05, 0.1, 0.5]
     lrs = [0.1]
-    pool = multiprocessing.Pool(1)
+    pool = multiprocessing.Pool(2)
     processes = []
     for lr in lrs:
         for sim in sims:

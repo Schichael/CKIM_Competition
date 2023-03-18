@@ -1,7 +1,7 @@
 use_gpu: True
 device: 0
 early_stop:
-  patience: 1000
+  patience: 2000
   improve_indicator_mode: mean
   the_smaller_the_better: False
 federate:
@@ -10,7 +10,7 @@ federate:
   make_global_eval: False
   method: gcflplus
 
-  total_round_num: 1000
+  total_round_num: 2000
   share_local_model: False
 train:
   local_update_steps: 1
@@ -34,7 +34,7 @@ personalization:
 gcflplus:
   EPS_1: 0.05 #0.05
   EPS_2: 0.1
-  seq_length: 5
+  seq_length: 50
   standardize: False
 
 criterion:

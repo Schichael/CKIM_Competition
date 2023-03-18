@@ -1,6 +1,9 @@
 import os
 import sys
 
+import torch
+from torch import multiprocessing
+
 from federatedscope.contrib.trainer.laplacian_trainer_dom_sep_2_out_only_diff_sim_NEW import call_laplacian_trainer
 #from federatedscope.contrib.trainer.laplacian_trainer import call_laplacian_trainer
 from federatedscope.contrib.workers.laplacian_client import LaplacianClient
@@ -38,6 +41,13 @@ from federatedscope.core.configs.config import global_cfg, CN
 from federatedscope.core.fed_runner import FedRunner
 from yacs.config import CfgNode
 
+
+try:
+    torch.multiprocessing.set_start_method('spawn', force=True)
+except RuntimeError:
+    pass
+
+
 if os.environ.get('https_proxy'):
     del os.environ['https_proxy']
 if os.environ.get('http_proxy'):
@@ -61,7 +71,7 @@ def train(lr):
     init_cfg.merge_from_file(cfg_file)
     # init_cfg.data.subdirectory = 'graph_dt_backup/processed'
     # init_cfg.merge_from_list(args.opts)
-    init_cfg.data.save_dir = 'GCFL_plus_lr_0_1'
+    init_cfg.data.save_dir = 'GCFL_plus_FedBN_lr_0_1'
     """
         kld_ne_imps = [1] #A
         kld_local_imp = 1 #B
@@ -115,17 +125,24 @@ def train(lr):
 
 if __name__ == '__main__':
 
-    num_trainings = 1
+    num_trainings = 4
 
 
     # lrs = [0.001, 0.005, 0.01, 0.05, 0.1, 0.5]
     lrs = [0.1]
-    for lr in lrs:
-                        for i in range(num_trainings):
-                            setup_seed(num_trainings)
-                            train(lr)
 
-    """
+    pool = multiprocessing.Pool(4)
+    processes = []
+
+    for lr in lrs:
+        for i in range(num_trainings):
+            setup_seed(i)
+            processes.append(pool.apply_async(train, args=(lr,)))
+
+    result = [p.get() for p in processes]
+
+
+    """A
     noch kombinationen zu machen:
     diff: und sim die 4 Kombinaationen. Eins ist dann doppelt, aber ist ja egal. (
     0.001 und 01 
