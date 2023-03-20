@@ -21,9 +21,8 @@ from federatedscope.gfl.model.sage import SAGE_Net
 from federatedscope.gfl.model.gat import GAT_Net
 from federatedscope.gfl.model.gin import GIN_Net
 from federatedscope.gfl.model.gpr import GPR_Net
-from federatedscope.gfl.model.club import CLUB
 
-# graph_level_Dom_Sep_2out_only2_branches_CLUBdiff_sim_NEW
+# graph_level_Dom_Sep_1out_only_COSINEdiff_no_global_NEW
 
 EPS = 1e-15
 EMD_DIM = 200
@@ -121,10 +120,10 @@ class GNN_Net_Graph(torch.nn.Module):
         # Embedding (pre) layer
         self.encoder_atom = AtomEncoder(in_channels, hidden)
         self.encoder = Linear(in_channels, hidden)
+        self.cos_loss = torch.nn.CosineEmbeddingLoss()
+        self.decoder = InnerProductDecoder()
         self.eps = None
 
-        self.cos_loss = torch.nn.CosineEmbeddingLoss()
-        self.club_diff = CLUB(hidden, hidden, hidden)
         # GNN layer
         if gnn == 'gcn':
             self.gnn = GCN_Net(in_channels=hidden,
@@ -150,12 +149,12 @@ class GNN_Net_Graph(torch.nn.Module):
                                      hidden=hidden,
                                      max_depth=max_depth,
                                      dropout=dropout)
+            self.interm_gnn = GIN_Net(in_channels=hidden,
+                                     out_channels=hidden,
+                                     hidden=hidden,
+                                     max_depth=max_depth,
+                                     dropout=dropout)
 
-            self.global_gnn = GIN_Net(in_channels=hidden,
-                                      out_channels=hidden,
-                                      hidden=hidden,
-                                      max_depth=max_depth,
-                                      dropout=dropout)
             """
             self.global_gnn_mu = GIN_Net(in_channels=hidden,
                                       out_channels=hidden,
@@ -199,12 +198,14 @@ class GNN_Net_Graph(torch.nn.Module):
 
         # Output layer
         self.global_linear_out1 = Linear(hidden, hidden)
+        self.interm_linear_out1 = Linear(hidden, hidden)
         self.local_linear_out1 = Linear(hidden, hidden)
 
 
         # local
         self.clf = Linear(hidden, out_channels)
         self.emb = Linear(edge_dim, hidden)
+        self.vae_decoder = VAE_Decoder(hidden, hidden)
         # torch.nn.init.xavier_normal_(self.emb.weight.data)
 
     def kld_loss(self, x):
@@ -229,10 +230,13 @@ class GNN_Net_Graph(torch.nn.Module):
 
     def reparametrize_from_x(self, x, return_mu = False):
         """ x is just the normal output of the encoder
+
         Args:
             x:
             return_mu: If True, just return mu
+
         Returns:
+
         """
         mu_logvar = x.view(-1, 2, self.hidden)
         mu = mu_logvar[:, 0, :]
@@ -256,18 +260,18 @@ class GNN_Net_Graph(torch.nn.Module):
         else:
             return mu
 
-    def similarity_loss(self, x1, x2):
-        # cosine embedding loss: 1-cos(x1, x2). The 1 defines this loss function.
-        y = torch.ones(x1.size(0)).to('cuda:0')
-        recon_loss = self.cos_loss(x1, x2, y)
-        return recon_loss
-
     def cosine_diff_loss(self, x1, x2):
         # cosine embedding loss: 1-cos(x1, x2). The 1 defines this loss function.
         y = torch.ones(x1.size(0)).to('cuda:0')
         y = -y
         diff_loss = self.cos_loss(x1, x2, y)
         return diff_loss
+
+    def similarity_loss(self, x1, x2):
+        # cosine embedding loss: 1-cos(x1, x2). The 1 defines this loss function.
+        y = torch.ones(x1.size(0)).to('cuda:0')
+        recon_loss = self.cos_loss(x1, x2, y)
+        return recon_loss
 
     def mse_loss(self, x1, x2):
         return torch.nn.functional.mse_loss(x1, x2, reduction='mean')
@@ -309,7 +313,7 @@ class GNN_Net_Graph(torch.nn.Module):
         return pos_loss + neg_loss
 
 
-    def forward(self, data):
+    def forward(self, data, sim_loss):
 
         x, edge_index, batch = data.x, data.edge_index, data.batch
 
@@ -321,24 +325,24 @@ class GNN_Net_Graph(torch.nn.Module):
         kld_loss_encoder = self.kld_loss(x)
 
         x_local_enc = self.local_gnn((x, edge_index))
-        x_global_enc = self.global_gnn((x, edge_index))
+        x_interm_enc = self.interm_gnn((x, edge_index))
 
         x_local_pooled = self.pooling(x_local_enc, batch)
-        x_global_enc_pooled = self.pooling(x_global_enc, batch)
+        x_interm_pooled = self.pooling(x_interm_enc, batch)
 
         x_local = self.local_linear_out1(x_local_pooled).relu()
-        x_global = self.global_linear_out1(x_global_enc_pooled).relu()
+        x_interm = self.interm_linear_out1(x_interm_pooled).relu()
 
-        diff_local_global = self.club_diff.learning_loss(x_local, x_global)
+        diff_local_interm = self.cosine_diff_loss(x_local, x_interm)
 
-        with torch.no_grad():
-            MI = self.club_diff(x_local, x_global)
 
-        x_local = F.dropout(x_local, self.dropout, training=self.training)
-        x_global = F.dropout(x_global, self.dropout, training=self.training)
+        x_local_interm = x_local + x_interm
 
-        x_local_global = x_local + x_global
-        out_local_global = self.clf(x_local_global)
+        x_local_interm = F.dropout(x_local_interm, self.dropout, training=self.training)
+        x_interm = F.dropout(x_interm, self.dropout, training=self.training)
+
+        out_local_interm = self.clf(x_local_interm)
+        out_interm = self.clf(x_interm)
 
 
         # recon loss adjacency matrix
@@ -346,7 +350,7 @@ class GNN_Net_Graph(torch.nn.Module):
         # return x, mi
         # return out_global, torch.Tensor([[0.1, 0.9]]*out_global.size(0)).float().to('cuda:0'), torch.Tensor([[0.1, 0.9]]*out_global.size(0)).float().to('cuda:0'), kld_loss_encoder, kld_global, torch.Tensor([0.]).float().to('cuda:0'), torch.Tensor([0.]).float().to('cuda:0'), torch.Tensor([0.]).float().to('cuda:0'), torch.Tensor([0.]).float().to('cuda:0'), torch.Tensor([0.]).float().to('cuda:0')
 
-        return out_local_global, kld_loss_encoder, diff_local_global, MI
+        return out_local_interm, out_interm, kld_loss_encoder, diff_local_interm
 
 
 def dot_product_decode(Z):
