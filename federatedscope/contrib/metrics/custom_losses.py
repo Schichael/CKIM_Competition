@@ -1,53 +1,59 @@
-
+import numpy as np
 def recon_loss_metric(ctx, **kwargs):
-    return ctx.rec_loss_metric
+    return np.mean(ctx.rec_loss_metric)
 
 def kld_loss_encoder_metric(ctx, **kwargs):
-    return ctx.kld_loss_encoder_metric
+    return np.mean(ctx.kld_loss_encoder_metric)
 
 def kld_global_metric(ctx, **kwargs):
-    return ctx.kld_global_metric
+    return np.mean(ctx.kld_global_metric)
 
 def kld_interm_metric(ctx, **kwargs):
-    return ctx.kld_interm_metric
+    return np.mean(ctx.kld_interm_metric)
 
 def kld_local_metric(ctx, **kwargs):
-    return ctx.kld_local_metric
+    return np.mean(ctx.kld_local_metric)
 
 def diff_local_interm_metric(ctx, **kwargs):
-    return ctx.diff_local_interm_metric
+    return np.mean(ctx.diff_local_interm_metric)
 
 def diff_local_global_metric(ctx, **kwargs):
-    return ctx.diff_local_global_metric
+    return np.mean(ctx.diff_local_global_metric)
 
 def diff_local_fixed_metric(ctx, **kwargs):
-    return ctx.diff_local_fixed_metric
+    return np.mean(ctx.diff_local_fixed_metric)
 
 def sim_global_interm_metric(ctx, **kwargs):
-    return ctx.sim_global_interm_metric
+    return np.mean(ctx.sim_global_interm_metric)
 
 def sim_global_fixed_metric(ctx, **kwargs):
-    return ctx.sim_global_fixed_metric
+    return np.mean(ctx.sim_global_fixed_metric)
 
 
 def loss_out_interm_metric(ctx, **kwargs):
-    return ctx.loss_out_interm_metric
+    return np.mean(ctx.loss_out_interm_metric)
 
 def loss_out_local_interm_metric(ctx, **kwargs):
-    return ctx.loss_out_local_interm_metric
+    return np.mean(ctx.loss_out_local_interm_metric)
 
 def loss_batch_csd_metric(ctx, **kwargs):
-    return ctx.loss_batch_csd_metric
+    return np.mean(ctx.loss_batch_csd_metric)
 
 def prox_loss_metric(ctx, **kwargs):
-    return ctx.prox_loss_metric
+    return np.mean(ctx.prox_loss_metric)
 
 def mmd_loss_metric(ctx, **kwargs):
-    return ctx.mmd_loss_metric
+    return np.mean(ctx.mmd_loss_metric)
 
 def swd_loss_metric(ctx, **kwargs):
-    return ctx.swd_loss_metric
+    return np.mean(ctx.swd_loss_metric)
 
+def mi_estimation_metric(ctx, **kwargs):
+    return np.mean(ctx.MI_metric)
+
+def call_mi_estimation_metric(types):
+    if "MI_estimation" in types:
+        return "MI_estimation", mi_estimation_metric
 def call_prox_loss_metric(types):
     if "prox_loss" in types:
         return "prox_loss", prox_loss_metric
