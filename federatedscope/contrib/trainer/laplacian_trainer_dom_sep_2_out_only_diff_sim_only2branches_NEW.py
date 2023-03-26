@@ -122,7 +122,9 @@ class LaplacianDomainSeparationVAE_2Out_OnlyDiffSim_only2branches_NEW_Trainer(Gr
         ctx.acc_rec_loss = 0.
         #if not self.first_round:
         #    print(f"last round mean difference loss: {ctx.aggr_diff_loss/ctx.batchnumbers}")
-
+        ctx.kld_loss_encoder_metric = []
+        ctx.loss_batch_csd_metric = []
+        ctx.diff_local_global_metric = []
         if ctx.cur_data_split == "train" and not self.in_finetune:
             #print("in train")
             self.round_num += 1
@@ -170,8 +172,12 @@ class LaplacianDomainSeparationVAE_2Out_OnlyDiffSim_only2branches_NEW_Trainer(Gr
         #ctx.sim_interm_fixed_metric = sim_interm_fixed.detach().item()
 
         ctx.kld_loss_encoder = kld_loss_encoder
-        ctx.kld_loss_encoder_metric = kld_loss_encoder.detach().item()
-
+        ctx.kld_loss_encoder_metric.append(kld_loss_encoder.detach().item())
+        """
+        ctx.kld_loss_encoder_metric
+        ctx.loss_batch_csd_metric
+        ctx.diff_local_global_metric
+        """
         #ctx.kld_global = kld_global
         #ctx.kld_global_metric = kld_global.detach().item()
 
@@ -185,7 +191,7 @@ class LaplacianDomainSeparationVAE_2Out_OnlyDiffSim_only2branches_NEW_Trainer(Gr
         #ctx.rec_loss_metric = rec_loss.detach().item()
 
         ctx.diff_local_global = diff_local_global
-        ctx.diff_local_global_metric = diff_local_global.detach().item()
+        ctx.diff_local_global_metric.append(diff_local_global.detach().item())
 
 
         #print(f"diff_local_global: {diff_local_global}")
@@ -209,7 +215,7 @@ class LaplacianDomainSeparationVAE_2Out_OnlyDiffSim_only2branches_NEW_Trainer(Gr
         #ctx.loss_batch_csd = self.get_csd_loss(ctx.model.state_dict(), ctx.new_mu, ctx.new_omega, ctx.cur_epoch_i + 1)
         ctx.loss_batch_csd = csd_loss(ctx.model.state_dict(), ctx.new_mu,
                                       ctx.new_omega, self.round_num)
-        ctx.loss_batch_csd_metric = ctx.loss_batch_csd.detach().item()
+        ctx.loss_batch_csd_metric.append(ctx.loss_batch_csd.detach().item())
         #print(f"loss_batch_csd: {ctx.loss_batch_csd}")
 
         ctx.batch_size = len(label)
