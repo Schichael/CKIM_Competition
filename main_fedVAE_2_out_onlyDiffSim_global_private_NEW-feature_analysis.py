@@ -35,15 +35,18 @@ try:
 except RuntimeError:
     pass
 
-
+"""
 metrics = [
     ('kld_loss_encoder', call_kld_loss_encoder_metric),
     ('diff_local_interm', call_diff_local_interm_metric), ('sim_global_interm', call_sim_global_interm_metric),
     ('loss_out_local_interm', call_loss_out_local_interm_metric),
            ]
 
+
 for metric in metrics:
     register_metric(metric[0], metric[1])
+
+"""
 
 sys.path = ['~/Master-Thesis/CKIM_Competition/federatedscope', '~/Master-Thesis/CKIM_Competition',] + sys.path
 # sys.path = ['/home/michael/Projects/CKIM_Competition/federatedscope', '/home/michael/Projects/CKIM_Competition',] + sys.path

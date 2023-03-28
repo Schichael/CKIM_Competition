@@ -22,7 +22,7 @@ from federatedscope.gfl.model.gat import GAT_Net
 from federatedscope.gfl.model.gin import GIN_Net
 from federatedscope.gfl.model.gpr import GPR_Net
 
-# feature_analysisgraph_level_Dom_Sep_2out_only_diff_sim_NEW
+# feature_analysis_graph_level_Dom_Sep_2out_only_diff_sim_NEW
 
 EPS = 1e-15
 EMD_DIM = 200

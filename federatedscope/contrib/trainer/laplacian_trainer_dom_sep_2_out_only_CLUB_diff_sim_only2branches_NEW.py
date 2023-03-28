@@ -267,7 +267,7 @@ class LaplacianDomainSeparationVAE_2Out_OnlyCLUBDiffSim_only2branches_NEW_Traine
                 param[1].requires_grad = False
 
         # train CLUB network
-        loss = self.config.params.club_lr * ctx.loss_out_global
+        loss = (self.config.params.club_lr / self.config.train.optimizer.lr) * ctx.diff_local_global
         loss.backward(retain_graph=True)
 
         # Reset requires_grad
