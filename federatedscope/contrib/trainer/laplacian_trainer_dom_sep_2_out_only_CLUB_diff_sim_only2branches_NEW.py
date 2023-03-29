@@ -37,6 +37,7 @@ class LaplacianDomainSeparationVAE_2Out_OnlyCLUBDiffSim_only2branches_NEW_Traine
         self.device = device
         self.config = config
         self.first_round = True
+        self.second_round = False
         self.round_num=0
         self.in_finetune = False
         self.tmp = 0
@@ -113,10 +114,18 @@ class LaplacianDomainSeparationVAE_2Out_OnlyCLUBDiffSim_only2branches_NEW_Traine
         #self._align_interm_parameters(self.ctx.model)
         #self._align_global_fixed_parameters(self.ctx.model)
 
-        if self.first_round:
+        if self.first_round or self.second_round:
             self._align_global_local_parameters(self.ctx.model)
             self._align_interm_parameters(self.ctx.model)
 
+
+
+
+        if self.second_round:
+            self.second_round = False
+
+        if self.first_round:
+            self.second_round = True
         # trainable_parameters = self._param_filter(model_parameters)
         # for key in trainable_parameters:
         #    self.ctx.model.state_dict()[key].data.copy_(trainable_parameters[key])s
