@@ -194,7 +194,7 @@ class LaplacianDomainSeparationVAE_2Out_OnlyCLUBDiffSim_only2branches_NEW_Traine
         #ctx.rec_loss_metric = rec_loss.detach().item()
 
         ctx.diff_local_global = diff_local_global
-        ctx.diff_local_global_metric = diff_local_global.detach().item()
+        ctx.diff_local_global_metric.append(diff_local_global.detach().item())
 
         ctx.MI_metric.append(MI.detach().item())
 

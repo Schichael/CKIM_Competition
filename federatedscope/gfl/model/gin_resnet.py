@@ -4,7 +4,8 @@ from torch.nn import ModuleList
 from torch_geometric.data import Data
 from torch_geometric.nn import GINConv, BatchNorm
 
-from federatedscope.core.mlp import MLP
+from federatedscope.gfl.model.mlp_resnet import MLPResNet
+
 """
 Model param names of GIN:
 [
@@ -63,19 +64,20 @@ class GIN_Res_Net(torch.nn.Module):
         super(GIN_Res_Net, self).__init__()
         self.convs = ModuleList()
         self.bns = ModuleList()
+
         for i in range(max_depth):
             self.bns.append(BatchNorm(hidden))
             if i == 0:
                 self.convs.append(
-                    GINConv(MLP([in_channels, hidden, hidden],
+                    GINConv(MLPResNet([in_channels, hidden, hidden],
                                 batch_norm=True)))
             elif (i + 1) == max_depth:
                 self.convs.append(
                     GINConv(
-                        MLP([hidden, hidden, out_channels], batch_norm=True)))
+                        MLPResNet([hidden, hidden, out_channels], batch_norm=True)))
             else:
                 self.convs.append(
-                    GINConv(MLP([hidden, hidden, hidden], batch_norm=True)))
+                    GINConv(MLPResNet([hidden, hidden, hidden], batch_norm=True)))
         self.dropout = dropout
 
     def forward(self, data):

@@ -51,6 +51,12 @@ def swd_loss_metric(ctx, **kwargs):
 def mi_estimation_metric(ctx, **kwargs):
     return np.mean(ctx.MI_metric)
 
+def diff_resnet_1_metric(ctx, **kwargs):
+    return np.mean(ctx.diff_loss_1_metric)
+
+def diff_resnet_2_metric(ctx, **kwargs):
+    return np.mean(ctx.diff_loss_2_metric)
+
 def call_mi_estimation_metric(types):
     if "MI_estimation" in types:
         return "MI_estimation", mi_estimation_metric
@@ -83,6 +89,13 @@ def call_diff_local_interm_metric(types):
     if "diff_local_interm" in types:
         return "diff_local_interm", diff_local_interm_metric
 
+def call_diff_resnet_1_metric(types):
+    if "diff_resnet_1" in types:
+        return "diff_resnet_1", diff_resnet_1_metric
+
+def call_diff_resnet_2_metric(types):
+    if "diff_resnet_2" in types:
+        return "diff_resnet_2", diff_resnet_2_metric
 def call_diff_local_global_metric(types):
     if "diff_local_global" in types:
         return "diff_local_global", diff_local_global_metric
