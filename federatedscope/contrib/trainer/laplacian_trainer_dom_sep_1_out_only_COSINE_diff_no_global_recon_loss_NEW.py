@@ -46,7 +46,7 @@ class LaplacianDomainSeparation_1Out_OnlyCOSINEDiff_noGlobal_RECON_Loss_NEW_Trai
         self.ctx.kld_loss_encoder_metric = []
         self.ctx.diff_local_interm_metric = []
         self.ctx.loss_out_local_interm_metric = []
-        self.ctx.recon_loss_metric = []
+        self.ctx.rec_loss_metric = []
         self.ctx.MI_metric = []
         # Get all model parameters with reuqires_grad = True
         # for param in self.ctx.model.named_parameters():
@@ -123,7 +123,7 @@ class LaplacianDomainSeparation_1Out_OnlyCOSINEDiff_noGlobal_RECON_Loss_NEW_Trai
         self.ctx.diff_local_interm_metric = []
         self.ctx.loss_out_local_interm_metric = []
         self.ctx.MI_metric = []
-        self.ctx.recon_loss_metric = []
+        self.ctx.rec_loss_metric = []
 
         if ctx.cur_data_split == "train" and not self.in_finetune:
             # print("in train")
@@ -174,7 +174,7 @@ class LaplacianDomainSeparation_1Out_OnlyCOSINEDiff_noGlobal_RECON_Loss_NEW_Trai
         ctx.kld_loss_encoder_metric.append(kld_loss_encoder.detach().item())
 
         ctx.recon_loss = recon_loss
-        ctx.recon_loss_metric.append(recon_loss.detach().item())
+        ctx.rec_loss_metric.append(recon_loss.detach().item())
         # ctx.kld_global = kld_global
         # ctx.kld_global_metric = kld_global.detach().item()
 

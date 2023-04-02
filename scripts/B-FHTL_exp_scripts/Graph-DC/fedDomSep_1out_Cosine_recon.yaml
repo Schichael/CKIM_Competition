@@ -37,8 +37,8 @@ eval:
   report: ['avg']
   freq: 1
   # metrics: ['imp_ratio', 'acc']
-  metrics: ['imp_ratio', 'acc', 'kld_loss_encoder', 'diff_local_interm', 'loss_out_local_interm',
-    'loss_out_interm', 'MI_estimation', 'loss_batch_csd']
+  metrics: ['imp_ratio', 'acc', 'kld_loss_encoder', 'diff_local_interm',
+    'loss_out_interm', 'recon_loss', 'loss_batch_csd']
   best_res_update_round_wise_key: val_imp_ratio
   count_flops: False
   base: 0.

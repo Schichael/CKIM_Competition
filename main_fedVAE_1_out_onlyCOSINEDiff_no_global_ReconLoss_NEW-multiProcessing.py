@@ -44,7 +44,7 @@ except RuntimeError:
 metrics = [
     ('kld_loss_encoder', call_kld_loss_encoder_metric),
     ('diff_local_interm', call_diff_local_interm_metric),
-    ('loss_out_local_interm', call_loss_out_local_interm_metric), ('loss_out_interm', call_loss_out_interm_metric),
+    ('recon_loss', call_recon_loss_metric),
     ('loss_batch_csd', call_loss_batch_csd_metric)
            ]
 for metric in metrics:
@@ -86,7 +86,7 @@ def train(lr, kld_ne_imp, diff_interm_imp, diff_local_imp, csd_imp):
     # init_cfg.data.subdirectory = 'graph_dt_backup/processed'
     # init_cfg.merge_from_list(args.opts)
     init_cfg.data.save_dir = \
-        'Graph-DC_FedVAE_1_out_only_COSINEDiff_no_global_NEW_sim_loss_lr_' + str(
+        'Graph-DC_FedVAE_1_out_only_COSINEDiff_no_global_recon_loss_NEW_sim_loss_lr_' + str(
             lr).replace('.', '_') + '_A'+ str(kld_ne_imp).replace('.', '_') + \
     '_F' + str(diff_interm_imp).replace('.', '_') + \
     '_G' + str(diff_local_imp).replace('.', '_') + '_H' + str(csd_imp).replace('.', '_')
