@@ -84,7 +84,7 @@ def train(lr, kld_ne_imp, diff_imp_1, diff_imp_2, csd_imp):
     # init_cfg.data.subdirectory = 'graph_dt_backup/processed'
     # init_cfg.merge_from_list(args.opts)
     init_cfg.data.save_dir = \
-        'Graph-DC_2_ResNet_lr_' + str(lr).replace(
+        'testGraph-DC_2_ResNet_lr_' + str(lr).replace(
             '.', '_') + '_A'+ str(kld_ne_imp).replace('.', '_') + \
     '_F' + str(diff_imp_1).replace('.', '_') + '_F' + str(diff_imp_2).replace(
         '.', '_') + '_H' + str(csd_imp).replace(
@@ -155,7 +155,7 @@ if __name__ == '__main__':
 
     # lrs = [0.001, 0.005, 0.01, 0.05, 0.1, 0.5]
     lrs = [0.1]
-    pool = multiprocessing.Pool(5)
+    pool = multiprocessing.Pool(1)
     processes = []
     for lr in lrs:
         for diff_imp in diff_imps:

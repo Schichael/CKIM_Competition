@@ -1,25 +1,24 @@
 import os
 import sys
+import time
 from multiprocessing import set_start_method
 
 import torch
 from torch import multiprocessing
-import time
-from federatedscope.contrib.trainer.laplacian_trainer_dom_sep_1_out_only_CLUB_diff_no_global_NEW import \
-    call_laplacian_trainer
-from federatedscope.contrib.workers\
-    .laplacian_with_domain_separation_1_out_noGlobal_NEW_client import \
-    LaplacianDomainSeparationVAE_1_out_onlyDiff_noGlobal_NEW_Client
+
+from federatedscope.contrib.trainer.feature_analysis_laplacian_trainer_resnet import call_laplacian_trainer
+from federatedscope.contrib.workers.feature_analysis_laplacian_resnet_client import FeatureAnalysisLaplacianResNetClient
+from federatedscope.contrib.workers.feature_analysis_laplacian_with_domain_separation_2_out_onlyDiff_only2branches_NEW_client import \
+    FeatureAnalysisLaplacianDomainSeparationVAE_2_out_onlyDiff_only2branches_NEW_Client
 #from federatedscope.contrib.trainer.laplacian_trainer import call_laplacian_trainer
 from federatedscope.contrib.workers.laplacian_client import LaplacianClient
 from federatedscope.contrib.workers.laplacian_diff_global_out_client import LaplacianDiffGlobalOutClient
+from federatedscope.contrib.workers.laplacian_resnet_client import LaplacianResNetClient
 from federatedscope.contrib.workers.laplacian_server import LaplacianServer
 from federatedscope.contrib.workers.laplacian_server_dom_sep_VAE_1_out import LaplacianServerDomSepVAE_1_out
 from federatedscope.contrib.workers.laplacian_server_dom_sep_without_fixed import LaplacianServerDomSepWithoutFixed
-from federatedscope.contrib.workers.laplacian_with_domain_separation_1_out_onlyDiffProxLoss_NEW_client import \
-    LaplacianDomainSeparationVAE_1_out_onlyDiffProxLoss_NEW_Client
-from federatedscope.contrib.workers.laplacian_with_domain_separation_1_out_only_CLUB_diff_noGlobal_NEW_client import \
-    LaplacianDomainSeparationVAE_1_out_onlyCLUB_Diff_noGlobal_NEW_Client
+from federatedscope.contrib.workers.laplacian_with_domain_separation_2_out_onlyDiff_only2branches_NEW_client import \
+    LaplacianDomainSeparationVAE_2_out_onlyDiff_only2branches_NEW_Client
 from federatedscope.contrib.workers.laplacian_with_domain_separation_VAE_1_out_client import \
     LaplacianDomainSeparationVAE_1_out_Client
 from federatedscope.contrib.workers.laplacian_with_domain_separation_VAE_2_out_NEW_client import \
@@ -35,7 +34,7 @@ from federatedscope.register import register_metric
 from federatedscope.contrib.metrics.custom_losses import call_recon_loss_metric, \
     call_kld_loss_encoder_metric, call_kld_global_metric, call_kld_interm_metric, call_kld_local_metric, \
     call_diff_local_interm_metric, call_sim_global_interm_metric, call_loss_out_interm_metric, \
-    call_loss_out_local_interm_metric, call_loss_batch_csd_metric, call_prox_loss_metric, call_mi_estimation_metric
+    call_loss_out_local_interm_metric, call_loss_batch_csd_metric, call_prox_loss_metric, call_diff_local_global_metric
 
 try:
     torch.multiprocessing.set_start_method('spawn', force=True)
@@ -43,18 +42,10 @@ except RuntimeError:
     pass
 
 
-metrics = [
-    ('kld_loss_encoder', call_kld_loss_encoder_metric),
-    ('diff_local_interm', call_diff_local_interm_metric),
-    ('loss_out_local_interm', call_loss_out_local_interm_metric), ('loss_out_interm', call_loss_out_interm_metric),
-    ('MI_estimation', call_mi_estimation_metric),
-    ('loss_batch_csd', call_loss_batch_csd_metric),
-           ]
-for metric in metrics:
-    register_metric(metric[0], metric[1])
 
-# sys.path = ['/home/ms234795/Master Thesis/CKIM_Competition/federatedscope', '/home/ms234795/Master Thesis/CKIM_Competition',] + sys.path
-# sys.path = ['/home/michael/Projects/CKIM_Competition/federatedscope', '/home/michael/Projects/CKIM_Competition',] + sys.path
+#sys.path = ['~/Master-Thesis/CKIM_Competition/federatedscope',
+# '~/Master-Thesis/CKIM_Competition',] + sys.path
+sys.path = ['/home/michael/Projects/CKIM_Competition/federatedscope', '/home/michael/Projects/CKIM_Competition',] + sys.path
 
 print(sys.path)
 from federatedscope.core.cmd_args import parse_args
@@ -73,11 +64,11 @@ if os.environ.get('http_proxy'):
 register_trainer('laplacian_trainer', call_laplacian_trainer)
 
 
-def train(lr, kld_ne_imp, diff_interm_imp, diff_local_imp, csd_imp):
+def train(lr, kld_ne_imp, diff_imp_1, diff_imp_2, csd_imp):
 
 
 
-    cfg_file = 'scripts/B-FHTL_exp_scripts/Graph-DC/fedDomSep_1out_Club.yaml'
+    cfg_file = 'scripts/B-FHTL_exp_scripts/Graph-DC/fedResNet.yaml'
     cfg_client = 'scripts/B-FHTL_exp_scripts/Graph-DC/cfg_per_client.yaml'
     # cfg_per_Client_ours_lr
     # cfg_per_client_ours_lr_local_steps
@@ -89,10 +80,11 @@ def train(lr, kld_ne_imp, diff_interm_imp, diff_local_imp, csd_imp):
     # init_cfg.data.subdirectory = 'graph_dt_backup/processed'
     # init_cfg.merge_from_list(args.opts)
     init_cfg.data.save_dir = \
-        'Graph-DC_Fed_1_out_only_CLUBDiff_no_global_multistep_lr_' + str(
-            lr).replace('.', '_') + '_A'+ str(kld_ne_imp).replace('.', '_') + \
-    '_F' + str(diff_interm_imp).replace('.', '_') + \
-    '_G' + str(diff_local_imp).replace('.', '_') + '_H' + str(csd_imp).replace('.', '_')
+        'FeatureAnalysisGraph-DC_2_ResNet_lr_' + str(lr).replace(
+            '.', '_') + '_A'+ str(kld_ne_imp).replace('.', '_') + \
+    '_F' + str(diff_imp_1).replace('.', '_') + '_F' + str(diff_imp_2).replace(
+        '.', '_') + '_H' + str(csd_imp).replace(
+        '.', '_')
     """
         kld_ne_imps = [1] #A
         kld_local_imp = 1 #B
@@ -107,19 +99,19 @@ def train(lr, kld_ne_imp, diff_interm_imp, diff_local_imp, csd_imp):
 
     init_cfg.params = CN()
     init_cfg.params.kld_ne_imp = kld_ne_imp
-    init_cfg.params.diff_interm_imp = diff_interm_imp
-    init_cfg.params.diff_local_imp = diff_local_imp
+    init_cfg.params.diff_imp_1 = diff_imp_1
+    init_cfg.params.diff_imp_2 = diff_imp_2
     init_cfg.params.csd_imp = csd_imp
-    init_cfg.params.sim_loss = "mse"
-    init_cfg.params.club_lr = 0.05
 
     init_cfg.federate.client_num = 13
     init_cfg.params.eps = 1e-15
-    init_cfg.params.save_client_always = True
 
+    init_cfg.params.save_client_always = True
 
     init_cfg.params.p = 0.
     init_cfg.params.alpha = 0.1
+    init_cfg.federate.total_round_num = 1
+    init_cfg.params.model_path = '/home/michael/Dropbox/Master thesis/results_graph-dc/ResNet/on_MLP_level/cosine_diff/single_runs_for_diff/Graph-DC_2_ResNet_single_step_lr_0_1_A0_F0_001_F0_001_H10/FedDomSep_GraphDC_gin_on_fs_contest_data_lr0.1_lstep1_'
 
     init_cfg.model.dropout = 0.5
     init_cfg.train.optimizer.lr = lr
@@ -139,8 +131,8 @@ def train(lr, kld_ne_imp, diff_interm_imp, diff_local_imp, csd_imp):
     else:
         cfg_client = CfgNode.load_cfg(open(cfg_client, 'r')).clone()
     runner = FedRunner(data=data,
-                   server_class = LaplacianServerDomSepVAE_1_out,
-                   client_class = LaplacianDomainSeparationVAE_1_out_onlyCLUB_Diff_noGlobal_NEW_Client,
+                   server_class = LaplacianServer,
+                   client_class = FeatureAnalysisLaplacianResNetClient,
                    config=init_cfg.clone(),
                    client_config=cfg_client)
     _ = runner.run()
@@ -151,25 +143,28 @@ def tmp(a):
 
 if __name__ == '__main__':
 
-    num_trainings = 5
+    num_trainings = 1
     kld_ne_imps = [0] #A
-    diff_imps = [0.1]  # [0.001, 0.0001, 0.00001]
-    diff_interm_imp = 0.001 #F    HERE  [0.0001, 0.001]
-    diff_local_imp = 0.001 #G
+    diff_imps = [0.001]   #Now 0.0001
+    #diff_global_imps = [0] #F    HERE  [0.0001, 0.001]
+    #diff_local_imps = [0.1, 0.01, 0.001] #G
     csd_imp = 10 #H
     #sim_losses = ["mse", "cosine"]
 
     # lrs = [0.001, 0.005, 0.01, 0.05, 0.1, 0.5]
     lrs = [0.1]
-    pool = multiprocessing.Pool(5)
+    pool = multiprocessing.Pool(1)
     processes = []
     for lr in lrs:
-            for diff_imp in diff_imps:
-                    for kld_ne_imp in kld_ne_imps:
-                        for i in range(num_trainings):
-                            time.sleep(1)
-                            setup_seed(i)
-                            processes.append(pool.apply_async(train, args=(lr, kld_ne_imp, diff_imp, diff_imp, csd_imp)))
+        for diff_imp in diff_imps:
+            #for diff_local_imp in diff_local_imps:
+                for kld_ne_imp in kld_ne_imps:
+                    for i in range(num_trainings):
+                        time.sleep(1)
+                        setup_seed(i)
+                        processes.append(pool.apply_async(train, args=(lr,
+                                                                       kld_ne_imp,
+                                                                       diff_imp, diff_imp, csd_imp)))
     result = [p.get() for p in processes]
 
     #kld=0 mit repara: ~1.00 - 1.05
