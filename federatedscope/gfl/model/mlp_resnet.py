@@ -35,9 +35,6 @@ class MLPResNet(torch.nn.Module):
 
     def forward(self, x):
         x_local = self.local_linear(x)
-        if self.relu_first:
-            x_local = F.relu(x_local)
-        x_local = self.local_norm(x_local)
         self.local_out = x_local
 
 

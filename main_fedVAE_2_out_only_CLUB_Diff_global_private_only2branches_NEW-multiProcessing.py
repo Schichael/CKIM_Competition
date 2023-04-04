@@ -48,8 +48,7 @@ except RuntimeError:
 metrics = [
     ('kld_loss_encoder', call_kld_loss_encoder_metric),
     ('diff_local_global', call_diff_local_global_metric),
-    ('MI_estimation', call_mi_estimation_metric),
-    ('loss_batch_csd', call_loss_batch_csd_metric)
+    ('MI_estimation', call_mi_estimation_metric),    ('loss_batch_csd', call_loss_batch_csd_metric)
 ]
 for metric in metrics:
     register_metric(metric[0], metric[1])
