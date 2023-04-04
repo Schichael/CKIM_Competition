@@ -1,5 +1,6 @@
 import os
 import sys
+import time
 from multiprocessing import set_start_method
 
 import torch
@@ -161,6 +162,7 @@ if __name__ == '__main__':
             for diff_local_imp in diff_local_imps:
                 for kld_ne_imp in kld_ne_imps:
                     for i in range(num_trainings):
+                        time.sleep(10)
                         setup_seed(i)
                         processes.append(pool.apply_async(train, args=(lr,
                                                                        kld_ne_imp,
