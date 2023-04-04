@@ -110,7 +110,7 @@ class FeatureAnalysisLaplacianResNet_Trainer(GraphMiniBatchTrainer):
     def _hook_on_batch_forward(self, ctx):
         self.tmp += 1
         batch = ctx.data_batch.to(ctx.device)
-        out, diff_loss_1, diff_loss_2, x_local_1, x_local_2, x_global_1, x_global_2 = ctx.model(batch)
+        out, diff_loss_1, diff_loss_2, x_local_1, x_local_2, x_global_1, x_global_2, x_local_1_pooled, x_local_2_pooled, x_global_1_pooled, x_global_2_pooled = ctx.model(batch)
 
         ctx.diff_loss_1 = diff_loss_1
         ctx.diff_loss_1_metric.append(diff_loss_1.detach().item())
@@ -170,6 +170,24 @@ class FeatureAnalysisLaplacianResNet_Trainer(GraphMiniBatchTrainer):
         # interm
         file_name = path + '/x_global_2_' + dataset_name + '_' + str(cur_batch_i) + '.pt'
         torch.save(x_global_2, file_name)
+
+
+
+
+            # Pooled
+        file_name = path + '/x_local_1_pooled_' + dataset_name + '_' + str(cur_batch_i) + '.pt'
+        torch.save(x_local_1_pooled, file_name)
+
+        # interm
+        file_name = path + '/x_local_2_pooled_' + dataset_name + '_' + str(cur_batch_i) + '.pt'
+        torch.save(x_local_2_pooled, file_name)
+
+        file_name = path + '/x_global_1_pooled_' + dataset_name + '_' + str(cur_batch_i) + '.pt'
+        torch.save(x_global_1_pooled, file_name)
+
+        # interm
+        file_name = path + '/x_global_2_pooled_' + dataset_name + '_' + str(cur_batch_i) + '.pt'
+        torch.save(x_global_2_pooled, file_name)
 
 
         # save labels
