@@ -43,6 +43,10 @@ class LaplacianDomainSeparationVAE_1Out_OnlyDiff_noGlobal_NEW_Trainer(
         self.kld_imp = 0.
         self.routine_steps = 1
         self.proxLoss = ProxLoss(self._param_filter)
+        self.ctx.kld_loss_encoder_metric = []
+        self.ctx.diff_local_interm_metric = []
+        self.ctx.loss_out_local_interm_metric = []
+        self.ctx.loss_out_interm_metric = []
         # Get all model parameters with reuqires_grad = True
         # for param in self.ctx.model.named_parameters():
         #    if param[0].startswith('fixed'):
@@ -113,7 +117,10 @@ class LaplacianDomainSeparationVAE_1Out_OnlyDiff_noGlobal_NEW_Trainer(
         ctx.acc_rec_loss = 0.
         # if not self.first_round:
         #    print(f"last round mean difference loss: {ctx.aggr_diff_loss/ctx.batchnumbers}")
-
+        ctx.kld_loss_encoder_metric = []
+        ctx.diff_local_interm_metric = []
+        ctx.loss_out_local_interm_metric = []
+        ctx.loss_out_interm_metric = []
         if ctx.cur_data_split == "train" and not self.in_finetune:
             # print("in train")
             self.round_num += 1
@@ -160,7 +167,7 @@ class LaplacianDomainSeparationVAE_1Out_OnlyDiff_noGlobal_NEW_Trainer(
         # ctx.sim_interm_fixed_metric = sim_interm_fixed.detach().item()
 
         ctx.kld_loss_encoder = kld_loss_encoder
-        ctx.kld_loss_encoder_metric = kld_loss_encoder.detach().item()
+        ctx.kld_loss_encoder_metric.append(kld_loss_encoder.detach().item())
 
         # ctx.kld_global = kld_global
         # ctx.kld_global_metric = kld_global.detach().item()
@@ -175,9 +182,14 @@ class LaplacianDomainSeparationVAE_1Out_OnlyDiff_noGlobal_NEW_Trainer(
         # ctx.rec_loss_metric = rec_loss.detach().item()
 
         ctx.diff_local_interm = diff_local_interm
-        ctx.diff_local_interm_metric = diff_local_interm.detach().item()
+        ctx.diff_local_interm_metric.append(diff_local_interm.detach().item())
 
-
+        """
+        ctx.kld_loss_encoder_metric = []
+        ctx.diff_local_interm_metric = []
+        ctx.loss_out_local_interm_metric = []
+        ctx.loss_out_interm_metric = []
+        """
         # print(f"diff_local_global: {diff_local_global}")
         # print(f"mi_global_fixed: {sim_global_fixed}")
         # print(f"rec_loss: {rec_loss}")
@@ -196,9 +208,9 @@ class LaplacianDomainSeparationVAE_1Out_OnlyDiff_noGlobal_NEW_Trainer(
         ctx.loss_batch = ctx.criterion(out_interm, label)
         ctx.loss_out_global = ctx.loss_batch
         ctx.loss_out_local_interm = ctx.criterion(out_local_interm, label)
-        ctx.loss_out_local_interm_metric = ctx.loss_out_local_interm.detach().item()
+        ctx.loss_out_local_interm_metric.append(ctx.loss_out_local_interm.detach().item())
         ctx.loss_out_interm = ctx.criterion(out_interm, label)
-        ctx.loss_out_interm_metric = ctx.loss_out_interm.detach().item()
+        ctx.loss_out_interm_metric.append(ctx.loss_out_interm.detach().item())
 
         # ctx.loss_batch_csd = self.get_csd_loss(ctx.model.state_dict(), ctx.new_mu, ctx.new_omega, ctx.cur_epoch_i + 1)
         ctx.loss_batch_csd = csd_loss(ctx.model.state_dict(), ctx.new_mu,

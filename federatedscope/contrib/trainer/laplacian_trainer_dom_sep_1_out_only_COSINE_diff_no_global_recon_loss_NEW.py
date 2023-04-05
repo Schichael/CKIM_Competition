@@ -261,7 +261,7 @@ class LaplacianDomainSeparation_1Out_OnlyCOSINEDiff_noGlobal_RECON_Loss_NEW_Trai
 
         # backward through the interm branch. Only backward interm branch
         for param in ctx.model.named_parameters():
-            if (param[0].startswith("local") or param[0].startswith("club_diff")):
+            if (param[0].startswith("local")):
                 param[1].requires_grad = False
 
         loss = ctx.loss_out_interm + self.config.params.diff_interm_imp * \
