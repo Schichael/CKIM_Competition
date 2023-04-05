@@ -155,7 +155,7 @@ if __name__ == '__main__':
 
     # lrs = [0.001, 0.005, 0.01, 0.05, 0.1, 0.5]
     lrs = [0.1]
-    pool = multiprocessing.Pool(5)
+    pool = multiprocessing.Pool(1)
     processes = []
     for lr in lrs:
         for diff_global_imp in diff_global_imps:
