@@ -66,7 +66,7 @@ if os.environ.get('http_proxy'):
 register_trainer('laplacian_trainer', call_laplacian_trainer)
 
 
-def train(lr, kld_ne_imp, diff_imp, csd_imp):
+def train(lr, kld_ne_imp, diff_imp_global, diff_imp_local, csd_imp):
 
 
 
@@ -82,7 +82,7 @@ def train(lr, kld_ne_imp, diff_imp, csd_imp):
     # init_cfg.data.subdirectory = 'graph_dt_backup/processed'
     # init_cfg.merge_from_list(args.opts)
     init_cfg.data.save_dir = 'Graph-DC_2_out_only_Diff_global_private_only_2_branches_NEW_sim_loss_lr_' + str(lr).replace('.', '_') + '_A'+ str(kld_ne_imp).replace('.', '_') + \
-    '_F' + str(diff_imp).replace('.', '_') + '_H' + str(csd_imp).replace('.', '_')
+    '_F' + str(diff_imp_global).replace('.', '_') + '_G' + str(diff_imp_local).replace('.', '_')  + '_H' + str(csd_imp).replace('.', '_')
     """
         kld_ne_imps = [1] #A
         kld_local_imp = 1 #B
@@ -97,7 +97,8 @@ def train(lr, kld_ne_imp, diff_imp, csd_imp):
 
     init_cfg.params = CN()
     init_cfg.params.kld_ne_imp = kld_ne_imp
-    init_cfg.params.diff_imp = diff_imp
+    init_cfg.params.diff_imp_global = diff_imp_global
+    init_cfg.params.diff_imp_local = diff_imp_local
     init_cfg.params.csd_imp = csd_imp
 
     init_cfg.federate.client_num = 13
@@ -154,7 +155,7 @@ if __name__ == '__main__':
                 for kld_ne_imp in kld_ne_imps:
                     for i in range(num_trainings):
                         setup_seed(num_trainings)
-                        processes.append(pool.apply_async(train, args=(lr, kld_ne_imp, diff_imp, csd_imp)))
+                        processes.append(pool.apply_async(train, args=(lr, kld_ne_imp, diff_imp,diff_imp, csd_imp)))
     result = [p.get() for p in processes]
 
     #kld=0 mit repara: ~1.00 - 1.05
