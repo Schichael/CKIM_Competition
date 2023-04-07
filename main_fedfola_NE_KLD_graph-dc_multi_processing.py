@@ -1,5 +1,9 @@
 import os
 import sys
+import time
+
+import torch
+from torch import multiprocessing
 
 from federatedscope.contrib.metrics.custom_losses import call_kld_loss_encoder_metric
 from federatedscope.contrib.trainer.laplacian_trainer_NE_KLD import call_laplacian_trainer
@@ -8,8 +12,9 @@ from federatedscope.contrib.workers.laplacian_client_NE_KLD import LaplacianClie
 from federatedscope.contrib.workers.laplacian_server import LaplacianServer
 from federatedscope.register import register_trainer
 
-sys.path = ['~/Master-Thesis/CKIM_Competition/federatedscope', '~/Master-Thesis/CKIM_Competition',] + sys.path
-# sys.path = ['/home/michael/Projects/CKIM_Competition/federatedscope', '/home/michael/Projects/CKIM_Competition',] + sys.path
+#sys.path = ['~/Master-Thesis/CKIM_Competition/federatedscope',
+# '~/Master-Thesis/CKIM_Competition',] + sys.path
+sys.path = ['/home/michael/Projects/CKIM_Competition/federatedscope', '/home/michael/Projects/CKIM_Competition',] + sys.path
 
 print(sys.path)
 from federatedscope.core.cmd_args import parse_args
@@ -26,6 +31,11 @@ if os.environ.get('http_proxy'):
     del os.environ['http_proxy']
 
 register_trainer('laplacian_trainer', call_laplacian_trainer)
+
+try:
+    torch.multiprocessing.set_start_method('spawn', force=True)
+except RuntimeError:
+    pass
 
 metrics = [
     ('kld_loss_encoder', call_kld_loss_encoder_metric),
@@ -57,6 +67,7 @@ def train(lr, csd_imp, kld_imp):
     init_cfg.params.p = 0.
     init_cfg.params.alpha = 0.1
     init_cfg.params.kld_imp = kld_imp
+    init_cfg.params.save_client_always = True
 
     init_cfg.model.dropout = 0.5
     update_logger(init_cfg)
@@ -83,15 +94,19 @@ def train(lr, csd_imp, kld_imp):
 
 
 if __name__ == '__main__':
-    num_trainings = 1
+    num_trainings = 5
     csd_imps = [10]
-    kld_imps = [50]
+    kld_imps = [0]
     # lrs = [0.001, 0.005, 0.01, 0.05, 0.1, 0.5]
-    lrs = [0.1]
+    lrs = [0.04, 0.06, 0.07, 0.03]
+    pool = multiprocessing.Pool(10)
+    processes = []
     for lr in lrs:
         for csd_imp in csd_imps:
             for kld_imp in kld_imps:
                 for i in range(num_trainings):
+                    time.sleep(1)
                     setup_seed(i)
-                    print(f"training run: {i + 1}")
-                    train(lr, csd_imp, kld_imp)
+                    processes.append(pool.apply_async(train, args=(lr, csd_imp,
+                                                                   kld_imp)))
+    result = [p.get() for p in processes]
