@@ -81,7 +81,7 @@ def train(lr, kld_ne_imp, diff_imp_global, diff_imp_local, csd_imp):
     init_cfg.merge_from_file(cfg_file)
     # init_cfg.data.subdirectory = 'graph_dt_backup/processed'
     # init_cfg.merge_from_list(args.opts)
-    init_cfg.data.save_dir = 'Graph-DC_2_out_only_FrobeniusDiff_only_2_branches_NEW_sim_loss_lr_' + str(lr).replace('.', '_') + '_A'+ str(kld_ne_imp).replace('.', '_') + \
+    init_cfg.data.save_dir = 'TGraph-DC_2_out_only_FrobeniusDiff_only_2_branches_NEW_sim_loss_lr_' + str(lr).replace('.', '_') + '_A'+ str(kld_ne_imp).replace('.', '_') + \
     '_F' + str(diff_imp_global).replace('.', '_') + '_G' + str(diff_imp_local).replace('.', '_') + '_H' + str(csd_imp).replace('.', '_')
     """
         kld_ne_imps = [1] #A
