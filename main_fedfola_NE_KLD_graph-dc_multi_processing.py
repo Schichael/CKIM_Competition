@@ -12,9 +12,9 @@ from federatedscope.contrib.workers.laplacian_client_NE_KLD import LaplacianClie
 from federatedscope.contrib.workers.laplacian_server import LaplacianServer
 from federatedscope.register import register_trainer
 
-#sys.path = ['~/Master-Thesis/CKIM_Competition/federatedscope',
-# '~/Master-Thesis/CKIM_Competition',] + sys.path
-sys.path = ['/home/michael/Projects/CKIM_Competition/federatedscope', '/home/michael/Projects/CKIM_Competition',] + sys.path
+sys.path = ['~/Master-Thesis/CKIM_Competition/federatedscope',
+ '~/Master-Thesis/CKIM_Competition',] + sys.path
+#sys.path = ['/home/michael/Projects/CKIM_Competition/federatedscope', '/home/michael/Projects/CKIM_Competition',] + sys.path
 
 print(sys.path)
 from federatedscope.core.cmd_args import parse_args
@@ -98,8 +98,8 @@ if __name__ == '__main__':
     csd_imps = [10]
     kld_imps = [0]
     # lrs = [0.001, 0.005, 0.01, 0.05, 0.1, 0.5]
-    lrs = [0.04, 0.06, 0.07, 0.03]
-    pool = multiprocessing.Pool(10)
+    lrs = [0.07, 0.03]
+    pool = multiprocessing.Pool(4)
     processes = []
     for lr in lrs:
         for csd_imp in csd_imps:
