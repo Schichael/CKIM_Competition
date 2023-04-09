@@ -22,7 +22,7 @@ from federatedscope.gfl.model.gat import GAT_Net
 from federatedscope.gfl.model.gin import GIN_Net
 from federatedscope.gfl.model.gpr import GPR_Net
 
-# graph_level_Dom_Sep_1out_only_COSINEdiff_no_global_NEW
+# graph_level_Dom_Sep_1out_only_FROBENIUSdiff_no_global_NEW
 
 EPS = 1e-15
 EMD_DIM = 200
@@ -260,13 +260,6 @@ class GNN_Net_Graph(torch.nn.Module):
         else:
             return mu
 
-    def cosine_diff_loss(self, x1, x2):
-        # cosine embedding loss: 1-cos(x1, x2). The 1 defines this loss function.
-        y = torch.ones(x1.size(0)).to('cuda:0')
-        y = -y
-        diff_loss = self.cos_loss(x1, x2, y)
-        return diff_loss
-
     def similarity_loss(self, x1, x2):
         # cosine embedding loss: 1-cos(x1, x2). The 1 defines this loss function.
         y = torch.ones(x1.size(0)).to('cuda:0')
@@ -333,7 +326,7 @@ class GNN_Net_Graph(torch.nn.Module):
         x_local = self.local_linear_out1(x_local_pooled).relu()
         x_interm = self.interm_linear_out1(x_interm_pooled).relu()
 
-        diff_local_interm = self.cosine_diff_loss(x_local, x_interm)
+        diff_local_interm = self.diff_loss(x_local, x_interm)
 
 
         x_local_interm = x_local + x_interm
