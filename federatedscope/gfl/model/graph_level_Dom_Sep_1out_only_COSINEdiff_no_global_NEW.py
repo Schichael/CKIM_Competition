@@ -14,7 +14,6 @@ from torch_geometric.nn.glob import global_add_pool, global_mean_pool, \
 from wandb.util import np
 
 from federatedscope.gfl.model.MI_Network import Mine, T, MutualInformationEstimator
-from federatedscope.gfl.model.club import CLUB
 from federatedscope.gfl.model.gcn import GCN_Net
 from federatedscope.gfl.model.gine import GINE_Net
 from federatedscope.gfl.model.gine_no_jk import GINE_NO_JK_Net
@@ -23,7 +22,7 @@ from federatedscope.gfl.model.gat import GAT_Net
 from federatedscope.gfl.model.gin import GIN_Net
 from federatedscope.gfl.model.gpr import GPR_Net
 
-# graph_level_Dom_Sep_1out_only_CLUBdiff_no_global_NEW
+# graph_level_Dom_Sep_1out_only_COSINEdiff_no_global_NEW
 
 EPS = 1e-15
 EMD_DIM = 200
@@ -121,7 +120,7 @@ class GNN_Net_Graph(torch.nn.Module):
         # Embedding (pre) layer
         self.encoder_atom = AtomEncoder(in_channels, hidden)
         self.encoder = Linear(in_channels, hidden)
-        self.club_diff = CLUB(hidden, hidden, hidden)
+        self.cos_loss = torch.nn.CosineEmbeddingLoss()
         self.decoder = InnerProductDecoder()
         self.eps = None
 
@@ -261,6 +260,13 @@ class GNN_Net_Graph(torch.nn.Module):
         else:
             return mu
 
+    def cosine_diff_loss(self, x1, x2):
+        # cosine embedding loss: 1-cos(x1, x2). The 1 defines this loss function.
+        y = torch.ones(x1.size(0)).to('cuda:0')
+        y = -y
+        diff_loss = self.cos_loss(x1, x2, y)
+        return diff_loss
+
     def similarity_loss(self, x1, x2):
         # cosine embedding loss: 1-cos(x1, x2). The 1 defines this loss function.
         y = torch.ones(x1.size(0)).to('cuda:0')
@@ -327,10 +333,7 @@ class GNN_Net_Graph(torch.nn.Module):
         x_local = self.local_linear_out1(x_local_pooled).relu()
         x_interm = self.interm_linear_out1(x_interm_pooled).relu()
 
-        diff_local_interm = self.club_diff.learning_loss(x_local, x_interm)
-
-        with torch.no_grad():
-            MI = self.club_diff(x_local, x_interm)
+        diff_local_interm = self.cosine_diff_loss(x_local, x_interm)
 
 
         x_local_interm = x_local + x_interm
@@ -347,7 +350,7 @@ class GNN_Net_Graph(torch.nn.Module):
         # return x, mi
         # return out_global, torch.Tensor([[0.1, 0.9]]*out_global.size(0)).float().to('cuda:0'), torch.Tensor([[0.1, 0.9]]*out_global.size(0)).float().to('cuda:0'), kld_loss_encoder, kld_global, torch.Tensor([0.]).float().to('cuda:0'), torch.Tensor([0.]).float().to('cuda:0'), torch.Tensor([0.]).float().to('cuda:0'), torch.Tensor([0.]).float().to('cuda:0'), torch.Tensor([0.]).float().to('cuda:0')
 
-        return out_local_interm, out_interm, kld_loss_encoder, diff_local_interm, MI
+        return out_local_interm, out_interm, kld_loss_encoder, diff_local_interm
 
 
 def dot_product_decode(Z):
