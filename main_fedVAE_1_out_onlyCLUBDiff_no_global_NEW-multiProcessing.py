@@ -89,7 +89,7 @@ def train(lr, kld_ne_imp, diff_interm_imp, diff_local_imp, csd_imp):
     # init_cfg.data.subdirectory = 'graph_dt_backup/processed'
     # init_cfg.merge_from_list(args.opts)
     init_cfg.data.save_dir = \
-        'Graph-DC_Fed_1_out_only_CLUBDiff_no_global_multistep_lr_' + str(
+        'Graph-DC_Fed_1_out_only_CLUBDiff_multistep_lr_' + str(
             lr).replace('.', '_') + '_A'+ str(kld_ne_imp).replace('.', '_') + \
     '_F' + str(diff_interm_imp).replace('.', '_') + \
     '_G' + str(diff_local_imp).replace('.', '_') + '_H' + str(csd_imp).replace('.', '_')
@@ -168,7 +168,7 @@ if __name__ == '__main__':
                 for diff_local_imp in diff_local_imps:
                     for kld_ne_imp in kld_ne_imps:
                         for i in range(num_trainings):
-                            time.sleep(1)
+                            time.sleep(10)
                             setup_seed(i)
                             processes.append(pool.apply_async(train, args=(lr, kld_ne_imp, diff_interm_imp, diff_local_imp, csd_imp)))
     result = [p.get() for p in processes]
