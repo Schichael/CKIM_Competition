@@ -261,15 +261,30 @@ class LaplacianDomainSeparationVAE_1Out_OnlyDiff_noGlobal_NEW_Trainer(
         ctx.diff_interm = diff_interm
         """
         # backward through the local and interm branch. Only backward interm branch
-
+        for param in ctx.model.named_parameters():
+            if param[0].startswith("local"):
+                param[1].requires_grad = False
 
         loss = ctx.loss_out_interm + self.config.params.diff_interm_imp * \
                ctx.diff_interm + self.config.params.kld_ne_imp * \
-               ctx.kld_loss_encoder + self.config.params.diff_local_imp * \
-               ctx.diff_local
+               ctx.kld_loss_encoder
         # loss = ctx.loss_out_global
 
         loss.backward(retain_graph=True)
+
+        # Reset requires_grad
+        for param in ctx.model.named_parameters():
+            if param[0] in self.grad_params:
+                param[1].requires_grad = True
+
+        # backward through the local branch. Only backward local branch
+        for param in ctx.model.named_parameters():
+            if not param[0].startswith("local"):
+                param[1].requires_grad = False
+        loss = ctx.loss_out_local_interm + self.config.params.diff_local_imp * \
+               ctx.diff_local
+        loss.backward(retain_graph=True)
+
 
 
         # Reset requires_grad
