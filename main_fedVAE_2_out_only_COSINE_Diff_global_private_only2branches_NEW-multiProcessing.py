@@ -109,6 +109,7 @@ def train(lr, kld_ne_imp, diff_imp_global, diff_imp_local, csd_imp):
 
     init_cfg.federate.client_num = 13
     init_cfg.params.eps = 1e-15
+    init_cfg.federate.total_round_num = 500
 
     init_cfg.params.save_client_always = True
 
@@ -145,28 +146,28 @@ def tmp(a):
 
 if __name__ == '__main__':
 
-    num_trainings = 5
+    num_trainings = 1
     kld_ne_imps = [0] #A
-    diff_imps = [0.003, 0.01, 0.1]   #Now 0.0001
-    #diff_global_imps = [0.01] #F    HERE  [0.0001, 0.001]
-    #diff_local_imps = [0.01] #G
+    # diff_imps =    #Now 0.0001
+    diff_global_imps = [0] #F    HERE  [0.0001, 0.001]
+    diff_local_imps = [0.01, 0.1, 0.5, 1] #G
     csd_imp = 10 #H
     #sim_losses = ["mse", "cosine"]
 
     # lrs = [0.001, 0.005, 0.01, 0.05, 0.1, 0.5]
     lrs = [0.05]
-    pool = multiprocessing.Pool(5)
+    pool = multiprocessing.Pool(1)
     processes = []
     for lr in lrs:
-        for diff_imp in diff_imps:
-            #for diff_local_imp in diff_local_imps:
+        for diff_global_imp in diff_global_imps:
+            for diff_local_imp in diff_local_imps:
                 for kld_ne_imp in kld_ne_imps:
                     for i in range(num_trainings):
                         time.sleep(10)
                         setup_seed(i)
                         processes.append(pool.apply_async(train, args=(lr,
                                                                        kld_ne_imp,
-                                                                       diff_imp, diff_imp, csd_imp)))
+                                                                       diff_global_imp, diff_local_imp, csd_imp)))
     result = [p.get() for p in processes]
 
     #kld=0 mit repara: ~1.00 - 1.05

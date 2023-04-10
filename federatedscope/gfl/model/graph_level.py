@@ -21,8 +21,9 @@ from federatedscope.gfl.model.sage import SAGE_Net
 from federatedscope.gfl.model.gat import GAT_Net
 from federatedscope.gfl.model.gin import GIN_Net
 from federatedscope.gfl.model.gpr import GPR_Net
+from federatedscope.gfl.model.club import CLUB
 
-# graph_level_Dom_Sep_2out_only2_branches_COSINEdiff_sim_NEW
+# graph_level_Dom_Sep_2out_only2_branches_CLUBdiff_sim_NEW
 
 EPS = 1e-15
 EMD_DIM = 200
@@ -123,7 +124,7 @@ class GNN_Net_Graph(torch.nn.Module):
         self.eps = None
 
         self.cos_loss = torch.nn.CosineEmbeddingLoss()
-
+        self.club_diff = CLUB(hidden, hidden, hidden)
         # GNN layer
         if gnn == 'gcn':
             self.gnn = GCN_Net(in_channels=hidden,
@@ -328,8 +329,12 @@ class GNN_Net_Graph(torch.nn.Module):
         x_local = self.local_linear_out1(x_local_pooled).relu()
         x_global = self.global_linear_out1(x_global_enc_pooled).relu()
 
-        diff_local = self.cosine_diff_loss(x_local, x_global.detach())
-        diff_global = self.cosine_diff_loss(x_local.detach(), x_global)
+        diff_global = self.club_diff.learning_loss(x_local.detach(), x_global)
+        diff_local = self.club_diff.learning_loss(x_local, x_global.detach())
+        diff_club_net = self.club_diff.learning_loss(x_local.detach(), x_global.detach())
+
+        with torch.no_grad():
+            MI = self.club_diff(x_local, x_global)
 
         x_local = F.dropout(x_local, self.dropout, training=self.training)
         x_global = F.dropout(x_global, self.dropout, training=self.training)
@@ -343,7 +348,7 @@ class GNN_Net_Graph(torch.nn.Module):
         # return x, mi
         # return out_global, torch.Tensor([[0.1, 0.9]]*out_global.size(0)).float().to('cuda:0'), torch.Tensor([[0.1, 0.9]]*out_global.size(0)).float().to('cuda:0'), kld_loss_encoder, kld_global, torch.Tensor([0.]).float().to('cuda:0'), torch.Tensor([0.]).float().to('cuda:0'), torch.Tensor([0.]).float().to('cuda:0'), torch.Tensor([0.]).float().to('cuda:0'), torch.Tensor([0.]).float().to('cuda:0')
 
-        return out_local_global, kld_loss_encoder, diff_local, diff_global
+        return out_local_global, kld_loss_encoder, diff_local, diff_global, diff_club_net, MI
 
 
 def dot_product_decode(Z):

@@ -156,8 +156,8 @@ if __name__ == '__main__':
     num_trainings = 5
     kld_ne_imps = [0] #A
     #diff_imps = [0, 0.1, 0.01, 0.05, 0.005]   #Now 0.0001
-    diff_global_imps = [0.005] #F    HERE  [0.0001, 0.001]
-    diff_local_imps = [0.005] #G
+    diff_global_imps = [0.02] #F    HERE  [0.0001, 0.001]
+    diff_local_imps = [0.02] #G
     csd_imp = 10 #H
 
     #sim_losses = ["mse", "cosine"]
