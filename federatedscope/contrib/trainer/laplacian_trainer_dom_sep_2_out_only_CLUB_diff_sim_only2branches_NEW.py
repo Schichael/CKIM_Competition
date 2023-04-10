@@ -180,7 +180,7 @@ class LaplacianDomainSeparationVAE_2Out_OnlyCLUBDiffSim_only2branches_NEW_Traine
     def _hook_on_batch_forward(self, ctx):
         self.tmp += 1
         batch = ctx.data_batch.to(ctx.device)
-        out_global_local, kld_loss_encoder, diff_local_global, MI = ctx.model(batch)
+        out_global_local, kld_loss_encoder, diff_local, diff_global, diff_club_net, MI = ctx.model(batch)
 
         #ctx.sim_interm_fixed = sim_interm_fixed
 
@@ -202,8 +202,11 @@ class LaplacianDomainSeparationVAE_2Out_OnlyCLUBDiffSim_only2branches_NEW_Traine
         #ctx.rec_loss = rec_loss
         #ctx.rec_loss_metric = rec_loss.detach().item()
 
-        ctx.diff_local_global = diff_local_global
-        ctx.diff_local_global_metric.append(diff_local_global.detach().item())
+        ctx.diff_local = diff_local
+        ctx.diff_local_global_metric.append(diff_local.detach().item())
+
+        ctx.diff_global = diff_global
+        ctx.diff_club_net = diff_club_net
 
         ctx.MI_metric.append(MI.detach().item())
 
@@ -377,7 +380,7 @@ class LaplacianDomainSeparationVAE_2Out_OnlyCLUBDiffSim_only2branches_NEW_Traine
                 param[1].requires_grad = False
 
         # train CLUB network
-        loss = (self.config.params.club_lr / self.config.train.optimizer.lr) * ctx.diff_local_global
+        loss = (self.config.params.club_lr / self.config.train.optimizer.lr) * ctx.diff_club_net
         loss.backward(retain_graph=True)
 
         # Reset requires_grad
@@ -391,7 +394,7 @@ class LaplacianDomainSeparationVAE_2Out_OnlyCLUBDiffSim_only2branches_NEW_Traine
 
 
         # loss for output and KLD
-        loss = ctx.loss_out_global + self.config.params.kld_ne_imp * ctx.kld_loss_encoder + self.config.params.diff_imp_global * ctx.diff_local_global
+        loss = ctx.loss_out_global + self.config.params.kld_ne_imp * ctx.kld_loss_encoder + self.config.params.diff_imp_global * ctx.diff_global + self.config.params.diff_imp_local * ctx.diff_local
         loss.backward(retain_graph=True)
 
         # Reset requires_grad

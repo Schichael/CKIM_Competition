@@ -317,7 +317,7 @@ class GNN_Net_Graph(torch.nn.Module):
 
         kld_loss_encoder = self.kld_loss(x)
 
-        x_local_enc = self.local_gnn((x, edge_index))
+        x_local_enc = self.local_gnn((x.detach(), edge_index))
         x_interm_enc = self.interm_gnn((x, edge_index))
 
         x_local_pooled = self.pooling(x_local_enc, batch)
@@ -335,7 +335,7 @@ class GNN_Net_Graph(torch.nn.Module):
             MI = self.club_diff(x_local, x_interm)
 
 
-        x_local_interm = x_local + x_interm
+        x_local_interm = x_local + x_interm.detach()
 
         x_local_interm = F.dropout(x_local_interm, self.dropout, training=self.training)
         x_interm = F.dropout(x_interm, self.dropout, training=self.training)

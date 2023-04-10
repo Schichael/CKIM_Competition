@@ -47,6 +47,7 @@ class LaplacianDomainSeparation_1Out_OnlyCLUBDiff_noGlobal_NEW_Trainer(
         self.ctx.diff_local_interm_metric = []
         self.ctx.loss_out_local_interm_metric = []
         self.ctx.MI_metric = []
+        self.ctx.loss_out_interm_metric = []
         # Get all model parameters with reuqires_grad = True
         # for param in self.ctx.model.named_parameters():
         #    if param[0].startswith('fixed'):
@@ -122,6 +123,7 @@ class LaplacianDomainSeparation_1Out_OnlyCLUBDiff_noGlobal_NEW_Trainer(
         self.ctx.diff_local_interm_metric = []
         self.ctx.loss_out_local_interm_metric = []
         self.ctx.MI_metric = []
+        self.ctx.loss_out_interm_metric = []
 
         if ctx.cur_data_split == "train" and not self.in_finetune:
             # print("in train")
@@ -214,7 +216,7 @@ class LaplacianDomainSeparation_1Out_OnlyCLUBDiff_noGlobal_NEW_Trainer(
         ctx.loss_out_local_interm = ctx.criterion(out_local_interm, label)
         ctx.loss_out_local_interm_metric.append(ctx.loss_out_local_interm.detach().item())
         ctx.loss_out_interm = ctx.criterion(out_interm, label)
-        ctx.loss_out_interm_metric = ctx.loss_out_interm.detach().item()
+        ctx.loss_out_interm_metric.append(ctx.loss_out_interm.detach().item())
 
         # ctx.loss_batch_csd = self.get_csd_loss(ctx.model.state_dict(), ctx.new_mu, ctx.new_omega, ctx.cur_epoch_i + 1)
         ctx.loss_batch_csd = csd_loss(ctx.model.state_dict(), ctx.new_mu,
@@ -393,17 +395,30 @@ class LaplacianDomainSeparation_1Out_OnlyCLUBDiff_noGlobal_NEW_Trainer(
             if param[0].startswith("club_diff"):
                 param[1].requires_grad = False
 
-        # train CLUB network
+        # train global branch + NE + clf
         loss = ctx.loss_out_interm + self.config.params.diff_interm_imp * \
                ctx.diff_loss_interm + self.config.params.kld_ne_imp * \
-               ctx.kld_loss_encoder + self.config.params.diff_local_imp * \
-               ctx.diff_loss_local
+               ctx.kld_loss_encoder
         loss.backward(retain_graph=True)
 
         # Reset requires_grad
         for param in ctx.model.named_parameters():
             if param[0] in self.grad_params:
                 param[1].requires_grad = True
+
+        for param in ctx.model.named_parameters():
+            if not param[0].startswith("local"):
+                param[1].requires_grad = False
+
+        loss = self.config.params.diff_local_imp * \
+               ctx.diff_loss_local + ctx.loss_out_local_interm
+        loss.backward(retain_graph=True)
+
+        # Reset requires_grad
+        for param in ctx.model.named_parameters():
+            if param[0] in self.grad_params:
+                param[1].requires_grad = True
+
 
         # Compute omega
         for name, param in ctx.model.named_parameters():

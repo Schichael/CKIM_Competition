@@ -164,7 +164,7 @@ class LaplacianDomainSeparationVAE_2Out_OnlyDiffSim_only2branches_NEW_Trainer(Gr
     def _hook_on_batch_forward(self, ctx):
         self.tmp += 1
         batch = ctx.data_batch.to(ctx.device)
-        out_global_local, kld_loss_encoder, diff_local_global = ctx.model(batch)
+        out_global_local, kld_loss_encoder, diff_local, diff_global = ctx.model(batch)
 
         #ctx.sim_interm_fixed = sim_interm_fixed
 
@@ -190,10 +190,10 @@ class LaplacianDomainSeparationVAE_2Out_OnlyDiffSim_only2branches_NEW_Trainer(Gr
         #ctx.rec_loss = rec_loss
         #ctx.rec_loss_metric = rec_loss.detach().item()
 
-        ctx.diff_local_global = diff_local_global
-        ctx.diff_local_global_metric.append(diff_local_global.detach().item())
+        ctx.diff_local = diff_local
+        ctx.diff_local_global_metric.append(diff_local.detach().item())
 
-
+        ctx.diff_global = diff_global
         #print(f"diff_local_global: {diff_local_global}")
         #print(f"mi_global_fixed: {sim_global_fixed}")
         #print(f"rec_loss: {rec_loss}")
@@ -344,7 +344,7 @@ class LaplacianDomainSeparationVAE_2Out_OnlyDiffSim_only2branches_NEW_Trainer(Gr
         ctx.optimizer.zero_grad()
 
         # loss for output and KLD
-        loss = ctx.loss_out_global + self.config.params.kld_ne_imp * ctx.kld_loss_encoder + self.config.params.diff_imp_global * ctx.diff_local_global
+        loss = ctx.loss_out_global + self.config.params.kld_ne_imp * ctx.kld_loss_encoder + self.config.params.diff_imp_global * ctx.diff_global + self.config.params.diff_imp_local * ctx.diff_local
         loss.backward(retain_graph=True)
 
         # Compute omega

@@ -328,7 +328,8 @@ class GNN_Net_Graph(torch.nn.Module):
         x_local = self.local_linear_out1(x_local_pooled).relu()
         x_global = self.global_linear_out1(x_global_enc_pooled).relu()
 
-        diff_local_global = self.cosine_diff_loss(x_local, x_global)
+        diff_local = self.cosine_diff_loss(x_local, x_global.detach())
+        diff_global = self.cosine_diff_loss(x_local.detach(), x_global)
 
         x_local = F.dropout(x_local, self.dropout, training=self.training)
         x_global = F.dropout(x_global, self.dropout, training=self.training)
@@ -342,7 +343,7 @@ class GNN_Net_Graph(torch.nn.Module):
         # return x, mi
         # return out_global, torch.Tensor([[0.1, 0.9]]*out_global.size(0)).float().to('cuda:0'), torch.Tensor([[0.1, 0.9]]*out_global.size(0)).float().to('cuda:0'), kld_loss_encoder, kld_global, torch.Tensor([0.]).float().to('cuda:0'), torch.Tensor([0.]).float().to('cuda:0'), torch.Tensor([0.]).float().to('cuda:0'), torch.Tensor([0.]).float().to('cuda:0'), torch.Tensor([0.]).float().to('cuda:0')
 
-        return out_local_global, kld_loss_encoder, diff_local_global
+        return out_local_global, kld_loss_encoder, diff_local, diff_global
 
 
 def dot_product_decode(Z):
