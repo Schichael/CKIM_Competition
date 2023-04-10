@@ -55,7 +55,7 @@ for metric in metrics:
 
 #sys.path = ['~/Master-Thesis/CKIM_Competition/federatedscope',
 # '~/Master-Thesis/CKIM_Competition',] + sys.path
-sys.path = ['/home/michael/Projects/CKIM_Competition/federatedscope', '/home/michael/Projects/CKIM_Competition',] + sys.path
+sys.path = ['/home/ms234795/Master Thesis/CKIM_Competition/federatedscope', '/home/ms234795/Master Thesis/CKIM_Competition',] + sys.path
 
 print(sys.path)
 from federatedscope.core.cmd_args import parse_args
@@ -153,7 +153,7 @@ def tmp(a):
 
 if __name__ == '__main__':
 
-    num_trainings = 1
+    num_trainings = 5
     kld_ne_imps = [0] #A
     #diff_imps = [0, 0.1, 0.01, 0.05, 0.005]   #Now 0.0001
     diff_global_imps = [0.005] #F    HERE  [0.0001, 0.001]
