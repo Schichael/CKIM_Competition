@@ -158,8 +158,8 @@ class LaplacianDomainSeparationVAE_1Out_OnlyDiff_noGlobal_NEW_Trainer(
     def _hook_on_batch_forward(self, ctx):
         self.tmp += 1
         batch = ctx.data_batch.to(ctx.device)
-        out_local_interm, out_interm, kld_loss_encoder, diff_local_interm = ctx.model(batch,
-                                                                                                               self.config.params.sim_loss)
+        out_local_interm, out_interm, kld_loss_encoder, diff_local, diff_interm = \
+            ctx.model(batch, self.config.params.sim_loss)
 
         # ctx.sim_interm_fixed = sim_interm_fixed
 
@@ -181,8 +181,9 @@ class LaplacianDomainSeparationVAE_1Out_OnlyDiff_noGlobal_NEW_Trainer(
         # ctx.rec_loss = rec_loss
         # ctx.rec_loss_metric = rec_loss.detach().item()
 
-        ctx.diff_local_interm = diff_local_interm
-        ctx.diff_local_interm_metric.append(diff_local_interm.detach().item())
+        ctx.diff_local = diff_local
+        ctx.diff_interm = diff_interm
+        ctx.diff_local_interm_metric.append(diff_local.detach().item())
 
         """
         ctx.kld_loss_encoder_metric = []
@@ -255,32 +256,20 @@ class LaplacianDomainSeparationVAE_1Out_OnlyDiff_noGlobal_NEW_Trainer(
 
         """
         ctx.optimizer.zero_grad()
-
+        """
+        ctx.diff_local = diff_local
+        ctx.diff_interm = diff_interm
+        """
         # backward through the local and interm branch. Only backward interm branch
-        for param in ctx.model.named_parameters():
-            if param[0].startswith("local"):
-                param[1].requires_grad = False
+
 
         loss = ctx.loss_out_interm + self.config.params.diff_interm_imp * \
-               ctx.diff_local_interm + self.config.params.kld_ne_imp * \
-               ctx.kld_loss_encoder
+               ctx.diff_interm + self.config.params.kld_ne_imp * \
+               ctx.kld_loss_encoder + self.config.params.diff_local_imp * \
+               ctx.diff_local
         # loss = ctx.loss_out_global
 
         loss.backward(retain_graph=True)
-
-        # Reset requires_grad
-        for param in ctx.model.named_parameters():
-            if param[0] in self.grad_params:
-                param[1].requires_grad = True
-
-        # backward through the local branch. Only backward local branch
-        for param in ctx.model.named_parameters():
-            if param[0].startswith("global") or param[0].startswith("clf"):
-                param[1].requires_grad = False
-        loss = ctx.loss_out_local_interm + self.config.params.diff_local_imp * \
-               ctx.diff_local_interm
-        loss.backward(retain_graph=True)
-
 
 
         # Reset requires_grad
