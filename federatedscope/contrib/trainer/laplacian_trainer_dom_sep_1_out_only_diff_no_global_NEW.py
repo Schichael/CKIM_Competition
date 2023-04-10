@@ -275,7 +275,7 @@ class LaplacianDomainSeparationVAE_1Out_OnlyDiff_noGlobal_NEW_Trainer(
 
         # backward through the local branch. Only backward local branch
         for param in ctx.model.named_parameters():
-            if not param[0].startswith("local"):
+            if param[0].startswith("global") or param[0].startswith("clf"):
                 param[1].requires_grad = False
         loss = ctx.loss_out_local_interm + self.config.params.diff_local_imp * \
                ctx.diff_local_interm

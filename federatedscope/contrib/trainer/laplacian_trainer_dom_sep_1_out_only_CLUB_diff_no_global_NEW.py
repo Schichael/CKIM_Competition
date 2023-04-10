@@ -160,7 +160,7 @@ class LaplacianDomainSeparation_1Out_OnlyCLUBDiff_noGlobal_NEW_Trainer(
     def _hook_on_batch_forward(self, ctx):
         self.tmp += 1
         batch = ctx.data_batch.to(ctx.device)
-        out_local_interm, out_interm, kld_loss_encoder, diff_local_interm, MI = ctx.model(batch,
+        out_local_interm, out_interm, kld_loss_encoder, diff_loss_local, diff_loss_interm, diff_loss_club_net, MI = ctx.model(batch,
                                                                                                                self.config.params.sim_loss)
 
         # ctx.sim_interm_fixed = sim_interm_fixed
@@ -187,8 +187,11 @@ class LaplacianDomainSeparation_1Out_OnlyCLUBDiff_noGlobal_NEW_Trainer(
         # ctx.rec_loss = rec_loss
         # ctx.rec_loss_metric = rec_loss.detach().item()
 
-        ctx.diff_local_interm = diff_local_interm
-        ctx.diff_local_interm_metric.append(diff_local_interm.detach().item())
+        ctx.diff_loss_interm = diff_loss_interm
+        ctx.diff_loss_local = diff_loss_local
+        ctx.diff_loss_club_net = diff_loss_club_net
+
+        ctx.diff_local_interm_metric.append(diff_loss_club_net.detach().item())
 
         ctx.MI_metric.append(MI.detach().item())
         # print(f"diff_local_global: {diff_local_global}")
@@ -246,7 +249,8 @@ class LaplacianDomainSeparation_1Out_OnlyCLUBDiff_noGlobal_NEW_Trainer(
 
         return sum(loss_set)
 
-    def _backward_step(self, ctx):
+
+    def _backward_step_old(self, ctx):
         """ Train the local and global branch. Freeze everything else
 
         Args:
@@ -291,13 +295,110 @@ class LaplacianDomainSeparation_1Out_OnlyCLUBDiff_noGlobal_NEW_Trainer(
 
         # backward through the local branch. Only backward local branch
         for param in ctx.model.named_parameters():
-            if not param[0].startswith("local"):
+            if param[0].startswith("global") or param[0].startswith("club_diff") or param[0].startswith("clf"):
                 param[1].requires_grad = False
         loss = ctx.loss_out_local_interm + self.config.params.diff_local_imp * \
                ctx.diff_local_interm
         loss.backward(retain_graph=True)
 
 
+
+        # Reset requires_grad
+        for param in ctx.model.named_parameters():
+            if param[0] in self.grad_params:
+                param[1].requires_grad = True
+
+        # Compute omega
+        for name, param in ctx.model.named_parameters():
+            if param.grad is not None and param.requires_grad is True:
+                ctx.omega[name] += (len(ctx.data_batch.y) / len(
+                    ctx.data['train'].dataset)) * param.grad.data.clone() ** 2
+
+        loss = self.config.params.csd_imp * ctx.loss_batch_csd
+        loss.backward()
+
+        # Prior loss for linear layer
+        # for param in ctx.model.named_parameters():
+        #    if not (param[0].startswith("global_linear_out1")):
+        #        param[1].requires_grad = False
+
+        # loss = self.config.params.csd_imp * ctx.loss_batch_csd
+        # loss.backward(retain_graph=False)
+
+        # freeze everything that is not local
+        """
+        for param in ctx.model.named_parameters():
+            if not param[0].startswith("local"):
+                param[1].requires_grad = False
+
+
+        loss = ctx.loss_out_local_interm + self.config.params.kld_local_imp * ctx.kld_local + self.config.params.diff_local_imp * ctx.diff_local_interm
+
+        loss.backward()
+        """
+        if ctx.grad_clip > 0:
+            torch.nn.utils.clip_grad_norm_(ctx.model.parameters(),
+                                           ctx.grad_clip)
+        ctx.optimizer.step()
+
+        # Reset requires_grad
+        for param in ctx.model.named_parameters():
+            if param[0] in self.grad_params:
+                param[1].requires_grad = True
+
+    def _hook_on_batch_backward(self, ctx):
+        # Get all model parameters with reuqires_grad = True
+        # grad_params = [param[0] for param in ctx.model.named_parameters() if param[1].requires_grad]
+
+        ctx.optimizer.zero_grad()
+
+        self._backward_step(ctx)
+
+
+
+    def _backward_step(self, ctx):
+        """ Train the local and global branch. Freeze everything else
+
+        Args:
+            ctx:
+
+        Returns:
+
+        """
+
+
+        """
+        ctx.diff_loss_interm = diff_loss_interm
+        ctx.diff_loss_local = diff_loss_local
+        ctx.diff_loss_club_net = diff_loss_club_net
+        """
+
+        ctx.optimizer.zero_grad()
+        # loss for diff loss for global branch
+        for param in ctx.model.named_parameters():
+            if not (param[0].startswith("club_diff")):
+                param[1].requires_grad = False
+
+        # train CLUB network
+        loss = (self.config.params.club_lr / self.config.train.optimizer.lr) * ctx.diff_loss_club_net
+        loss.backward(retain_graph=True)
+
+        # Reset requires_grad
+        for param in ctx.model.named_parameters():
+            if param[0] in self.grad_params:
+                param[1].requires_grad = True
+
+        # backward through the interm branch. Only backward interm branch
+        for param in ctx.model.named_parameters():
+            if param[0].startswith("club_diff"):
+                param[1].requires_grad = False
+
+        # train CLUB network
+        loss = ctx.loss_out_interm + self.config.params.diff_interm_imp * \
+               ctx.diff_loss_interm + self.config.params.kld_ne_imp * \
+               ctx.kld_loss_encoder + self.config.params.diff_local_imp * \
+               ctx.diff_loss_local
+        loss.backward(retain_graph=True)
 
         # Reset requires_grad
         for param in ctx.model.named_parameters():
