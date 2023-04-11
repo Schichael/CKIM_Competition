@@ -117,7 +117,7 @@ def train(lr, kld_ne_imp, diff_imp_global, diff_imp_local, csd_imp):
     init_cfg.params.eps = 1e-15
 
     init_cfg.params.club_lr = 0.05
-    init_cfg.federate.total_round_num = 500
+    # init_cfg.federate.total_round_num = 500
 
     init_cfg.params.save_client_always = True
 
