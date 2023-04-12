@@ -247,7 +247,7 @@ class LaplacianDomainSeparation_1Out_OnlyCOSINEDiff_noGlobal_RECON_Loss_NEW_Trai
             torch.save(x_local_pooled, file_name)
 
             # interm
-            file_name = path + '/global' + dataset_name + '_' + str(cur_batch_i) + '.pt'
+            file_name = path + '/global_' + dataset_name + '_' + str(cur_batch_i) + '.pt'
             torch.save(x_global_pooled, file_name)
 
             # save labels

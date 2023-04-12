@@ -43,7 +43,7 @@ class FeatureAnalysisLaplacianDomainSeparationVAE_2_out_onlyDiff_only2branches_N
         self.omega_set = self._set_init_omega(model, device)
         #self._align_global_local_parameters(model)
 
-        trainer = FeatureAnalysisLaplacianResNetClient(
+        trainer = FeatureAnalysisLaplacianDomainSeparationVAE_2Out_OnlyDiffSim_only2branches_NEW_Trainer(
             model=model,
             omega=self.omega_set,
             data=data,
