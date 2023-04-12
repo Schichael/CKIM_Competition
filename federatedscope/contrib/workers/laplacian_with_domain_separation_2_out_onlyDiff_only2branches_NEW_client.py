@@ -45,6 +45,7 @@ class LaplacianDomainSeparationVAE_2_out_onlyDiff_only2branches_NEW_Client(Clien
             omega=self.omega_set,
             data=data,
             device=device,
+            clientID = ID,
             config=config,
             only_for_eval=False,
             monitor=None

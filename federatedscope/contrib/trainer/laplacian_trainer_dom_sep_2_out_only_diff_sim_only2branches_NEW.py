@@ -1,5 +1,6 @@
 import copy
 import logging
+import os
 from copy import deepcopy
 from typing import Callable
 
@@ -20,6 +21,7 @@ class LaplacianDomainSeparationVAE_2Out_OnlyDiffSim_only2branches_NEW_Trainer(Gr
                  omega,
                  data,
                  device,
+                 clientID,
                  config,
                  only_for_eval=False,
                  monitor=None):
@@ -33,6 +35,7 @@ class LaplacianDomainSeparationVAE_2Out_OnlyDiffSim_only2branches_NEW_Trainer(Gr
                          monitor)
 
         self.ctx.omega = self.omega
+        self.clientID = clientID
         self.device = device
         self.config = config
         self.first_round = True
@@ -125,7 +128,7 @@ class LaplacianDomainSeparationVAE_2Out_OnlyDiffSim_only2branches_NEW_Trainer(Gr
         ctx.kld_loss_encoder_metric = []
         ctx.loss_batch_csd_metric = []
         ctx.diff_local_global_metric = []
-        if ctx.cur_data_split == "train" and not self.in_finetune:
+        if ctx.cur_data_split == "train":
             #print("in train")
             self.round_num += 1
             self.in_finetune = True
@@ -164,7 +167,7 @@ class LaplacianDomainSeparationVAE_2Out_OnlyDiffSim_only2branches_NEW_Trainer(Gr
     def _hook_on_batch_forward(self, ctx):
         self.tmp += 1
         batch = ctx.data_batch.to(ctx.device)
-        out_global_local, kld_loss_encoder, diff_local, diff_global = ctx.model(batch)
+        out_global_local, kld_loss_encoder, diff_local, diff_global, x_local, x_global = ctx.model(batch)
 
         #ctx.sim_interm_fixed = sim_interm_fixed
 
@@ -221,6 +224,31 @@ class LaplacianDomainSeparationVAE_2Out_OnlyDiffSim_only2branches_NEW_Trainer(Gr
         ctx.batch_size = len(label)
         ctx.y_true = label
         ctx.y_prob = out_global_local
+
+        if self.round_num == 498 or self.round_num == 998:
+            dataset_name = self.ctx.dataset_name
+            cur_batch_i = self.ctx.cur_batch_i
+            out_dir = self.config.outdir
+
+            path = out_dir + '/features/client_' + str(self.clientID)
+
+            if not os.path.exists(path):
+                os.makedirs(path)
+
+
+            # local
+            file_name = path + '/local_' + dataset_name + '_' + str(cur_batch_i) + '.pt'
+            torch.save(x_local, file_name)
+
+            # interm
+            file_name = path + '/global_' + dataset_name + '_' + str(cur_batch_i) + '.pt'
+            torch.save(x_global, file_name)
+
+            # save labels
+            # local
+            file_name = path + '/' + dataset_name + '_' + str(
+                cur_batch_i) + '_labels' + '.pt'
+            torch.save(label, file_name)
 
         # record the index of the ${MODE} samples
         if hasattr(ctx.data_batch, 'data_index'):
