@@ -255,8 +255,13 @@ class Trainer(object):
         """
         if dataset_name is None:
             dataset_name = mode
+
+        self.ctx.dataset_name = dataset_name
+        self.ctx.dataset_mode = mode
         self.ctx.append_mode(mode)
         self.ctx.track_used_dataset(dataset_name)
+
+
 
         for hook in hooks_set["on_fit_start"]:
             hook(self.ctx)

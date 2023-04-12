@@ -53,6 +53,7 @@ class LaplacianDomainSeparationVAE_1_out_onlyCLUB_Diff_noGlobal_ReconLoss_NEW_Cl
             data=data,
             device=device,
             config=config,
+            clientID=ID,
             only_for_eval=False,
             monitor=None
         )

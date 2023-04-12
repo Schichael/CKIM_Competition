@@ -22,7 +22,7 @@ from federatedscope.gfl.model.gat import GAT_Net
 from federatedscope.gfl.model.gin import GIN_Net
 from federatedscope.gfl.model.gpr import GPR_Net
 
-# graph_level_Dom_Sep_1out_only_COSINEdiff_no_global_recon_loss_NEW
+# graph_level_Dom_Sep_1out_only_COSINEdiff_no_global_recon_loss_diff_before_pool_NEW
 
 EPS = 1e-15
 EMD_DIM = 200
@@ -328,11 +328,11 @@ class GNN_Net_Graph(torch.nn.Module):
         x_interm_enc = self.interm_gnn((x, edge_index))
 
         x_interm_pooled = self.pooling(x_interm_enc, batch)
-        x_local_pooled = self.pooling(x_local_enc, batch)
+
+        diff_local_interm = self.cosine_diff_loss(x_interm_enc, x_local_enc)
 
         x_interm = self.interm_linear_out1(x_interm_pooled).relu()
 
-        diff_local_interm = self.cosine_diff_loss(x_interm_pooled, x_local_pooled)
 
         x_local_interm = x_local_enc + x_interm_enc.detach()
 
@@ -350,7 +350,7 @@ class GNN_Net_Graph(torch.nn.Module):
         # return out_global, torch.Tensor([[0.1, 0.9]]*out_global.size(0)).float().to('cuda:0'), torch.Tensor([[0.1, 0.9]]*out_global.size(0)).float().to('cuda:0'), kld_loss_encoder, kld_global, torch.Tensor([0.]).float().to('cuda:0'), torch.Tensor([0.]).float().to('cuda:0'), torch.Tensor([0.]).float().to('cuda:0'), torch.Tensor([0.]).float().to('cuda:0'), torch.Tensor([0.]).float().to('cuda:0')
 
         return out_interm, kld_loss_encoder, diff_local_interm, recon_loss, \
-            x_interm_pooled, x_local_pooled
+            x_interm_enc, x_local_enc
 
 
 def dot_product_decode(Z):

@@ -1,5 +1,6 @@
 import copy
 import logging
+import os
 from copy import deepcopy
 from typing import Callable
 
@@ -127,7 +128,7 @@ class LaplacianDomainSeparation_1Out_OnlyCOSINEDiff_noGlobal_RECON_Loss_NEW_Trai
         self.ctx.MI_metric = []
         self.ctx.rec_loss_metric = []
 
-        if ctx.cur_data_split == "train" and not self.in_finetune:
+        if ctx.cur_data_split == "train":
             # print("in train")
             self.round_num += 1
             self.in_finetune = True
@@ -143,6 +144,8 @@ class LaplacianDomainSeparation_1Out_OnlyCOSINEDiff_noGlobal_RECON_Loss_NEW_Trai
 
         elif ctx.cur_data_split == "train" and self.in_finetune:
             self.in_finetune = False
+
+        logger.info(f"own round num: {self.round_num}")
 
         ctx.log_ce_loss = 0
         ctx.log_csd_loss = 0
@@ -164,8 +167,8 @@ class LaplacianDomainSeparation_1Out_OnlyCOSINEDiff_noGlobal_RECON_Loss_NEW_Trai
     def _hook_on_batch_forward(self, ctx):
         self.tmp += 1
         batch = ctx.data_batch.to(ctx.device)
-        out_interm, kld_loss_encoder, diff_local_interm, recon_loss = ctx.model(batch,
-                                                                                                               self.config.params.sim_loss)
+        out_interm, kld_loss_encoder, diff_local_interm, recon_loss, x_global_pooled, \
+            x_local_pooled = ctx.model(batch, self.config.params.sim_loss)
 
         # ctx.sim_interm_fixed = sim_interm_fixed
 
@@ -226,6 +229,34 @@ class LaplacianDomainSeparation_1Out_OnlyCOSINEDiff_noGlobal_RECON_Loss_NEW_Trai
         ctx.y_true = label
         ctx.y_prob = out_interm
 
+        # save outputs
+
+        if self.round_num == 498 or self.round_num == 998:
+            dataset_name = self.ctx.dataset_name
+            cur_batch_i = self.ctx.cur_batch_i
+            out_dir = self.config.outdir
+
+            path = out_dir + '/features/client_' + str(self.clientID)
+
+            if not os.path.exists(path):
+                os.makedirs(path)
+
+
+            # local
+            file_name = path + '/local_' + dataset_name + '_' + str(cur_batch_i) + '.pt'
+            torch.save(x_local_pooled, file_name)
+
+            # interm
+            file_name = path + '/global' + dataset_name + '_' + str(cur_batch_i) + '.pt'
+            torch.save(x_global_pooled, file_name)
+
+            # save labels
+            # local
+            file_name = path + '/' + dataset_name + '_' + str(
+                cur_batch_i) + '_labels' + '.pt'
+            torch.save(label, file_name)
+
+
         # record the index of the ${MODE} samples
         if hasattr(ctx.data_batch, 'data_index'):
             setattr(
@@ -261,35 +292,11 @@ class LaplacianDomainSeparation_1Out_OnlyCOSINEDiff_noGlobal_RECON_Loss_NEW_Trai
 
         ctx.optimizer.zero_grad()
 
-        # backward through the interm branch. Only backward interm branch
-        for param in ctx.model.named_parameters():
-            if (param[0].startswith("local")):
-                param[1].requires_grad = False
-
         loss = ctx.loss_out_interm + self.config.params.diff_interm_imp * \
                ctx.diff_local_interm + self.config.params.kld_ne_imp * \
-               ctx.kld_loss_encoder
-        # loss = ctx.loss_out_global
+               ctx.kld_loss_encoder + ctx.recon_loss
 
         loss.backward(retain_graph=True)
-
-        # Reset requires_grad
-        for param in ctx.model.named_parameters():
-            if param[0] in self.grad_params:
-                param[1].requires_grad = True
-
-        # backward through the local branch. Only backward local branch
-        for param in ctx.model.named_parameters():
-            if not (param[0].startswith("local") or param[0].startswith("decoder_gnn")):
-                param[1].requires_grad = False
-        loss = ctx.recon_loss + self.config.params.diff_local_imp * \
-               ctx.diff_local_interm
-        loss.backward(retain_graph=True)
-
-        # Reset requires_grad
-        for param in ctx.model.named_parameters():
-            if param[0] in self.grad_params:
-                param[1].requires_grad = True
 
         # Compute omega
         for name, param in ctx.model.named_parameters():
