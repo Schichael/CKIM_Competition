@@ -327,13 +327,14 @@ class GNN_Net_Graph(torch.nn.Module):
         x_local_enc = self.local_gnn((x, edge_index))
         x_interm_enc = self.interm_gnn((x, edge_index))
 
-        x_local_pooled = self.pooling(x_local_enc, batch)
+        x_local_pooled = self.pooling(x_local_enc.detach(), batch)
         x_interm_pooled = self.pooling(x_interm_enc, batch)
 
         x_local = self.local_linear_out1(x_local_pooled).relu()
         x_interm = self.interm_linear_out1(x_interm_pooled).relu()
 
-        diff_local_interm = self.cosine_diff_loss(x_local, x_interm)
+        diff_local = self.cosine_diff_loss(x_local, x_interm.detach())
+        diff_global = self.cosine_diff_loss(x_local.detach(), x_interm)
 
 
         x_local_interm = x_local + x_interm
@@ -350,7 +351,7 @@ class GNN_Net_Graph(torch.nn.Module):
         # return x, mi
         # return out_global, torch.Tensor([[0.1, 0.9]]*out_global.size(0)).float().to('cuda:0'), torch.Tensor([[0.1, 0.9]]*out_global.size(0)).float().to('cuda:0'), kld_loss_encoder, kld_global, torch.Tensor([0.]).float().to('cuda:0'), torch.Tensor([0.]).float().to('cuda:0'), torch.Tensor([0.]).float().to('cuda:0'), torch.Tensor([0.]).float().to('cuda:0'), torch.Tensor([0.]).float().to('cuda:0')
 
-        return out_local_interm, out_interm, kld_loss_encoder, diff_local_interm
+        return out_local_interm, out_interm, kld_loss_encoder, diff_local, diff_global
 
 
 def dot_product_decode(Z):
