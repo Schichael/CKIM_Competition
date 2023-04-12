@@ -98,7 +98,7 @@ class FeatureAnalysisLaplacianDomainSeparationVAE_2Out_OnlyDiffSim_NEW_Trainer(G
     def _hook_on_fit_start_init(self, ctx):
         super()._hook_on_fit_start_init(ctx)
         setattr(ctx, "{}_y_inds".format(ctx.cur_data_split), [])
-        model_path = f"{self.config.params.model_path}/best_aggr_model{self.client_ID}.pth"
+        model_path = f"{self.config.params.model_path}/model{self.client_ID}_0.pth"
         state_dict = torch.load(model_path)['model']
         ctx.model.load_state_dict(state_dict)
 

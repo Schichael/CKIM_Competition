@@ -111,7 +111,7 @@ class FeatureAnalysisLaplacianDomainSeparationVAE_2Out_OnlyDiffSim_only2branches
     def _hook_on_batch_forward(self, ctx):
         self.tmp += 1
         batch = ctx.data_batch.to(ctx.device)
-        out_global_local, kld_loss_encoder, diff_local_global, x_local, x_global = ctx.model(batch)
+        out_global_local, kld_loss_encoder, diff_local, diff_global, x_local, x_global = ctx.model(batch)
 
         #ctx.sim_interm_fixed = sim_interm_fixed
 
@@ -132,10 +132,6 @@ class FeatureAnalysisLaplacianDomainSeparationVAE_2Out_OnlyDiffSim_only2branches
 
         #ctx.rec_loss = rec_loss
         #ctx.rec_loss_metric = rec_loss.detach().item()
-
-        ctx.diff_local_global = diff_local_global
-        ctx.diff_local_global_metric = diff_local_global.detach().item()
-
 
         #print(f"diff_local_global: {diff_local_global}")
         #print(f"mi_global_fixed: {sim_global_fixed}")
