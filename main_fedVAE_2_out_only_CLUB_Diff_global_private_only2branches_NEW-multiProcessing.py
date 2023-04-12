@@ -1,6 +1,5 @@
 import os
 import sys
-from multiprocessing import set_start_method
 
 import torch
 from torch import multiprocessing
@@ -90,7 +89,8 @@ def train(lr, kld_ne_imp, diff_imp_global, diff_imp_local, csd_imp):
     # init_cfg.data.subdirectory = 'graph_dt_backup/processed'
     # init_cfg.merge_from_list(args.opts)
     init_cfg.data.save_dir = \
-        'Graph-DC_2_out_only_CLUB_Diff_global_private_only_2_branches_NEW_sim_loss_lr_' + str(lr).replace(
+        'Graph-DC_2_out_only_CLUB_Diff_global_private_only_2_branches_multi_lr_' + str(
+            lr).replace(
             '.', '_') + '_A'+ str(kld_ne_imp).replace('.', '_') + \
     '_F' + str(diff_imp_global).replace('.', '_') + '_F' + str(diff_imp_local).replace(
         '.', '_') + '_H' + str(csd_imp).replace(
@@ -154,31 +154,27 @@ def tmp(a):
 
 if __name__ == '__main__':
 
-    num_trainings = 1
+    num_trainings = 2
     kld_ne_imps = [0] #A
-    #diff_imps = [0, 0.1, 0.01, 0.05, 0.005]   #Now 0.0001
-    diff_global_imps = [0] #F    HERE  [0.0001, 0.001]
-    diff_local_imps = [0.05, 0.1, 1] #G
+    diff_imps = [0.02]   #Now 0.0001
+    #diff_global_imps = [0] #F    HERE  [0.0001, 0.001]
+    #diff_local_imps = [0.05, 0.1, 1] #G
     csd_imp = 10 #H
 
     #sim_losses = ["mse", "cosine"]
 
     # lrs = [0.001, 0.005, 0.01, 0.05, 0.1, 0.5]
     lrs = [0.05]
-    pool = multiprocessing.Pool(1)
+    pool = multiprocessing.Pool(2)
     processes = []
     for lr in lrs:
-        for diff_global_imp in diff_global_imps:
-            for diff_local_imp in diff_local_imps:
+        for diff_imp in diff_imps:
+            #for diff_local_imp in diff_local_imps:
                 for kld_ne_imp in kld_ne_imps:
                     for i in range(num_trainings):
-                        setup_seed(i)
+                        setup_seed(i+3)
                         processes.append(pool.apply_async(train, args=(lr,
                                                                        kld_ne_imp,
-                                                                       diff_global_imp, diff_local_imp, csd_imp)))
+                                                                       diff_imp, diff_imp, csd_imp)))
     result = [p.get() for p in processes]
 
-    #kld=0 mit repara: ~1.00 - 1.05
-    #kld=0.01 mit repara: ~1.00 - 1.05
-    # kld=0.01 mit repara: ~1.37
-    #  nur mu: ~1.00

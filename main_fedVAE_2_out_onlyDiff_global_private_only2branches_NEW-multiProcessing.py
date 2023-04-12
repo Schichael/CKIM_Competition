@@ -105,7 +105,7 @@ def train(lr, kld_ne_imp, diff_imp_global, diff_imp_local, csd_imp):
     init_cfg.params.eps = 1e-15
 
     init_cfg.params.save_client_always = True
-    init_cfg.federate.total_round_num = 500
+    # init_cfg.federate.total_round_num = 600
     init_cfg.params.p = 0.
     init_cfg.params.alpha = 0.1
 
@@ -141,7 +141,7 @@ if __name__ == '__main__':
 
     num_trainings = 1
     kld_ne_imps = [0] #A
-    diff_imps = [0.005]   #Now 0.0001
+    diff_imps = [0.004, 0.005, 0.006]   #Now 0.0001
     diff_interm_imp = 0.001 #F    HERE  [0.0001, 0.001]
     diff_local_imp = 0.001 #G
     csd_imp = 10 #H

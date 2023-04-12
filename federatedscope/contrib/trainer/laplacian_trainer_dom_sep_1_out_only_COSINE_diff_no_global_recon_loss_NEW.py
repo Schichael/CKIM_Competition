@@ -22,6 +22,7 @@ class LaplacianDomainSeparation_1Out_OnlyCOSINEDiff_noGlobal_RECON_Loss_NEW_Trai
                  data,
                  device,
                  config,
+                 clientID,
                  only_for_eval=False,
                  monitor=None):
 
@@ -34,6 +35,7 @@ class LaplacianDomainSeparation_1Out_OnlyCOSINEDiff_noGlobal_RECON_Loss_NEW_Trai
                          monitor)
 
         self.ctx.omega = self.omega
+        self.clientID = clientID
         self.device = device
         self.config = config
         self.first_round = True

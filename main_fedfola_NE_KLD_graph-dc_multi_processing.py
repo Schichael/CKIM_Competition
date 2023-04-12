@@ -10,7 +10,7 @@ from federatedscope.contrib.trainer.laplacian_trainer_NE_KLD import call_laplaci
 from federatedscope.contrib.workers.laplacian_client import LaplacianClient
 from federatedscope.contrib.workers.laplacian_client_NE_KLD import LaplacianClient_NE_KLD
 from federatedscope.contrib.workers.laplacian_server import LaplacianServer
-from federatedscope.register import register_trainer
+from federatedscope.register import register_trainer, register_metric
 
 sys.path = ['~/Master-Thesis/CKIM_Competition/federatedscope',
  '~/Master-Thesis/CKIM_Competition',] + sys.path
@@ -40,7 +40,8 @@ except RuntimeError:
 metrics = [
     ('kld_loss_encoder', call_kld_loss_encoder_metric),
     ]
-
+for metric in metrics:
+    register_metric(metric[0], metric[1])
 def train(lr, csd_imp, kld_imp):
     cfg_file = 'scripts/B-FHTL_exp_scripts/Graph-DC/fedFOLA.yaml'
     cfg_client = 'scripts/B-FHTL_exp_scripts/Graph-DC/cfg_per_client.yaml'
@@ -54,13 +55,13 @@ def train(lr, csd_imp, kld_imp):
 
     # init_cfg.data.subdirectory = 'graph_dt_backup/processed'
     # init_cfg.merge_from_list(args.opts)
-    init_cfg.data.save_dir = 'Graph-DC_FedFOLA_NE_KLD_lr_' + str(lr).replace('.',
+    init_cfg.data.save_dir = 'Graph-DC_FedFOLA_NE_KLD_multistep_lr_' + str(lr).replace(
+        '.',
                                                                             '_') + \
                                                     '_local_update_steps_1_csd_imp_' \
                              + str(csd_imp).replace('.', '_') + "_kld_imp_" + str(
         kld_imp).replace('.', '_')
     init_cfg.train.optimizer.lr = lr
-
     init_cfg.params = CN()
     init_cfg.params.eps = 1e-15
     init_cfg.params.csd_importance = csd_imp
@@ -94,12 +95,12 @@ def train(lr, csd_imp, kld_imp):
 
 
 if __name__ == '__main__':
-    num_trainings = 5
+    num_trainings = 3
     csd_imps = [10]
-    kld_imps = [0]
+    kld_imps = [1, 0.1, 0.01]
     # lrs = [0.001, 0.005, 0.01, 0.05, 0.1, 0.5]
-    lrs = [0.07, 0.03]
-    pool = multiprocessing.Pool(4)
+    lrs = [0.05]
+    pool = multiprocessing.Pool(3)
     processes = []
     for lr in lrs:
         for csd_imp in csd_imps:

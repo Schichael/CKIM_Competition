@@ -36,6 +36,7 @@ class LaplacianTrainer_NE_KLD(GraphMiniBatchTrainer):
         self.config=config
         self.first_round = True
         self.in_finetune = False
+        self.ctx.kld_loss_encoder_metric = []
         self.round_num = 0
 
     def update(self, content, strict=False):
@@ -88,7 +89,7 @@ class LaplacianTrainer_NE_KLD(GraphMiniBatchTrainer):
         elif ctx.cur_data_split == "train" and self.in_finetune:
             self.in_finetune = False
 
-
+        self.ctx.kld_loss_encoder_metric = []
         ctx.log_ce_loss = 0
         ctx.log_csd_loss = 0
         new_omega = dict()
@@ -121,7 +122,7 @@ class LaplacianTrainer_NE_KLD(GraphMiniBatchTrainer):
         ctx.loss_batch_csd = csd_loss(ctx.model.state_dict(), ctx.new_mu,
                                       ctx.new_omega, self.round_num)
         ctx.kld_loss = kld_loss
-        ctx.kld_loss_encoder_metric = kld_loss.detach().item()
+        ctx.kld_loss_encoder_metric.append(kld_loss.detach().item())
         ctx.batch_size = len(label)
         ctx.y_true = label
         ctx.y_prob = pred
