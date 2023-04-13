@@ -90,7 +90,7 @@ def train(lr, kld_ne_imp, diff_interm_imp, diff_local_imp, csd_imp):
     # init_cfg.data.subdirectory = 'graph_dt_backup/processed'
     # init_cfg.merge_from_list(args.opts)
     init_cfg.data.save_dir = \
-        'Graph-DC_FedVAE_1_out_only_COSINEDiff_no_global_recon_loss_before_pooling_single_runs_lr_' + \
+        'Graph-DC_FedVAE_1_out_only_COSINEDiff_no_global_recon_loss_before_pooling_multi_runs_lr_' + \
         str(
             lr).replace('.', '_') + '_A'+ str(kld_ne_imp).replace('.', '_') + \
     '_F' + str(diff_interm_imp).replace('.', '_') + \
@@ -117,7 +117,7 @@ def train(lr, kld_ne_imp, diff_interm_imp, diff_local_imp, csd_imp):
     init_cfg.federate.client_num = 13
     init_cfg.params.eps = 1e-15
     init_cfg.params.save_client_always = True
-    init_cfg.federate.total_round_num = 500
+    # init_cfg.federate.total_round_num = 500
 
     init_cfg.params.p = 0.
     init_cfg.params.alpha = 0.1
@@ -152,9 +152,9 @@ def tmp(a):
 
 if __name__ == '__main__':
 
-    num_trainings = 1
+    num_trainings = 3
     kld_ne_imps = [0] #A
-    diff_imps = [0, 0.001, 0.005, 0.01, 0.05, 0.1]  # [0.001, 0.0001, 0.00001]
+    diff_imps = [0.001, 0.01]  # [0.001, 0.0001, 0.00001]
     diff_interm_imp = 0.001 #F    HERE  [0.0001, 0.001]
     diff_local_imp = 0.001 #G
     csd_imp = 10 #H
@@ -162,7 +162,7 @@ if __name__ == '__main__':
 
     # lrs = [0.001, 0.005, 0.01, 0.05, 0.1, 0.5]
     lrs = [0.05]
-    pool = multiprocessing.Pool(6)
+    pool = multiprocessing.Pool(3)
     processes = []
     for lr in lrs:
             for diff_imp in diff_imps:
