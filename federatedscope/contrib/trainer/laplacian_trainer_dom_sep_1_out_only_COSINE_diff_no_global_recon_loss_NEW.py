@@ -145,7 +145,6 @@ class LaplacianDomainSeparation_1Out_OnlyCOSINEDiff_noGlobal_RECON_Loss_NEW_Trai
         elif ctx.cur_data_split == "train" and self.in_finetune:
             self.in_finetune = False
 
-        logger.info(f"own round num: {self.round_num}")
 
         ctx.log_ce_loss = 0
         ctx.log_csd_loss = 0
