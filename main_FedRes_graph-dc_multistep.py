@@ -84,7 +84,7 @@ def train(lr, kld_ne_imp, diff_imp_1, diff_imp_2, csd_imp):
     # init_cfg.data.subdirectory = 'graph_dt_backup/processed'
     # init_cfg.merge_from_list(args.opts)
     init_cfg.data.save_dir = \
-        'testGraph-DC_2_ResNet_lr_' + str(lr).replace(
+        'Graph-DC_2_ResNet_single_step_lr_' + str(lr).replace(
             '.', '_') + '_A'+ str(kld_ne_imp).replace('.', '_') + \
     '_F' + str(diff_imp_1).replace('.', '_') + '_F' + str(diff_imp_2).replace(
         '.', '_') + '_H' + str(csd_imp).replace(
@@ -106,6 +106,7 @@ def train(lr, kld_ne_imp, diff_imp_1, diff_imp_2, csd_imp):
     init_cfg.params.diff_imp_1 = diff_imp_1
     init_cfg.params.diff_imp_2 = diff_imp_2
     init_cfg.params.csd_imp = csd_imp
+    init_cfg.federate.total_round_num = 500
 
     init_cfg.federate.client_num = 13
     init_cfg.params.eps = 1e-15
@@ -145,9 +146,9 @@ def tmp(a):
 
 if __name__ == '__main__':
 
-    num_trainings = 5
+    num_trainings = 1
     kld_ne_imps = [0] #A
-    diff_imps = [0.1]   #Now 0.0001
+    diff_imps = [0, 0.0001, 0.0001, 0.001, 0.01, 0.1, 0.5]   #Now 0.0001
     #diff_global_imps = [0] #F    HERE  [0.0001, 0.001]
     #diff_local_imps = [0.1, 0.01, 0.001] #G
     csd_imp = 10 #H
@@ -155,14 +156,14 @@ if __name__ == '__main__':
 
     # lrs = [0.001, 0.005, 0.01, 0.05, 0.1, 0.5]
     lrs = [0.1]
-    pool = multiprocessing.Pool(1)
+    pool = multiprocessing.Pool(6)
     processes = []
     for lr in lrs:
         for diff_imp in diff_imps:
             #for diff_local_imp in diff_local_imps:
                 for kld_ne_imp in kld_ne_imps:
                     for i in range(num_trainings):
-                        time.sleep(1)
+                        time.sleep(10)
                         setup_seed(i)
                         processes.append(pool.apply_async(train, args=(lr,
                                                                        kld_ne_imp,
