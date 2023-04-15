@@ -148,26 +148,26 @@ if __name__ == '__main__':
 
     num_trainings = 1
     kld_ne_imps = [0] #A
-    diff_imps = [0, 0.0001, 0.0001, 0.001, 0.01, 0.1, 0.5]   #Now 0.0001
-    #diff_global_imps = [0] #F    HERE  [0.0001, 0.001]
-    #diff_local_imps = [0.1, 0.01, 0.001] #G
+    # diff_imps = [0, 0.0001, 0.0001, 0.001, 0.01, 0.1, 0.5]   #Now 0.0001
+    diff_imps1 = [0] #F    HERE  [0.0001, 0.001]
+    diff_imps2 = [0, 0.00001, 0.0001, 0.001, 0.01, 0.1, 0.5] #G
     csd_imp = 10 #H
     #sim_losses = ["mse", "cosine"]
 
     # lrs = [0.001, 0.005, 0.01, 0.05, 0.1, 0.5]
     lrs = [0.05]
-    pool = multiprocessing.Pool(6)
+    pool = multiprocessing.Pool(3)
     processes = []
     for lr in lrs:
-        for diff_imp in diff_imps:
-            #for diff_local_imp in diff_local_imps:
+        for diff_imp1 in diff_imps1:
+            for diff_imp2 in diff_imps2:
                 for kld_ne_imp in kld_ne_imps:
                     for i in range(num_trainings):
                         time.sleep(10)
                         setup_seed(i)
                         processes.append(pool.apply_async(train, args=(lr,
                                                                        kld_ne_imp,
-                                                                       diff_imp, diff_imp, csd_imp)))
+                                                                       diff_imp1, diff_imp2, csd_imp)))
     result = [p.get() for p in processes]
 
     #kld=0 mit repara: ~1.00 - 1.05
