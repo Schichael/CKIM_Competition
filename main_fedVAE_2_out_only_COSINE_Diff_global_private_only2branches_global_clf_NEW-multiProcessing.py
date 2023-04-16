@@ -177,7 +177,7 @@ def tmp(a):
 
 if __name__ == '__main__':
 
-    num_trainings = 1
+    num_trainings = 3
     kld_ne_imps = [0] #A
     diff_imps = [0.1, 0.03, 1]   #Now 0.0001
     #diff_imps = [0.1]
