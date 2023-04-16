@@ -57,6 +57,31 @@ def diff_resnet_1_metric(ctx, **kwargs):
 def diff_resnet_2_metric(ctx, **kwargs):
     return np.mean(ctx.diff_loss_2_metric)
 
+def loss_global_clf_metric(ctx, **kwargs):
+    return np.mean(ctx.loss_global_clf_metric)
+
+def num_local_features_not_0_metric(ctx, **kwargs):
+    return np.mean(ctx.num_local_features_not_0_metric)
+
+def avg_local_features_not_0_metric(ctx, **kwargs):
+    return np.mean(ctx.avg_local_features_not_0_metric)
+
+def num_global_features_not_0_metric(ctx, **kwargs):
+    return np.mean(ctx.num_global_features_not_0_metric)
+
+def avg_global_features_not_0_metric(ctx, **kwargs):
+    return np.mean(ctx.avg_global_features_not_0_metric)
+
+def num_local_global_features_not_0_metric(ctx, **kwargs):
+    return np.mean(ctx.num_local_global_features_not_0_metric)
+
+def avg_local_global_features_not_0_metric(ctx, **kwargs):
+    return np.mean(ctx.avg_local_global_features_not_0_metric)
+
+def num_features_global_local_metric(ctx, **kwargs):
+    return np.mean(ctx.num_features_global_local_metric)
+
+
 def call_mi_estimation_metric(types):
     if "MI_estimation" in types:
         return "MI_estimation", mi_estimation_metric
@@ -123,7 +148,9 @@ def call_loss_out_local_interm_metric(types):
 def call_loss_batch_csd_metric(types):
     if "loss_batch_csd" in types:
         return "loss_batch_csd", loss_batch_csd_metric
-
+def call_loss_global_clf_metric(types):
+    if "loss_global_clf" in types:
+        return "loss_global_clf", loss_global_clf_metric
 def call_mmd_loss_metric(types):
     if "mmd_loss" in types:
         return "mmd_loss", mmd_loss_metric
@@ -131,4 +158,32 @@ def call_mmd_loss_metric(types):
 def call_swd_loss_metric(types):
     if "swd_loss" in types:
         return "swd_loss", swd_loss_metric
+
+def call_num_local_features_not_0_metric(types):
+    if "num_local_features_not_0_metric" in types:
+        return "num_local_features_not_0_metric", num_local_features_not_0_metric
+
+def call_avg_local_features_not_0_metric(types):
+    if "avg_local_features_not_0_metric" in types:
+        return "avg_local_features_not_0_metric", avg_local_features_not_0_metric
+
+def call_num_global_features_not_0_metric(types):
+    if "num_global_features_not_0_metric" in types:
+        return "num_global_features_not_0_metric", num_global_features_not_0_metric
+
+def call_avg_global_features_not_0_metric(types):
+    if "avg_global_features_not_0_metric" in types:
+        return "avg_global_features_not_0_metric", avg_global_features_not_0_metric
+
+def call_num_local_global_features_not_0_metric(types):
+    if "num_local_global_features_not_0_metric" in types:
+        return "num_local_global_features_not_0_metric", num_local_global_features_not_0_metric
+
+def call_avg_local_global_features_not_0_metric(types):
+    if "avg_local_global_features_not_0_metric" in types:
+        return "avg_local_global_features_not_0_metric", avg_local_global_features_not_0_metric
+
+def call_num_features_global_local_metric(types):
+    if "num_features_global_local_metric" in types:
+        return "num_features_global_local_metric", num_features_global_local_metric
 

@@ -32,9 +32,13 @@ from federatedscope.contrib.workers.laplacian_with_domain_separation_VAE_2_out_o
 from federatedscope.register import register_trainer
 from federatedscope.register import register_metric
 from federatedscope.contrib.metrics.custom_losses import call_recon_loss_metric, \
-    call_kld_loss_encoder_metric, call_kld_global_metric, call_kld_interm_metric, call_kld_local_metric, \
-    call_diff_local_interm_metric, call_sim_global_interm_metric, call_loss_out_interm_metric, \
-    call_loss_out_local_interm_metric, call_loss_batch_csd_metric, call_prox_loss_metric, call_diff_local_global_metric
+    call_kld_loss_encoder_metric, call_kld_global_metric, call_kld_interm_metric, \
+    call_kld_local_metric, \
+    call_diff_local_interm_metric, call_sim_global_interm_metric, \
+    call_loss_out_interm_metric, \
+    call_loss_out_local_interm_metric, call_loss_batch_csd_metric, \
+    call_prox_loss_metric, call_diff_local_global_metric, call_diff_resnet_1_metric, \
+    call_diff_resnet_2_metric
 
 try:
     torch.multiprocessing.set_start_method('spawn', force=True)
@@ -42,6 +46,14 @@ except RuntimeError:
     pass
 
 
+metrics = [
+    ('diff_resnet_1', call_diff_resnet_1_metric),
+    ('diff_resnet_2', call_diff_resnet_2_metric),
+    #('loss_batch_csd', call_loss_batch_csd_metric)
+]
+
+for metric in metrics:
+    register_metric(metric[0], metric[1])
 
 #sys.path = ['~/Master-Thesis/CKIM_Competition/federatedscope',
 # '~/Master-Thesis/CKIM_Competition',] + sys.path
@@ -80,7 +92,7 @@ def train(lr, kld_ne_imp, diff_imp_1, diff_imp_2, csd_imp):
     # init_cfg.data.subdirectory = 'graph_dt_backup/processed'
     # init_cfg.merge_from_list(args.opts)
     init_cfg.data.save_dir = \
-        'FeatureAnalysisGraph-DC_2_ResNet_lr_' + str(lr).replace(
+        'FeatureAnalysisGraph-DC_2_ResNet_imbalanced_lr_' + str(lr).replace(
             '.', '_') + '_A'+ str(kld_ne_imp).replace('.', '_') + \
     '_F' + str(diff_imp_1).replace('.', '_') + '_F' + str(diff_imp_2).replace(
         '.', '_') + '_H' + str(csd_imp).replace(
@@ -111,7 +123,7 @@ def train(lr, kld_ne_imp, diff_imp_1, diff_imp_2, csd_imp):
     init_cfg.params.p = 0.
     init_cfg.params.alpha = 0.1
     init_cfg.federate.total_round_num = 1
-    init_cfg.params.model_path = '/home/michael/Dropbox/Master thesis/results_graph-dc/ResNet/on_MLP_level/cosine_diff/single_runs_for_diff/Graph-DC_2_ResNet_single_step_lr_0_1_A0_F0_001_F0_001_H10/FedDomSep_GraphDC_gin_on_fs_contest_data_lr0.1_lstep1_'
+    init_cfg.params.model_path = '/home/michael/Dropbox/Master thesis/results_graph_dc_new_lr_0_5/ResNet/imbalanced/Graph-DC_2_ResNet_single_step_lr_0_05_A0_F0_F1e-05_H10/FedDomSep_GraphDC_gin_on_fs_contest_data_lr0.05_lstep1_'
 
     init_cfg.model.dropout = 0.5
     init_cfg.train.optimizer.lr = lr
@@ -145,26 +157,26 @@ if __name__ == '__main__':
 
     num_trainings = 1
     kld_ne_imps = [0] #A
-    diff_imps = [0.001]   #Now 0.0001
-    #diff_global_imps = [0] #F    HERE  [0.0001, 0.001]
-    #diff_local_imps = [0.1, 0.01, 0.001] #G
+    #diff_imps = [0]   #Now 0.0001
+    diff_imps_1 = [0] #F    HERE  [0.0001, 0.001]
+    diff_imps_2 = [0.00001] #G
     csd_imp = 10 #H
     #sim_losses = ["mse", "cosine"]
 
     # lrs = [0.001, 0.005, 0.01, 0.05, 0.1, 0.5]
-    lrs = [0.01]
+    lrs = [0]
     pool = multiprocessing.Pool(1)
     processes = []
     for lr in lrs:
-        for diff_imp in diff_imps:
-            #for diff_local_imp in diff_local_imps:
+        for diff_imp_1 in diff_imps_1:
+            for diff_imp_2 in diff_imps_2:
                 for kld_ne_imp in kld_ne_imps:
                     for i in range(num_trainings):
                         time.sleep(1)
                         setup_seed(i)
                         processes.append(pool.apply_async(train, args=(lr,
                                                                        kld_ne_imp,
-                                                                       diff_imp, diff_imp, csd_imp)))
+                                                                       diff_imp_1, diff_imp_2, csd_imp)))
     result = [p.get() for p in processes]
 
     #kld=0 mit repara: ~1.00 - 1.05

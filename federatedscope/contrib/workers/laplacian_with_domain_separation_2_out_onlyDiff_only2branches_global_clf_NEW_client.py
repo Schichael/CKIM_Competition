@@ -1,18 +1,33 @@
+import copy
 import logging
 from copy import deepcopy
-import copy
 
 import torch
 
-from federatedscope.contrib.trainer.laplacian_trainer import LaplacianTrainer
-from federatedscope.contrib.trainer.laplacian_trainer_resnet import LaplacianTrainerResNet
+from federatedscope.contrib.trainer\
+    .laplacian_trainer_dom_sep_2_out_only_diff_sim_only2branches_global_clf_NEW import \
+    LaplacianDomainSeparationVAE_2Out_OnlyDiffSim_only2branches_global_clf_NEW_Trainer
+from federatedscope.contrib.trainer.laplacian_trainer_dom_sep_2_out_only_diff_proxLoss_NEW import \
+    LaplacianDomainSeparationVAE_2Out_OnlyDiffProxLoss_NEW_Trainer
+from federatedscope.contrib.trainer.laplacian_trainer_dom_sep_2_out_only_diff_sim_NEW import \
+    LaplacianDomainSeparationVAE_2Out_OnlyDiffSim_NEW_Trainer
+from federatedscope.contrib.trainer.laplacian_trainer_dom_sep_2_out_only_diff_sim_only2branches_NEW import \
+    LaplacianDomainSeparationVAE_2Out_OnlyDiffSim_only2branches_NEW_Trainer
+from federatedscope.contrib.trainer.laplacian_trainer_dom_sep_VAE_1_out import LaplacianDomainSeparationVAE_1Out_Trainer
+from federatedscope.contrib.trainer.laplacian_trainer_dom_sep_VAE_2_out import LaplacianDomainSeparationVAE_2Out_Trainer
+from federatedscope.contrib.trainer.laplacian_trainer_dom_sep_VAE_2_out_NEW import \
+    LaplacianDomainSeparationVAE_2Out_NEW_Trainer
+
+from federatedscope.contrib.trainer.laplacian_trainer_with_domain_separation_with_summation import \
+    LaplacianDomainSeparationWithSummationTrainer
 from federatedscope.contrib.workers.client import Client
 from federatedscope.core.message import Message
 
 logger = logging.getLogger(__name__)
 
 
-class LaplacianResNetClient(Client):
+class LaplacianDomainSeparationVAE_2_out_onlyDiff_only2branches_global_clf_NEW_Client(
+    Client):
     def __init__(self,
                  ID=-1,
                  server_id=None,
@@ -27,12 +42,14 @@ class LaplacianResNetClient(Client):
                  **kwargs):
         self.alpha = config.params.alpha
         self.omega_set = self._set_init_omega(model, device)
-        trainer = LaplacianTrainerResNet(
+        #self._align_global_local_parameters(model)
+
+        trainer = LaplacianDomainSeparationVAE_2Out_OnlyDiffSim_only2branches_global_clf_NEW_Trainer(
             model=model,
             omega=self.omega_set,
             data=data,
             device=device,
-            clientID=ID,
+            clientID = ID,
             config=config,
             only_for_eval=False,
             monitor=None
@@ -50,9 +67,11 @@ class LaplacianResNetClient(Client):
                  trainer=trainer,
                  *args,
                  **kwargs)
-
-
+        #self._test_align_global_local_parameters(self.model)
         trainer.monitor = self._monitor
+
+
+
 
 
 
@@ -63,6 +82,23 @@ class LaplacianResNetClient(Client):
             omega_set[name] = torch.zeros_like(param.data).to(device)
         return omega_set
 
+    def _align_global_local_parameters(self, model):
+        for name, param in deepcopy(model).named_parameters():
+            if name.startswith('local'):
+                stripped_name = name[len('local'):]
+                global_name = 'global' + stripped_name
+                model.state_dict()[name].data.copy_(copy.deepcopy(model.state_dict()[global_name].data))
+
+    def _test_align_global_local_parameters(self, model):
+        for name, param in deepcopy(model).named_parameters():
+            if name.startswith('local'):
+                stripped_name = name[len('local'):]
+                global_name = 'global' + stripped_name
+                local_params = model.state_dict()[name].data
+                global_params = model.state_dict()[global_name].data
+                print(f"local data: {param}")
+                print(f"global data: {model.state_dict()[global_name].data}")
+                break
 
     def callback_funcs_for_model_para(self, message: Message):
         """
