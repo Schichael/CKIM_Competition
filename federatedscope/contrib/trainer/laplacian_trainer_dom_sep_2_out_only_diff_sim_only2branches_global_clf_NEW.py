@@ -4,6 +4,7 @@ import os
 from copy import deepcopy
 from typing import Callable
 
+import numpy as np
 import torch
 from torch_geometric.graphgym import optim
 from federatedscope.core.auxiliaries.utils import param2tensor
@@ -15,7 +16,8 @@ from federatedscope.gfl.trainer import GraphMiniBatchTrainer
 logger = logging.getLogger(__name__)
 
 
-class LaplacianDomainSeparationVAE_2Out_OnlyDiffSim_only2branches_NEW_Trainer(GraphMiniBatchTrainer):
+class \
+        LaplacianDomainSeparationVAE_2Out_OnlyDiffSim_only2branches_global_clf_NEW_Trainer(GraphMiniBatchTrainer):
     def __init__(self,
                  model,
                  omega,
@@ -128,6 +130,15 @@ class LaplacianDomainSeparationVAE_2Out_OnlyDiffSim_only2branches_NEW_Trainer(Gr
         ctx.kld_loss_encoder_metric = []
         ctx.loss_batch_csd_metric = []
         ctx.diff_local_global_metric = []
+        ctx.loss_global_clf_metric = []
+        ctx.num_local_features_not_0_metric = []
+        ctx.avg_local_features_not_0_metric = []
+        ctx.num_global_features_not_0_metric = []
+        ctx.avg_global_features_not_0_metric = []
+        ctx.num_local_global_features_not_0_metric = []
+        ctx.avg_local_global_features_not_0_metric = []
+        ctx.num_features_global_local_metric = []
+
         if ctx.cur_data_split == "train":
             #print("in train")
             self.round_num += 1
@@ -164,10 +175,32 @@ class LaplacianDomainSeparationVAE_2Out_OnlyDiffSim_only2branches_NEW_Trainer(Gr
         ctx.new_omega = new_omega
         ctx.new_mu = new_mu
 
+
+    def stats_calculator(self, local_features, global_features):
+        local_features = local_features.cpu().detach().numpy()
+        global_features = global_features.cpu().detach().numpy()
+        num_total_features_curr = local_features.shape[0] * local_features.shape[1]
+        local_global = local_features + global_features
+        mult_local_global = local_features * global_features
+        num_local_features_not_0 = np.sum(local_features != 0) / num_total_features_curr
+        avg_local_features_not_0 = local_features.sum() / np.sum(local_features != 0)
+        num_global_features_not_0 = np.sum(global_features != 0) / \
+                                    num_total_features_curr
+        avg_global_features_not_0 = global_features.sum() / np.sum(global_features != 0)
+        num_local_global_features_not_0 = np.sum(local_global != 0) / num_total_features_curr
+        avg_local_global_features_not_0 = local_global.sum() / np.sum(local_global !=
+                                                                      0)
+        num_features_global_local = np.sum(mult_local_global != 0) / num_total_features_curr
+
+        return num_local_features_not_0, avg_local_features_not_0, \
+            num_global_features_not_0, avg_global_features_not_0, \
+            num_local_global_features_not_0, avg_local_global_features_not_0, num_features_global_local
+
     def _hook_on_batch_forward(self, ctx):
         self.tmp += 1
         batch = ctx.data_batch.to(ctx.device)
-        out_global_local, kld_loss_encoder, diff_local, diff_global, x_local, x_global = ctx.model(batch)
+        out_global_local, out_global, kld_loss_encoder, diff_local, diff_global, \
+            x_local, x_global = ctx.model(batch)
 
         #ctx.sim_interm_fixed = sim_interm_fixed
 
@@ -213,6 +246,10 @@ class LaplacianDomainSeparationVAE_2Out_OnlyDiffSim_only2branches_NEW_Trainer(Gr
             label = label.unsqueeze(0)
 
         ctx.loss_batch = ctx.criterion(out_global_local, label)
+        ctx.loss_global_clf = ctx.criterion(out_global, label)
+        ctx.loss_global_clf_metric.append(ctx.loss_global_clf.detach().item())
+
+
         ctx.loss_out_global = ctx.loss_batch
 
         #ctx.loss_batch_csd = self.get_csd_loss(ctx.model.state_dict(), ctx.new_mu, ctx.new_omega, ctx.cur_epoch_i + 1)
@@ -224,9 +261,25 @@ class LaplacianDomainSeparationVAE_2Out_OnlyDiffSim_only2branches_NEW_Trainer(Gr
         ctx.batch_size = len(label)
         ctx.y_true = label
         ctx.y_prob = out_global_local
-        print(f"self.round_num: {self.round_num}")
 
-        if self.round_num == 1 or self.round_num == 2 or self.round_num == 498 or self.round_num == 998:
+        # stats calc
+        num_local_features_not_0, avg_local_features_not_0, \
+            num_global_features_not_0, avg_global_features_not_0, \
+            num_local_global_features_not_0, avg_local_global_features_not_0, num_features_global_local = \
+            self.stats_calculator(x_local, x_global)
+
+        ctx.num_local_features_not_0_metric.append(num_local_features_not_0)
+        ctx.avg_local_features_not_0_metric.append(avg_local_features_not_0)
+        ctx.num_global_features_not_0_metric.append(num_global_features_not_0)
+        ctx.avg_global_features_not_0_metric.append(avg_global_features_not_0)
+        ctx.num_local_global_features_not_0_metric.append(
+            num_local_global_features_not_0)
+        ctx.avg_local_global_features_not_0_metric.append(
+            avg_local_global_features_not_0)
+        ctx.num_features_global_local_metric.append(num_features_global_local)
+
+        if self.round_num == 0 or self.round_num == 1 or self.round_num == 498 or \
+                self.round_num == 998:
             dataset_name = self.ctx.dataset_name
             cur_batch_i = self.ctx.cur_batch_i
             out_dir = self.config.outdir
@@ -250,6 +303,7 @@ class LaplacianDomainSeparationVAE_2Out_OnlyDiffSim_only2branches_NEW_Trainer(Gr
             file_name = path + '/' + dataset_name + '_' + str(
                 cur_batch_i) + '_labels' + '.pt'
             torch.save(label, file_name)
+
 
         # record the index of the ${MODE} samples
         if hasattr(ctx.data_batch, 'data_index'):
@@ -317,6 +371,7 @@ class LaplacianDomainSeparationVAE_2Out_OnlyDiffSim_only2branches_NEW_Trainer(Gr
         loss.backward(retain_graph=True)
 
         # Reset requires_grad
+
         for param in ctx.model.named_parameters():
             if param[0] in self.grad_params:
                 param[1].requires_grad = True
@@ -373,7 +428,10 @@ class LaplacianDomainSeparationVAE_2Out_OnlyDiffSim_only2branches_NEW_Trainer(Gr
         ctx.optimizer.zero_grad()
 
         # loss for output and KLD
-        loss = ctx.loss_out_global + self.config.params.kld_ne_imp * ctx.kld_loss_encoder + self.config.params.diff_imp_global * ctx.diff_global + self.config.params.diff_imp_local * ctx.diff_local
+        loss = ctx.loss_out_global + self.config.params.kld_ne_imp * \
+               ctx.kld_loss_encoder + self.config.params.diff_imp_global * \
+               ctx.diff_global + self.config.params.diff_imp_local * ctx.diff_local +\
+               self.config.params.global_clf_imp * ctx.loss_global_clf
         loss.backward(retain_graph=True)
 
         # Compute omega
@@ -539,5 +597,5 @@ class CSDLoss(torch.nn.Module):
 
 def call_laplacian_trainer(trainer_type):
     if trainer_type == 'laplacian_trainer':
-        trainer_builder = LaplacianDomainSeparationVAE_2Out_OnlyDiffSim_only2branches_NEW_Trainer
+        trainer_builder = LaplacianDomainSeparationVAE_2Out_OnlyDiffSim_only2branches_global_clf_NEW_Trainer
         return trainer_builder

@@ -27,7 +27,9 @@ model:
   out_channels: 0
   task: graphClassification
 personalization:
-  local_param: ['encoder_atom', 'encoder', 'clf', 'local', 'decoder']   # to handle size-different pre & post layers
+  local_param: ['encoder_atom', 'encoder', 'clf', 'local', 'decoder',
+                'global_classifier']
+
 
 criterion:
   type: CrossEntropyLoss
@@ -38,7 +40,10 @@ eval:
   freq: 1
   # metrics: ['imp_ratio', 'acc']
   metrics: ['imp_ratio', 'acc', 'kld_loss_encoder', 'diff_local_global',
-    'loss_batch_csd']
+    'loss_batch_csd', 'num_local_features_not_0_metric',
+            'avg_local_features_not_0_metric', 'num_global_features_not_0_metric',
+  'avg_global_features_not_0_metric', 'num_local_global_features_not_0_metric',
+  'avg_local_global_features_not_0_metric', 'num_features_global_local_metric']
   best_res_update_round_wise_key: val_imp_ratio
   count_flops: False
   base: 0.

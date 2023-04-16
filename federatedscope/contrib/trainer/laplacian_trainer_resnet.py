@@ -1,5 +1,6 @@
 import copy
 import logging
+import os
 import time
 from copy import deepcopy
 
@@ -19,6 +20,7 @@ class LaplacianTrainerResNet(GraphMiniBatchTrainer):
                  omega,
                  data,
                  device,
+                 clientID,
                  config,
                  only_for_eval=False,
                  monitor=None):
@@ -32,6 +34,7 @@ class LaplacianTrainerResNet(GraphMiniBatchTrainer):
                  monitor)
 
         self.ctx.omega = self.omega
+        self.clientID = clientID
         self.ctx.diff_loss_1_metric = []
         self.ctx.diff_loss_2_metric = []
         self.ctx.loss_batch_csd_metric = []
@@ -113,7 +116,7 @@ class LaplacianTrainerResNet(GraphMiniBatchTrainer):
     def _hook_on_batch_forward(self, ctx):
 
         batch = ctx.data_batch.to(ctx.device)
-        pred, diff_loss_1, diff_loss_2 = ctx.model(batch)
+        pred, diff_loss_1, diff_loss_2, x_local_1, x_local_2, x_global_1, x_global_2, x_local_1_pooled, x_local_2_pooled, x_global_1_pooled, x_global_2_pooled = ctx.model(batch)
         csd_loss = CSDLoss(self._param_filter, ctx)
         # TODO: deal with the type of data within the dataloader or dataset
         if 'regression' in ctx.cfg.model.task.lower():
@@ -137,6 +140,73 @@ class LaplacianTrainerResNet(GraphMiniBatchTrainer):
         ctx.batch_size = len(label)
         ctx.y_true = label
         ctx.y_prob = pred
+
+
+        if self.round_num == 498 or self.round_num == 998:
+            dataset_name = self.ctx.dataset_name
+            cur_batch_i = self.ctx.cur_batch_i
+            out_dir = self.config.outdir
+
+            path = out_dir + '/features/client_' + str(self.clientID)
+
+            if not os.path.exists(path):
+                os.makedirs(path)
+
+
+            # local
+            file_name = path + '/local_1_' + dataset_name + '_' + str(cur_batch_i) + \
+                        '.pt'
+            torch.save(x_local_1, file_name)
+
+            # global
+            file_name = path + '/global_1_' + dataset_name + '_' + str(cur_batch_i) + \
+                        '.pt'
+            torch.save(x_global_1, file_name)
+
+            # local
+            file_name = path + '/local_2_' + dataset_name + '_' + str(cur_batch_i) + \
+                        '.pt'
+            torch.save(x_local_2, file_name)
+
+            # global
+            file_name = path + '/global_2_' + dataset_name + '_' + str(cur_batch_i) + \
+                        '.pt'
+            torch.save(x_global_2, file_name)
+
+
+            # pooled
+
+            # local
+            file_name = path + '/local_1_pooled_' + dataset_name + '_' + str(
+                cur_batch_i) + \
+                        '.pt'
+            torch.save(x_local_1_pooled, file_name)
+
+            # global
+            file_name = path + '/global_1_pooled_' + dataset_name + '_' + str(
+                cur_batch_i) + \
+                        '.pt'
+            torch.save(x_global_1_pooled, file_name)
+
+            # local
+            file_name = path + '/local_2_pooled_' + dataset_name + '_' + str(
+                cur_batch_i) + \
+                        '.pt'
+            torch.save(x_local_2_pooled, file_name)
+
+            # global
+            file_name = path + '/global_2_pooled_' + dataset_name + '_' + str(
+                cur_batch_i) + \
+                        '.pt'
+            torch.save(x_global_2_pooled, file_name)
+
+
+            # save labels
+            # local
+            file_name = path + '/' + dataset_name + '_' + str(
+                cur_batch_i) + '_labels' + '.pt'
+            torch.save(label, file_name)
+
 
         # record the index of the ${MODE} samples
         if hasattr(ctx.data_batch, 'data_index'):

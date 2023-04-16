@@ -6,11 +6,14 @@ from multiprocessing import set_start_method
 import torch
 from torch import multiprocessing
 
-from federatedscope.contrib.trainer.laplacian_trainer_resnet import call_laplacian_trainer
+from federatedscope.contrib.workers\
+    .laplacian_with_domain_separation_2_out_onlyDiff_only2branches_global_clf_NEW_client import \
+    LaplacianDomainSeparationVAE_2_out_onlyDiff_only2branches_global_clf_NEW_Client
+from federatedscope.contrib.trainer.laplacian_trainer_dom_sep_2_out_only_diff_sim_only2branches_NEW import \
+    call_laplacian_trainer
 #from federatedscope.contrib.trainer.laplacian_trainer import call_laplacian_trainer
 from federatedscope.contrib.workers.laplacian_client import LaplacianClient
 from federatedscope.contrib.workers.laplacian_diff_global_out_client import LaplacianDiffGlobalOutClient
-from federatedscope.contrib.workers.laplacian_resnet_client import LaplacianResNetClient
 from federatedscope.contrib.workers.laplacian_server import LaplacianServer
 from federatedscope.contrib.workers.laplacian_server_dom_sep_VAE_1_out import LaplacianServerDomSepVAE_1_out
 from federatedscope.contrib.workers.laplacian_server_dom_sep_without_fixed import LaplacianServerDomSepWithoutFixed
@@ -34,8 +37,11 @@ from federatedscope.contrib.metrics.custom_losses import call_recon_loss_metric,
     call_diff_local_interm_metric, call_sim_global_interm_metric, \
     call_loss_out_interm_metric, \
     call_loss_out_local_interm_metric, call_loss_batch_csd_metric, \
-    call_prox_loss_metric, call_diff_local_global_metric, call_diff_resnet_1_metric, \
-    call_diff_resnet_2_metric
+    call_prox_loss_metric, call_diff_local_global_metric, call_loss_global_clf_metric, \
+    call_num_local_features_not_0_metric, call_avg_local_features_not_0_metric, \
+    call_num_global_features_not_0_metric, call_avg_global_features_not_0_metric, \
+    call_num_local_global_features_not_0_metric, \
+    call_avg_local_global_features_not_0_metric, call_num_features_global_local_metric
 
 try:
     torch.multiprocessing.set_start_method('spawn', force=True)
@@ -44,10 +50,30 @@ except RuntimeError:
 
 
 metrics = [
-    ('diff_resnet_1', call_diff_resnet_1_metric),
-    ('diff_resnet_2', call_diff_resnet_2_metric),
-    ('loss_batch_csd', call_loss_batch_csd_metric)
+    ('kld_loss_encoder', call_kld_loss_encoder_metric),
+    ('diff_local_global', call_diff_local_global_metric),
+    ('loss_batch_csd', call_loss_batch_csd_metric),
+    ('loss_global_clf_metric', call_loss_global_clf_metric),
+('num_local_features_not_0_metric', call_num_local_features_not_0_metric),
+('avg_local_features_not_0_metric', call_avg_local_features_not_0_metric),
+('num_global_features_not_0_metric', call_num_global_features_not_0_metric),
+('avg_global_features_not_0_metric', call_avg_global_features_not_0_metric),
+('num_local_global_features_not_0_metric', call_num_local_global_features_not_0_metric),
+('avg_local_global_features_not_0_metric', call_avg_local_global_features_not_0_metric),
+    ('num_features_global_local_metric', call_num_features_global_local_metric),
+
 ]
+
+"""
+ctx.num_local_features_not_0_metric.append(num_local_features_not_0)
+            ctx.avg_local_features_not_0_metric.append(avg_local_features_not_0)
+            ctx.num_global_features_not_0_metric.append(num_global_features_not_0)
+            ctx.avg_global_features_not_0_metric.append(avg_global_features_not_0)
+            ctx.num_local_global_features_not_0_metric.append(num_local_global_features_not_0)
+            ctx.avg_local_global_features_not_0_metric.append(avg_local_global_features_not_0)
+            ctx.num_features_global_local_metric.append(num_features_global_local)
+"""
+
 for metric in metrics:
     register_metric(metric[0], metric[1])
 
@@ -72,11 +98,11 @@ if os.environ.get('http_proxy'):
 register_trainer('laplacian_trainer', call_laplacian_trainer)
 
 
-def train(lr, kld_ne_imp, diff_imp_1, diff_imp_2, csd_imp):
+def train(lr, kld_ne_imp, diff_imp_global, diff_imp_local, csd_imp, global_clf_imp):
 
 
 
-    cfg_file = 'scripts/B-FHTL_exp_scripts/Graph-DC/fedResNet.yaml'
+    cfg_file = 'scripts/B-FHTL_exp_scripts/Graph-DC/fedDomSep_VAE_only2branches.yaml'
     cfg_client = 'scripts/B-FHTL_exp_scripts/Graph-DC/cfg_per_client.yaml'
     # cfg_per_Client_ours_lr
     # cfg_per_client_ours_lr_local_steps
@@ -88,10 +114,11 @@ def train(lr, kld_ne_imp, diff_imp_1, diff_imp_2, csd_imp):
     # init_cfg.data.subdirectory = 'graph_dt_backup/processed'
     # init_cfg.merge_from_list(args.opts)
     init_cfg.data.save_dir = \
-        'Graph-DC_2_ResNet_imbalanced_multi_step_lr_' + str(lr).replace(
+        'Graph-DC_2_out_only_COSINE_Diff_global_private_only_2_branches_NEW_global_clf_loss_lr_' + str(lr).replace(
             '.', '_') + '_A'+ str(kld_ne_imp).replace('.', '_') + \
-    '_F' + str(diff_imp_1).replace('.', '_') + '_F' + str(diff_imp_2).replace(
+    '_F' + str(diff_imp_global).replace('.', '_') + '_F' + str(diff_imp_local).replace(
         '.', '_') + '_H' + str(csd_imp).replace(
+        '.', '_') + '_I' + str(global_clf_imp).replace(
         '.', '_')
     """
         kld_ne_imps = [1] #A
@@ -107,16 +134,16 @@ def train(lr, kld_ne_imp, diff_imp_1, diff_imp_2, csd_imp):
 
     init_cfg.params = CN()
     init_cfg.params.kld_ne_imp = kld_ne_imp
-    init_cfg.params.diff_imp_1 = diff_imp_1
-    init_cfg.params.diff_imp_2 = diff_imp_2
+    init_cfg.params.diff_imp_global = diff_imp_global
+    init_cfg.params.diff_imp_local = diff_imp_local
     init_cfg.params.csd_imp = csd_imp
-    # init_cfg.federate.total_round_num = 500
 
     init_cfg.federate.client_num = 13
     init_cfg.params.eps = 1e-15
+    # init_cfg.federate.total_round_num = 600
 
     init_cfg.params.save_client_always = True
-
+    init_cfg.params.global_clf_imp = global_clf_imp
     init_cfg.params.p = 0.
     init_cfg.params.alpha = 0.1
 
@@ -138,8 +165,8 @@ def train(lr, kld_ne_imp, diff_imp_1, diff_imp_2, csd_imp):
     else:
         cfg_client = CfgNode.load_cfg(open(cfg_client, 'r')).clone()
     runner = FedRunner(data=data,
-                   server_class = LaplacianServer,
-                   client_class = LaplacianResNetClient,
+                   server_class = LaplacianServerDomSepVAE_1_out,
+                   client_class = LaplacianDomainSeparationVAE_2_out_onlyDiff_only2branches_global_clf_NEW_Client,
                    config=init_cfg.clone(),
                    client_config=cfg_client)
     _ = runner.run()
@@ -150,28 +177,32 @@ def tmp(a):
 
 if __name__ == '__main__':
 
-    num_trainings = 3
+    num_trainings = 1
     kld_ne_imps = [0] #A
-    diff_imps_1 = [0]   #Now 0.0001
-    diff_imps_2 = [0.0005, 0.001, 0.005] #F    HERE  [0.0001, 0.001]
-    #diff_local_imain_FedRes_graph-dc_multistep.pymps = [0.1, 0.01, 0.001] #G
+    diff_imps = [0.1, 0.03, 1]   #Now 0.0001
+    #diff_imps = [0.1]
+    #diff_global_imps = [0] #F    HERE  [0.0001, 0.001]
+    #diff_local_imps = [0] #G
     csd_imp = 10 #H
+    global_clf_imps = [1, 0.1, 0.03]
+    #global_clf_imps = [0.1]
     #sim_losses = ["mse", "cosine"]
 
     # lrs = [0.001, 0.005, 0.01, 0.05, 0.1, 0.5]
     lrs = [0.05]
-    pool = multiprocessing.Pool(3)
+    pool = multiprocessing.Pool(6)
     processes = []
     for lr in lrs:
-        for diff_imp_1 in diff_imps_1:
-            for diff_imp_2 in diff_imps_2:
+        for diff_imp in diff_imps:
+            #for diff_local_imp in diff_local_imps:
                 for kld_ne_imp in kld_ne_imps:
-                    for i in range(num_trainings):
-                        time.sleep(10)
-                        setup_seed(i)
-                        processes.append(pool.apply_async(train, args=(lr,
-                                                                       kld_ne_imp,
-                                                                       diff_imp_1, diff_imp_2, csd_imp)))
+                    for global_clf_imp in global_clf_imps:
+                        for i in range(num_trainings):
+                            time.sleep(10)
+                            setup_seed(i)
+                            processes.append(pool.apply_async(train, args=(lr,
+                                                                           kld_ne_imp,
+                                                                           diff_imp, diff_imp, csd_imp, global_clf_imp)))
     result = [p.get() for p in processes]
 
     #kld=0 mit repara: ~1.00 - 1.05

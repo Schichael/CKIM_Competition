@@ -37,7 +37,7 @@ eval:
   report: ['avg']
   freq: 1
   # metrics: ['imp_ratio', 'acc']
-  metrics: ['imp_ratio', 'acc', 'diff_res_1', 'diff_res_2',
+  metrics: ['imp_ratio', 'acc', 'diff_resnet_1', 'diff_resnet_2',
     'loss_batch_csd']
   best_res_update_round_wise_key: val_imp_ratio
   count_flops: False
