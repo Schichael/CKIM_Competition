@@ -128,7 +128,7 @@ def train(lr, kld_ne_imp, diff_imp_global, diff_imp_local, sim_imp, csd_imp):
     # init_cfg.data.subdirectory = 'graph_dt_backup/processed'
     # init_cfg.merge_from_list(args.opts)
     init_cfg.data.save_dir = \
-        'TESTGraph-DC_1_out_only_COSINE_Diff_global_private_PROX_SIM_NEW_global_clf_loss_lr_' + str(lr).replace(
+        'Graph-DC_1_out_only_COSINE_Diff_global_private_PROX_SIM_NEW_global_clf_loss_lr_' + str(lr).replace(
             '.', '_') + '_A'+ str(kld_ne_imp).replace('.', '_') + \
     '_F' + str(diff_imp_global).replace('.', '_') + '_F' + str(diff_imp_local).replace(
         '.', '_') + '_H' + str(csd_imp).replace(

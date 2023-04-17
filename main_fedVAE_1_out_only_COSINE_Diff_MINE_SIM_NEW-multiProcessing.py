@@ -195,6 +195,8 @@ if __name__ == '__main__':
     kld_ne_imps = [0] #A
     diff_imps = [0, 0.1]  # Now 0.0001
     sim_imps = [1, 0.1, 0.01, 0.001, 0]
+
+
     #diff_imps = [0.1]
     #diff_global_imps = [0] #F    HERE  [0.0001, 0.001]
     #diff_local_imps = [0] #G
@@ -204,7 +206,7 @@ if __name__ == '__main__':
 
     # lrs = [0.001, 0.005, 0.01, 0.05, 0.1, 0.5]
     lrs = [0.05]
-    pool = multiprocessing.Pool(6)
+    pool = multiprocessing.Pool(5)
     processes = []
     for lr in lrs:
         for diff_imp in diff_imps:
