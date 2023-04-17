@@ -195,25 +195,23 @@ if __name__ == '__main__':
 
     num_trainings = 1
     kld_ne_imps = [0] #A
-    diff_imps = [0.005,]   #Now 0.0001
-    sim_imps = [0]
+    diff_imps = [0, 0.1]  # Now 0.0001
+    sim_imps = [1, 0.1, 0.01, 0.001, 0]
     #diff_imps = [0.1]
     #diff_global_imps = [0] #F    HERE  [0.0001, 0.001]
     #diff_local_imps = [0] #G
     csd_imp = 10 #H
-    global_clf_imps = [1]
     #global_clf_imps = [0.1]
     #sim_losses = ["mse", "cosine"]
 
     # lrs = [0.001, 0.005, 0.01, 0.05, 0.1, 0.5]
     lrs = [0.05]
-    pool = multiprocessing.Pool(6)
+    pool = multiprocessing.Pool(5)
     processes = []
     for lr in lrs:
         for diff_imp in diff_imps:
             for sim_imp in sim_imps:
                 for kld_ne_imp in kld_ne_imps:
-                    for global_clf_imp in global_clf_imps:
                         for i in range(num_trainings):
                             time.sleep(10)
                             setup_seed(i)
