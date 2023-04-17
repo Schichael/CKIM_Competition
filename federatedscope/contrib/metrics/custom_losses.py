@@ -81,13 +81,30 @@ def avg_local_global_features_not_0_metric(ctx, **kwargs):
 def num_features_global_local_metric(ctx, **kwargs):
     return np.mean(ctx.num_features_global_local_metric)
 
+def num_local_out_features_not_0_metric(ctx, **kwargs):
+    return np.mean(ctx.num_local_out_features_not_0_metric)
+
+def avg_local_out_features_not_0_metric(ctx, **kwargs):
+    return np.mean(ctx.avg_local_out_features_not_0_metric)
+
+def num_features_global_local_out_metric(ctx, **kwargs):
+    return np.mean(ctx.num_features_global_local_out_metric)
+
+def num_features_local_out_local_metric(ctx, **kwargs):
+    return np.mean(ctx.num_features_local_out_local_metric)
+
+def diff_local_local_out_metric(ctx, **kwargs):
+    return np.mean(ctx.diff_local_local_out_metric)
+
+def sim_interm_local_out_metric(ctx, **kwargs):
+    return np.mean(ctx.sim_interm_local_out_metric)
 
 def call_mi_estimation_metric(types):
     if "MI_estimation" in types:
         return "MI_estimation", mi_estimation_metric
 def call_prox_loss_metric(types):
-    if "prox_loss" in types:
-        return "prox_loss", prox_loss_metric
+    if "prox_loss_metric" in types:
+        return "prox_loss_metric", prox_loss_metric
 
 def call_recon_loss_metric(types):
     if "recon_loss" in types:
@@ -187,3 +204,26 @@ def call_num_features_global_local_metric(types):
     if "num_features_global_local_metric" in types:
         return "num_features_global_local_metric", num_features_global_local_metric
 
+def call_num_local_out_features_not_0_metric(types):
+    if "num_local_out_features_not_0_metric" in types:
+        return "num_local_out_features_not_0_metric", num_local_out_features_not_0_metric
+
+def call_avg_local_out_features_not_0_metric(types):
+    if "avg_local_out_features_not_0_metric" in types:
+        return "avg_local_out_features_not_0_metric", avg_local_out_features_not_0_metric
+
+def call_num_features_global_local_out_metric(types):
+    if "num_features_global_local_out_metric" in types:
+        return "num_features_global_local_out_metric", num_features_global_local_out_metric
+
+def call_num_features_local_out_local_metric(types):
+    if "num_features_local_out_local_metric" in types:
+        return "num_features_local_out_local_metric", num_features_local_out_local_metric
+
+def call_diff_local_local_out_metric(types):
+    if "diff_local_local_out_metric" in types:
+        return "diff_local_local_out_metric", diff_local_local_out_metric
+
+def call_sim_interm_local_out_metric(types):
+    if "sim_interm_local_out_metric" in types:
+        return "sim_interm_local_out_metric", sim_interm_local_out_metric
