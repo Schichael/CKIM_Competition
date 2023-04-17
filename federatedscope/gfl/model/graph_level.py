@@ -22,7 +22,7 @@ from federatedscope.gfl.model.gat import GAT_Net
 from federatedscope.gfl.model.gin import GIN_Net
 from federatedscope.gfl.model.gpr import GPR_Net
 
-# graph_level_Dom_Sep_1out_only_Cosine_diff_Cosine_sim_NEW
+# graph_level_Dom_Sep_1out_only_Cosine_diff_MSE_sim_NEW
 
 EPS = 1e-15
 EMD_DIM = 200
@@ -338,7 +338,7 @@ class GNN_Net_Graph(torch.nn.Module):
         diff_local_interm = self.diff_loss(x_local, x_interm)
         diff_local_local_out = self.diff_loss(x_local, x_local_out)
 
-        sim_interm_local_out = self.similarity_loss(x_interm.detach(), x_local_out)
+        sim_interm_local_out = self.mse_loss(x_interm.detach(), x_local_out)
 
         x_local_interm = x_local + x_interm.detach()
 
