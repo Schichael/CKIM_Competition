@@ -322,7 +322,7 @@ class GNN_Net_Graph(torch.nn.Module):
 
         kld_loss_encoder = self.kld_loss(x)
 
-        x_local_enc = self.local_gnn((x, edge_index))
+        x_local_enc = self.local_gnn((x.detach(), edge_index))
         x_interm_enc = self.interm_gnn((x, edge_index))
         x_global_enc = self.global_gnn((x, edge_index))
 
@@ -335,10 +335,7 @@ class GNN_Net_Graph(torch.nn.Module):
         x_global = self.global_linear_out1(x_global_enc_pooled).relu()
 
         diff_local_interm = self.diff_loss(x_local, x_interm)
-        if sim_loss == "cosine":
-            sim_global_interm = self.similarity_loss(x_interm, x_global)
-        else:
-            sim_global_interm = self.mse_loss(x_interm, x_global)
+        sim_global_interm = self.similarity_loss(x_interm, x_global)
 
         x_local_interm = x_local + x_interm
 
