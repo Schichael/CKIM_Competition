@@ -4,7 +4,7 @@ from copy import deepcopy
 
 import torch
 
-from contrib.trainer.laplacian_trainer_dom_sep_1_out_only_diff_sim_global_private_clf_NEW import \
+from federatedscope.contrib.trainer.laplacian_trainer_dom_sep_1_out_only_diff_sim_global_private_clf_NEW import \
     LaplacianDomainSeparationVAE_1Out_OnlyDiffSim_global_private_NEW_Trainer
 from federatedscope.contrib.trainer\
     .laplacian_trainer_dom_sep_2_out_only_diff_sim_only2branches_global_clf_NEW import \

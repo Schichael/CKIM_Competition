@@ -6,7 +6,7 @@ from multiprocessing import set_start_method
 import torch
 from torch import multiprocessing
 
-from contrib.workers.laplacian_with_domain_separation_1_out_onlyDiff_ProxSim_global_private_clf_NEW_client import \
+from federatedscope.contrib.workers.laplacian_with_domain_separation_1_out_onlyDiff_ProxSim_global_private_clf_NEW_client import \
     LaplacianDomainSeparationVAE_1_out_onlyDiff_ProxSim_global_private_clf_NEW_Client
 from federatedscope.contrib.workers.laplacian_server_dom_sep_VAE_1_out_global_private import \
     LaplacianServerDomSepVAE_1_out_global_private
@@ -154,9 +154,9 @@ def train(lr, kld_ne_imp, diff_imp_global, diff_imp_local, sim_imp, csd_imp):
     init_cfg.params.sim_imp = sim_imp
 
 
-    init_cfg.federate.client_num = 2
+    init_cfg.federate.client_num = 13
     init_cfg.params.eps = 1e-15
-    # init_cfg.federate.total_round_num = 6local_out00
+    init_cfg.federate.total_round_num = 500
 
     init_cfg.params.save_client_always = True
     init_cfg.params.p = 0.
@@ -207,7 +207,7 @@ if __name__ == '__main__':
 
     # lrs = [0.001, 0.005, 0.01, 0.05, 0.1, 0.5]
     lrs = [0.05]
-    pool = multiprocessing.Pool(1)
+    pool = multiprocessing.Pool(6)
     processes = []
     for lr in lrs:
         for diff_imp in diff_imps:
