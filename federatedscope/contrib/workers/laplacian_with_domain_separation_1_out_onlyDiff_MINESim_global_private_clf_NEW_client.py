@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 
 class \
-        LaplacianDomainSeparationVAE_1_out_onlyDiff_ProxSim_global_private_clf_NEW_Client(
+        LaplacianDomainSeparationVAE_1_out_onlyDiff_MINESim_global_private_clf_NEW_Client(
     Client):
     def __init__(self,
                  ID=-1,

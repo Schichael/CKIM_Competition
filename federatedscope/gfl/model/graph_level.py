@@ -22,7 +22,7 @@ from federatedscope.gfl.model.gat import GAT_Net
 from federatedscope.gfl.model.gin import GIN_Net
 from federatedscope.gfl.model.gpr import GPR_Net
 
-# graph_level_Dom_Sep_1out_only_Cosine_diff_MSE_sim_NEW
+# graph_level_Dom_Sep_1out_only_Cosine_diff_Prox_sim_NEW
 
 EPS = 1e-15
 EMD_DIM = 200

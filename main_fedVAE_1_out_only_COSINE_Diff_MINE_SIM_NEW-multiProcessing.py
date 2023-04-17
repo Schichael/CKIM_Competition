@@ -8,6 +8,8 @@ from torch import multiprocessing
 
 from federatedscope.contrib.workers.laplacian_server_dom_sep_VAE_1_out_global_private import \
     LaplacianServerDomSepVAE_1_out_global_private
+from federatedscope.contrib.workers.laplacian_with_domain_separation_1_out_onlyDiff_MINESim_global_private_clf_NEW_client import \
+    LaplacianDomainSeparationVAE_1_out_onlyDiff_MINESim_global_private_clf_NEW_Client
 from federatedscope.contrib.workers.laplacian_with_domain_separation_1_out_onlyDiff_Sim_global_private_clf_NEW_client import \
     LaplacianDomainSeparationVAE_1_out_onlyDiff_Sim_global_private_clf_NEW_Client
 from federatedscope.contrib.workers\
@@ -178,7 +180,7 @@ def train(lr, kld_ne_imp, diff_imp_global, diff_imp_local, sim_imp, csd_imp):
         cfg_client = CfgNode.load_cfg(open(cfg_client, 'r')).clone()
     runner = FedRunner(data=data,
                    server_class = LaplacianServerDomSepVAE_1_out_global_private,
-                   client_class = LaplacianDomainSeparationVAE_1_out_onlyDiff_Sim_global_private_clf_NEW_Client,
+                   client_class = LaplacianDomainSeparationVAE_1_out_onlyDiff_MINESim_global_private_clf_NEW_Client,
                    config=init_cfg.clone(),
                    client_config=cfg_client)
     _ = runner.run()
