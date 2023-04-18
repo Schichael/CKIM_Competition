@@ -125,7 +125,7 @@ def train(lr, kld_ne_imp, diff_imp_global, diff_imp_local, sim_imp, csd_imp):
     # init_cfg.data.subdirectory = 'graph_dt_backup/processed'
     # init_cfg.merge_from_list(args.opts)
     init_cfg.data.save_dir = \
-        'TESTGraph-DC_1_out_only_COSINE_Diff_global_private_MSE_SIM_NEW_global_clf_loss_lr_' + str(lr).replace(
+        'Graph-DC_1_out_only_COSINE_Diff_global_private_MSE_SIM_NEW_global_clf_loss_lr_' + str(lr).replace(
             '.', '_') + '_A'+ str(kld_ne_imp).replace('.', '_') + \
     '_F' + str(diff_imp_global).replace('.', '_') + '_F' + str(diff_imp_local).replace(
         '.', '_') + '_H' + str(csd_imp).replace(
@@ -203,7 +203,7 @@ if __name__ == '__main__':
 
     # lrs = [0.001, 0.005, 0.01, 0.05, 0.1, 0.5]
     lrs = [0.05]
-    pool = multiprocessing.Pool(1)
+    pool = multiprocessing.Pool(5)
     processes = []
     for lr in lrs:
         for diff_imp in diff_imps:
