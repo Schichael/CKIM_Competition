@@ -205,8 +205,6 @@ class \
 
         num_global_features_not_0 = np.sum(global_features != 0) / \
                                     num_total_features_curr
-        x = np.sum(global_features != 0)
-        print(f"np.sum(global_features != 0): {np.sum(global_features != 0)}")
         #print(f"np.sum(local_features != 0): {np.sum(local_features != 0)}")
 
         #print(f"np.sum(local_out_features != 0): {np.sum(local_out_features != 0)}")
@@ -507,11 +505,11 @@ class \
                ctx.diff_local_interm +\
                self.config.params.sim_imp * ctx.sim_interm_local_out
         loss.backward(retain_graph=True)
-        """
+
         for param in ctx.model.named_parameters():
-          if param[0].startswith("clf") or param[0].startswith("encoder"):
+          if param[0].startswith("clf"):
               param[1].requires_grad = False
-        """
+
         loss = ctx.loss_out_local_interm + ctx.loss_out_interm
         loss.backward(retain_graph=True)
 
