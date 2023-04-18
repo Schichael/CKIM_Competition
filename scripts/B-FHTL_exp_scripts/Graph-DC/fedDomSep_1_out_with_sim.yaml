@@ -28,7 +28,7 @@ model:
   task: graphClassification
 personalization:
   local_param: ['encoder_atom', 'encoder', 'clf', 'local', 'decoder',
-                'local_out_gnn', 'mine']
+                'llocal_out', 'mine']
 
 
 criterion:

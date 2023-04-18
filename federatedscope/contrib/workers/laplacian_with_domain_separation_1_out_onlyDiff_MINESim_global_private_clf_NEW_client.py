@@ -4,24 +4,12 @@ from copy import deepcopy
 
 import torch
 
-from federatedscope.contrib.trainer.laplacian_trainer_dom_sep_1_out_only_diff_sim_global_private_clf_NEW import \
-    LaplacianDomainSeparationVAE_1Out_OnlyDiffSim_global_private_NEW_Trainer
+from federatedscope.contrib.trainer.laplacian_trainer_dom_sep_1_out_only_diff_MINEsim_global_private_clf_NEW import \
+    LaplacianDomainSeparationVAE_1Out_OnlyDiff_MINESim_global_private_NEW_Trainer
 from federatedscope.contrib.trainer\
-    .laplacian_trainer_dom_sep_2_out_only_diff_sim_only2branches_global_clf_NEW import \
-    LaplacianDomainSeparationVAE_2Out_OnlyDiffSim_only2branches_global_clf_NEW_Trainer
-from federatedscope.contrib.trainer.laplacian_trainer_dom_sep_2_out_only_diff_proxLoss_NEW import \
-    LaplacianDomainSeparationVAE_2Out_OnlyDiffProxLoss_NEW_Trainer
-from federatedscope.contrib.trainer.laplacian_trainer_dom_sep_2_out_only_diff_sim_NEW import \
-    LaplacianDomainSeparationVAE_2Out_OnlyDiffSim_NEW_Trainer
-from federatedscope.contrib.trainer.laplacian_trainer_dom_sep_2_out_only_diff_sim_only2branches_NEW import \
-    LaplacianDomainSeparationVAE_2Out_OnlyDiffSim_only2branches_NEW_Trainer
-from federatedscope.contrib.trainer.laplacian_trainer_dom_sep_VAE_1_out import LaplacianDomainSeparationVAE_1Out_Trainer
-from federatedscope.contrib.trainer.laplacian_trainer_dom_sep_VAE_2_out import LaplacianDomainSeparationVAE_2Out_Trainer
-from federatedscope.contrib.trainer.laplacian_trainer_dom_sep_VAE_2_out_NEW import \
-    LaplacianDomainSeparationVAE_2Out_NEW_Trainer
+    .laplacian_trainer_dom_sep_1_out_only_diff_PROXsim_global_private_clf_NEW import \
+    LaplacianDomainSeparationVAE_1Out_OnlyDiff_ProxSim_global_private_NEW_Trainer
 
-from federatedscope.contrib.trainer.laplacian_trainer_with_domain_separation_with_summation import \
-    LaplacianDomainSeparationWithSummationTrainer
 from federatedscope.contrib.workers.client import Client
 from federatedscope.core.message import Message
 
@@ -29,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 
 class \
-        LaplacianDomainSeparationVAE_1_out_onlyDiff_Sim_global_private_clf_NEW_Client(
+        LaplacianDomainSeparationVAE_1_out_onlyDiff_MINESim_global_private_clf_NEW_Client(
     Client):
     def __init__(self,
                  ID=-1,
@@ -49,7 +37,7 @@ class \
         self._align_global_local_parameters(model)
         self._align_global_interm_parameters(model)
 
-        trainer = LaplacianDomainSeparationVAE_1Out_OnlyDiffSim_global_private_NEW_Trainer(
+        trainer = LaplacianDomainSeparationVAE_1Out_OnlyDiff_MINESim_global_private_NEW_Trainer(
             model=model,
             omega=self.omega_set,
             data=data,

@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 
 
 class \
-        LaplacianDomainSeparationVAE_1Out_OnlyDiffSim_global_private_NEW_Trainer(
+        LaplacianDomainSeparationVAE_1Out_OnlyDiff_MINESim_global_private_NEW_Trainer(
     GraphMiniBatchTrainer):
     def __init__(self,
                  model,
@@ -205,11 +205,6 @@ class \
 
         num_global_features_not_0 = np.sum(global_features != 0) / \
                                     num_total_features_curr
-
-        #print(f"np.sum(local_out_features != 0): {np.sum(local_out_features != 0)}")
-
-        #if x == 0:
-            #print("sum of global features is 0")
         avg_global_features_not_0 = global_features.sum() / np.sum(global_features != 0)
         num_local_global_features_not_0 = np.sum(local_global != 0) / num_total_features_curr
         avg_local_global_features_not_0 = local_global.sum() / np.sum(local_global !=
@@ -497,11 +492,26 @@ class \
         ctx.loss_out_interm = ctx.criterion(out_interm, label)
         """
 
+        # Train MINE network
+        for param in ctx.model.named_parameters():
+          if not param[0].startswith("mine"):
+              param[1].requires_grad = False
+        loss = ctx.sim_interm_local_out
+        loss.backward(retain_graph=True)
+
+        # Reset requires_grad
+        for param in ctx.model.named_parameters():
+            if param[0] in self.grad_params:
+                param[1].requires_grad = True
+
+        for param in ctx.model.named_parameters():
+          if param[0].startswith("mine"):
+              param[1].requires_grad = False
 
         # loss for output and KLD
         loss = ctx.loss_out_local_out + self.config.params.kld_ne_imp * \
                ctx.kld_loss_encoder + self.config.params.diff_imp_global * \
-               ctx.diff_local_interm +\
+               ctx.diff_local_interm + self.config.params.diff_imp_local * ctx.diff_local_interm +\
                self.config.params.sim_imp * ctx.sim_interm_local_out
         loss.backward(retain_graph=True)
 
@@ -676,5 +686,5 @@ class CSDLoss(torch.nn.Module):
 
 def call_laplacian_trainer(trainer_type):
     if trainer_type == 'laplacian_trainer':
-        trainer_builder = LaplacianDomainSeparationVAE_1Out_OnlyDiffSim_global_private_NEW_Trainer
+        trainer_builder = LaplacianDomainSeparationVAE_1Out_OnlyDiff_MINESim_global_private_NEW_Trainer
         return trainer_builder
