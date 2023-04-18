@@ -3,6 +3,7 @@ import logging
 from copy import deepcopy
 from typing import Callable
 
+import numpy as np
 import torch
 from torch_geometric.graphgym import optim
 from federatedscope.core.auxiliaries.utils import param2tensor
@@ -155,15 +156,42 @@ class LaplacianDomainSeparationVAE_1Out_OnlyDiff_noGlobal_NEW_Trainer(
         ctx.new_omega = new_omega
         ctx.new_mu = new_mu
 
+    def stats_calculator(self, local_features, global_features):
+        local_features = local_features.cpu().detach().numpy()
+        global_features = global_features.cpu().detach().numpy()
+        num_total_features_curr = local_features.shape[0] * local_features.shape[1]
+        local_global = local_features + global_features
+        mult_local_global = local_features * global_features
+        num_local_features_not_0 = np.sum(local_features != 0) / num_total_features_curr
+        avg_local_features_not_0 = local_features.sum() / np.sum(local_features != 0)
+        num_global_features_not_0 = np.sum(global_features != 0) / \
+                                    num_total_features_curr
+        avg_global_features_not_0 = global_features.sum() / np.sum(global_features != 0)
+        num_local_global_features_not_0 = np.sum(local_global != 0) / num_total_features_curr
+        avg_local_global_features_not_0 = local_global.sum() / np.sum(local_global !=
+                                                                      0)
+        num_features_global_local = np.sum(mult_local_global != 0) / num_total_features_curr
+
+        #print(f"np.sum(local_features != 0): {np.sum(local_features != 0)}")
+
+        return num_local_features_not_0, avg_local_features_not_0, \
+            num_global_features_not_0, avg_global_features_not_0, \
+            num_local_global_features_not_0, avg_local_global_features_not_0, num_features_global_local
+
     def _hook_on_batch_forward(self, ctx):
         self.tmp += 1
         batch = ctx.data_batch.to(ctx.device)
-        out_local_interm, out_interm, kld_loss_encoder, diff_local, diff_interm = \
+        out_local_interm, out_interm, kld_loss_encoder, diff_local, diff_interm, x_local, x_global = \
             ctx.model(batch, self.config.params.sim_loss)
+
+        num_local_features_not_0, avg_local_features_not_0, \
+        num_global_features_not_0, avg_global_features_not_0, \
+        num_local_global_features_not_0, avg_local_global_features_not_0, num_features_global_local = \
+            self.stats_calculator(x_local, x_global)
+
 
         # ctx.sim_interm_fixed = sim_interm_fixed
 
-        # TODO: Not in metrics yet
         # ctx.sim_interm_fixed_metric = sim_interm_fixed.detach().item()
 
         ctx.kld_loss_encoder = kld_loss_encoder
@@ -222,6 +250,8 @@ class LaplacianDomainSeparationVAE_1Out_OnlyDiff_noGlobal_NEW_Trainer(
         ctx.batch_size = len(label)
         ctx.y_true = label
         ctx.y_prob = out_interm
+
+
 
         # record the index of the ${MODE} samples
         if hasattr(ctx.data_batch, 'data_index'):

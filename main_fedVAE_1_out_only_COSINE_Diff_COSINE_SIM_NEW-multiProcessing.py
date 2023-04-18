@@ -190,7 +190,7 @@ if __name__ == '__main__':
 
     num_trainings = 1
     kld_ne_imps = [0] #A
-    diff_imps = [0, 0.1]   #Now 0.0001
+    diff_imps = [0.1]  # Now 0.0001
     sim_imps = [1, 0.1, 0.01, 0.001, 0]
     #diff_imps = [0.1]
     #diff_global_imps = [0] #F    HERE  [0.0001, 0.001]

@@ -22,7 +22,7 @@ from federatedscope.gfl.model.gat import GAT_Net
 from federatedscope.gfl.model.gin import GIN_Net
 from federatedscope.gfl.model.gpr import GPR_Net
 
-# graph_level_Dom_Sep_1out_only_Cosine_diff_MINE_sim_NEW_old
+# graph_level_Dom_Sep_1out_only_Cosine_diff_MSE_sim_NEW
 
 EPS = 1e-15
 EMD_DIM = 200
@@ -40,7 +40,7 @@ class AtomEncoder(torch.nn.Module):
     def forward(self, x):
         x_embedding = 0
         for i in range(x.shape[1]):
-            x_embedding += self.atom_embedding_list[i](x[:, i])
+            x_embedding += self.atom_embedding_list[i](x[:, i]) 
         return x_embedding
 
 
@@ -187,9 +187,9 @@ class GNN_Net_Graph(torch.nn.Module):
                                dropout=dropout)
         else:
             raise ValueError(f'Unsupported gnn type: {gnn}.')
-        mi_model = T(hidden, hidden)
+        # mi_model = T(hidden, hidden)
 
-        self.mine = Mine(mi_model, loss='mine')
+        # self.mine = Mine(mi_model, loss='mine')
 
         # Pooling layer
         if pooling == 'add':
@@ -310,6 +310,12 @@ class GNN_Net_Graph(torch.nn.Module):
 
         return pos_loss + neg_loss
 
+    def cosine_diff_loss(self, x1, x2):
+        # cosine embedding loss: 1-cos(x1, x2). The 1 defines this loss function.
+        y = torch.ones(x1.size(0)).to('cuda:0')
+        y = -y
+        diff_loss = self.cos_loss(x1, x2, y)
+        return diff_loss
 
     def forward(self, data):
 
@@ -335,10 +341,10 @@ class GNN_Net_Graph(torch.nn.Module):
         x_local_out = self.llocal_out_linear_out1(x_local_out_enc_pooled).relu()
 
 
-        diff_local_interm = self.diff_loss(x_local, x_interm)
-        diff_local_local_out = self.diff_loss(x_local, x_local_out)
+        diff_local_interm = self.cosine_diff_loss(x_local, x_interm)
+        diff_local_local_out = self.cosine_diff_loss(x_local, x_local_out)
 
-        sim_interm_local_out = self.mine(x_interm.detach(), x_local_out)
+        sim_interm_local_out = self.mse_loss(x_interm.detach(), x_local_out)
 
         x_local_interm = x_local + x_interm.detach()
 

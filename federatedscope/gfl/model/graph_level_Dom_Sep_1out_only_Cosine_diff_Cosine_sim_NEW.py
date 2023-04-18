@@ -310,6 +310,12 @@ class GNN_Net_Graph(torch.nn.Module):
 
         return pos_loss + neg_loss
 
+    def cosine_diff_loss(self, x1, x2):
+        # cosine embedding loss: 1-cos(x1, x2). The 1 defines this loss function.
+        y = torch.ones(x1.size(0)).to('cuda:0')
+        y = -y
+        diff_loss = self.cos_loss(x1, x2, y)
+        return diff_loss
 
     def forward(self, data):
 
@@ -335,8 +341,8 @@ class GNN_Net_Graph(torch.nn.Module):
         x_local_out = self.llocal_out_linear_out1(x_local_out_enc_pooled).relu()
 
 
-        diff_local_interm = self.diff_loss(x_local, x_interm)
-        diff_local_local_out = self.diff_loss(x_local, x_local_out)
+        diff_local_interm = self.cosine_diff_loss(x_local, x_interm)
+        diff_local_local_out = self.cosine_diff_loss(x_local, x_local_out)
 
         sim_interm_local_out = self.similarity_loss(x_interm.detach(), x_local_out)
 

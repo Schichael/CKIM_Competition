@@ -205,6 +205,14 @@ class \
 
         num_global_features_not_0 = np.sum(global_features != 0) / \
                                     num_total_features_curr
+        x = np.sum(global_features != 0)
+        print(f"np.sum(global_features != 0): {np.sum(global_features != 0)}")
+        #print(f"np.sum(local_features != 0): {np.sum(local_features != 0)}")
+
+        #print(f"np.sum(local_out_features != 0): {np.sum(local_out_features != 0)}")
+
+        #if x == 0:
+            #print("sum of global features is 0")
         avg_global_features_not_0 = global_features.sum() / np.sum(global_features != 0)
         num_local_global_features_not_0 = np.sum(local_global != 0) / num_total_features_curr
         avg_local_global_features_not_0 = local_global.sum() / np.sum(local_global !=
@@ -496,14 +504,14 @@ class \
         # loss for output and KLD
         loss = ctx.loss_out_local_out + self.config.params.kld_ne_imp * \
                ctx.kld_loss_encoder + self.config.params.diff_imp_global * \
-               ctx.diff_local_interm + self.config.params.diff_imp_local * ctx.diff_local_interm +\
+               ctx.diff_local_interm +\
                self.config.params.sim_imp * ctx.sim_interm_local_out
         loss.backward(retain_graph=True)
-
+        """
         for param in ctx.model.named_parameters():
-          if param[0].startswith("clf"):
+          if param[0].startswith("clf") or param[0].startswith("encoder"):
               param[1].requires_grad = False
-
+        """
         loss = ctx.loss_out_local_interm + ctx.loss_out_interm
         loss.backward(retain_graph=True)
 
