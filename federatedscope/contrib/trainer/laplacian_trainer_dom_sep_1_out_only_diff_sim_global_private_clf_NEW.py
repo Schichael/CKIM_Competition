@@ -205,7 +205,6 @@ class \
 
         num_global_features_not_0 = np.sum(global_features != 0) / \
                                     num_total_features_curr
-        #print(f"np.sum(local_features != 0): {np.sum(local_features != 0)}")
 
         #print(f"np.sum(local_out_features != 0): {np.sum(local_out_features != 0)}")
 
