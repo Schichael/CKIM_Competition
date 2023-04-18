@@ -22,7 +22,7 @@ from federatedscope.gfl.model.gat import GAT_Net
 from federatedscope.gfl.model.gin import GIN_Net
 from federatedscope.gfl.model.gpr import GPR_Net
 
-# graph_level_Dom_Sep_1out_only_Cosine_diff_MINE_sim_NEW_old
+# graph_level_Dom_Sep_1out_only_Cosine_diff_Prox_sim_NEW
 
 EPS = 1e-15
 EMD_DIM = 200
@@ -187,9 +187,9 @@ class GNN_Net_Graph(torch.nn.Module):
                                dropout=dropout)
         else:
             raise ValueError(f'Unsupported gnn type: {gnn}.')
-        mi_model = T(hidden, hidden)
+        # mi_model = T(hidden, hidden)
 
-        self.mine = Mine(mi_model, loss='mine')
+        # self.mine = Mine(mi_model, loss='mine')
 
         # Pooling layer
         if pooling == 'add':
@@ -344,7 +344,7 @@ class GNN_Net_Graph(torch.nn.Module):
         diff_local_interm = self.cosine_diff_loss(x_local, x_interm)
         diff_local_local_out = self.cosine_diff_loss(x_local, x_local_out)
 
-        sim_interm_local_out = self.mine(x_interm.detach(), x_local_out)
+        sim_interm_local_out = self.mse_loss(x_interm.detach(), x_local_out)
 
         x_local_interm = x_local + x_interm.detach()
 
