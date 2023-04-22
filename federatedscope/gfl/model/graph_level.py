@@ -22,7 +22,7 @@ from federatedscope.gfl.model.gat import GAT_Net
 from federatedscope.gfl.model.gin import GIN_Net
 from federatedscope.gfl.model.gpr import GPR_Net
 
-# graph_level_Dom_Sep_1out_only_Cosine_diff_Prox_sim_NEW
+# graph_level_Dom_Sep_2out_only_cosine_diff_MSE_sim_NEW
 
 EPS = 1e-15
 EMD_DIM = 200
@@ -156,10 +156,10 @@ class GNN_Net_Graph(torch.nn.Module):
                                      dropout=dropout)
 
             self.llocal_out_gnn = GIN_Net(in_channels=hidden,
-                                          out_channels=hidden,
-                                          hidden=hidden,
-                                          max_depth=max_depth,
-                                          dropout=dropout)
+                                      out_channels=hidden,
+                                      hidden=hidden,
+                                      max_depth=max_depth,
+                                      dropout=dropout)
             """
             self.global_gnn_mu = GIN_Net(in_channels=hidden,
                                       out_channels=hidden,
@@ -235,13 +235,10 @@ class GNN_Net_Graph(torch.nn.Module):
 
     def reparametrize_from_x(self, x, return_mu = False):
         """ x is just the normal output of the encoder
-
         Args:
             x:
             return_mu: If True, just return mu
-
         Returns:
-
         """
         mu_logvar = x.view(-1, 2, self.hidden)
         mu = mu_logvar[:, 0, :]
@@ -270,6 +267,13 @@ class GNN_Net_Graph(torch.nn.Module):
         y = torch.ones(x1.size(0)).to('cuda:0')
         recon_loss = self.cos_loss(x1, x2, y)
         return recon_loss
+
+    def cosine_diff_loss(self, x1, x2):
+        # cosine embedding loss: 1-cos(x1, x2). The 1 defines this loss function.
+        y = torch.ones(x1.size(0)).to('cuda:0')
+        y = -y
+        diff_loss = self.cos_loss(x1, x2, y)
+        return diff_loss
 
     def mse_loss(self, x1, x2):
         return torch.nn.functional.mse_loss(x1, x2, reduction='mean')
@@ -310,12 +314,6 @@ class GNN_Net_Graph(torch.nn.Module):
 
         return pos_loss + neg_loss
 
-    def cosine_diff_loss(self, x1, x2):
-        # cosine embedding loss: 1-cos(x1, x2). The 1 defines this loss function.
-        y = torch.ones(x1.size(0)).to('cuda:0')
-        y = -y
-        diff_loss = self.cos_loss(x1, x2, y)
-        return diff_loss
 
     def forward(self, data):
 
@@ -328,7 +326,7 @@ class GNN_Net_Graph(torch.nn.Module):
 
         kld_loss_encoder = self.kld_loss(x)
 
-        x_local_enc = self.local_gnn((x.detach(), edge_index))
+        x_local_enc = self.local_gnn((x, edge_index))
         x_interm_enc = self.interm_gnn((x.detach(), edge_index))
         x_local_out_enc = self.llocal_out_gnn((x, edge_index))
 
@@ -340,21 +338,19 @@ class GNN_Net_Graph(torch.nn.Module):
         x_interm = self.interm_linear_out1(x_interm_pooled).relu()
         x_local_out = self.llocal_out_linear_out1(x_local_out_enc_pooled).relu()
 
-
         diff_local_interm = self.cosine_diff_loss(x_local, x_interm)
         diff_local_local_out = self.cosine_diff_loss(x_local, x_local_out)
 
-        sim_interm_local_out = self.mse_loss(x_interm.detach(), x_local_out)
+        sim_local_out_interm = self.mse_loss(x_interm.detach(), x_local_out)
 
-        x_local_interm = x_local + x_interm.detach()
+        x_local_interm = x_local.detach() + x_interm
+        x_local_out_local = x_local_out + x_local
 
         x_local_interm = F.dropout(x_local_interm, self.dropout, training=self.training)
-        x_local_out = F.dropout(x_local_out, self.dropout, training=self.training)
-        x_interm = F.dropout(x_interm, self.dropout, training=self.training)
+        x_local_out_local = F.dropout(x_local_out_local, self.dropout, training=self.training)
 
         out_local_interm = self.clf(x_local_interm)
-        out_local_out = self.clf(x_local_out)
-        out_interm = self.clf(x_interm)
+        out_local_out_local = self.clf(x_local_out_local)
 
 
         # recon loss adjacency matrix
@@ -362,9 +358,9 @@ class GNN_Net_Graph(torch.nn.Module):
         # return x, mi
         # return out_global, torch.Tensor([[0.1, 0.9]]*out_global.size(0)).float().to('cuda:0'), torch.Tensor([[0.1, 0.9]]*out_global.size(0)).float().to('cuda:0'), kld_loss_encoder, kld_global, torch.Tensor([0.]).float().to('cuda:0'), torch.Tensor([0.]).float().to('cuda:0'), torch.Tensor([0.]).float().to('cuda:0'), torch.Tensor([0.]).float().to('cuda:0'), torch.Tensor([0.]).float().to('cuda:0')
 
-        return out_local_out, out_local_interm, out_interm, kld_loss_encoder, \
-            diff_local_interm, diff_local_local_out, sim_interm_local_out, x_local, \
+        return out_local_out_local, out_local_interm, kld_loss_encoder, diff_local_interm, diff_local_local_out, sim_local_out_interm, x_local, \
             x_interm, x_local_out
+
 
 def dot_product_decode(Z):
     A_pred = torch.sigmoid(torch.matmul(Z, Z.t()))
