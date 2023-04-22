@@ -6,12 +6,14 @@ from multiprocessing import set_start_method
 import torch
 from torch import multiprocessing
 
-from federatedscope.contrib.workers.laplacian_with_domain_separation_1_out_onlyDiff_ProxSim_global_private_clf_NEW_client import \
-    LaplacianDomainSeparationVAE_1_out_onlyDiff_ProxSim_global_private_clf_NEW_Client
+from federatedscope.contrib.trainer.laplacian_trainer_dom_sep_2_out_only_COSINEdiff_MSEsim_global_private_clf_NEW import \
+    LaplacianDomainSeparationVAE_2Out_Only_COSINE_Diff_MSE_Sim_global_private_NEW_Trainer
 from federatedscope.contrib.workers.laplacian_server_dom_sep_VAE_1_out_global_private import \
     LaplacianServerDomSepVAE_1_out_global_private
 from federatedscope.contrib.workers.laplacian_with_domain_separation_1_out_onlyDiff_Sim_global_private_clf_NEW_client import \
     LaplacianDomainSeparationVAE_1_out_onlyDiff_Sim_global_private_clf_NEW_Client
+from federatedscope.contrib.workers.laplacian_with_domain_separation_2_out_onlyDiff_Sim_global_private_clf_NEW_client import \
+    LaplacianDomainSeparationVAE_2_out_onlyCosineDiff_MSESim_global_private_clf_NEW_Client
 from federatedscope.contrib.workers\
     .laplacian_with_domain_separation_2_out_onlyDiff_only2branches_global_clf_NEW_client import \
     LaplacianDomainSeparationVAE_2_out_onlyDiff_only2branches_global_clf_NEW_Client
@@ -76,8 +78,7 @@ metrics = [
 ('num_features_local_out_local_metric', call_num_features_local_out_local_metric),
 
     ('diff_local_local_out_metric', call_diff_local_local_out_metric),
-    ('sim_interm_local_out_metric', call_sim_interm_local_out_metric),
-    ('prox_loss_metric', call_prox_loss_metric)
+    ('sim_interm_local_out_metric', call_sim_interm_local_out_metric)
 
 ]
 
@@ -128,7 +129,7 @@ def train(lr, kld_ne_imp, diff_imp_global, diff_imp_local, sim_imp, csd_imp):
     # init_cfg.data.subdirectory = 'graph_dt_backup/processed'
     # init_cfg.merge_from_list(args.opts)
     init_cfg.data.save_dir = \
-        'Graph-DC_1_out_only_COSINE_Diff_global_private_PROX_SIM_NEW_global_clf_multistep_lr_' + str(lr).replace(
+        'Graph-DC_2_out_only_COSINE_Diff_global_private_MSE_SIM_NEW_global_clf_loss_lr_' + str(lr).replace(
             '.', '_') + '_A'+ str(kld_ne_imp).replace('.', '_') + \
     '_F' + str(diff_imp_global).replace('.', '_') + '_F' + str(diff_imp_local).replace(
         '.', '_') + '_H' + str(csd_imp).replace(
@@ -156,7 +157,7 @@ def train(lr, kld_ne_imp, diff_imp_global, diff_imp_local, sim_imp, csd_imp):
 
     init_cfg.federate.client_num = 13
     init_cfg.params.eps = 1e-15
-    # init_cfg.federate.total_round_num = 500
+    init_cfg.federate.total_round_num = 500
 
     init_cfg.params.save_client_always = True
     init_cfg.params.p = 0.
@@ -181,8 +182,7 @@ def train(lr, kld_ne_imp, diff_imp_global, diff_imp_local, sim_imp, csd_imp):
         cfg_client = CfgNode.load_cfg(open(cfg_client, 'r')).clone()
     runner = FedRunner(data=data,
                    server_class = LaplacianServerDomSepVAE_1_out_global_private,
-                   client_class =
-                       LaplacianDomainSeparationVAE_1_out_onlyDiff_ProxSim_global_private_clf_NEW_Client,
+                   client_class = LaplacianDomainSeparationVAE_2_out_onlyCosineDiff_MSESim_global_private_clf_NEW_Client,
                    config=init_cfg.clone(),
                    client_config=cfg_client)
     _ = runner.run()
@@ -193,10 +193,12 @@ def tmp(a):
 
 if __name__ == '__main__':
 
-    num_trainings = 3
+    num_trainings = 1
     kld_ne_imps = [0] #A
-    diff_imps = [0.005, 0.05]  # Now 0.0001
-    sim_imps = [0.1, 0.01, 0.001]
+    #diff_imps = [0.001, 0.005, 0.01, 0.05, 0.1]  # Now 0.0001
+    diff_imps = [0.001, 0.005]
+    sim_imps = [0.001, 0.01, 0.1, 1]
+
     #diff_imps = [0.1]
     #diff_global_imps = [0] #F    HERE  [0.0001, 0.001]
     #diff_local_imps = [0] #G
@@ -206,7 +208,7 @@ if __name__ == '__main__':
 
     # lrs = [0.001, 0.005, 0.01, 0.05, 0.1, 0.5]
     lrs = [0.05]
-    pool = multiprocessing.Pool(6)
+    pool = multiprocessing.Pool(3)
     processes = []
     for lr in lrs:
         for diff_imp in diff_imps:
