@@ -129,7 +129,7 @@ def train(lr, kld_ne_imp, diff_imp_global, diff_imp_local, sim_imp, csd_imp):
     # init_cfg.data.subdirectory = 'graph_dt_backup/processed'
     # init_cfg.merge_from_list(args.opts)
     init_cfg.data.save_dir = \
-        'Graph-DC_2_out_only_COSINE_Diff_global_private_MSE_SIM_NEW_global_clf_loss_lr_' + str(lr).replace(
+        'Graph-DC_2_out_only_COSINE_Diff_global_private_MSE_SIM_NEW_global_multiruns_clf_loss_lr_' + str(lr).replace(
             '.', '_') + '_A'+ str(kld_ne_imp).replace('.', '_') + \
     '_F' + str(diff_imp_global).replace('.', '_') + '_F' + str(diff_imp_local).replace(
         '.', '_') + '_H' + str(csd_imp).replace(
@@ -157,7 +157,7 @@ def train(lr, kld_ne_imp, diff_imp_global, diff_imp_local, sim_imp, csd_imp):
 
     init_cfg.federate.client_num = 13
     init_cfg.params.eps = 1e-15
-    init_cfg.federate.total_round_num = 500
+    init_cfg.federate.total_round_num = 1000
 
     init_cfg.params.save_client_always = True
     init_cfg.params.p = 0.
@@ -193,11 +193,11 @@ def tmp(a):
 
 if __name__ == '__main__':
 
-    num_trainings = 1
+    num_trainings = 3
     kld_ne_imps = [0] #A
-    #diff_imps = [0.001, 0.005, 0.01, 0.05, 0.1]  # Now 0.0001
-    diff_imps = [0.001, 0.005]
-    sim_imps = [0.001, 0.01, 0.1, 1]
+    #diff_imps = [0.1, 0.01, 0.003]
+    diff_imps = [0.1]
+    sim_imps = [1, 0.5, 0.1, 10]  # sim_imps = [0.0005, 0.0001, 0]
 
     #diff_imps = [0.1]
     #diff_global_imps = [0] #F    HERE  [0.0001, 0.001]

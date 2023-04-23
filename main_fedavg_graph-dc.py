@@ -62,7 +62,7 @@ def train(lr):
 
 if __name__ == '__main__':
     lrs = [0.005, 0.001]
-    num_trainings = 1
+    num_trainings = 5
     for lr in lrs:
         for i in range(num_trainings):
             setup_seed(i)
