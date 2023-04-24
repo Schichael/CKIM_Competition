@@ -1,13 +1,13 @@
 use_gpu: True
 device: 0
 early_stop:
-  patience: 4000
+  patience: 1000
   improve_indicator_mode: mean
 federate:
   mode: 'standalone'
   method: Ditto
   make_global_eval: False
-  total_round_num: 400
+  total_round_num: 1000
   share_local_model: False
 train:
   local_update_steps: 1
