@@ -11,7 +11,7 @@ federate:
   total_round_num: 1000
   share_local_model: False
 train:
-  local_update_steps: 2
+  local_update_steps: 1
   batch_or_epoch: 'epoch'
   optimizer:
     lr: 0.5

@@ -1,5 +1,9 @@
 import os
 import sys
+import time
+
+import torch
+from torch import multiprocessing
 
 # sys.path = ['~/Master-Thesis/CKIM_Competition/federatedscope', '~/Master-Thesis/CKIM_Competition',] + sys.path
 sys.path = ['/home/michael/Projects/CKIM_Competition/federatedscope', '/home/michael/Projects/CKIM_Competition',] + sys.path
@@ -18,6 +22,10 @@ if os.environ.get('https_proxy'):
 if os.environ.get('http_proxy'):
     del os.environ['http_proxy']
 
+try:
+    torch.multiprocessing.set_start_method('spawn', force=True)
+except RuntimeError:
+    pass
 
 def train(lr):
     cfg_file = 'scripts/B-FHTL_exp_scripts/Graph-DC/fedavg.yaml'
@@ -32,7 +40,7 @@ def train(lr):
 
     # init_cfg.data.subdirectory = 'graph_dt_backup/processed'
     # init_cfg.merge_from_list(args.opts)
-    init_cfg.data.save_dir = 'Graph-DC_FedAvg_lr_' + str(lr).replace('.', '_') + '_local_update_steps_2_PAPER'
+    init_cfg.data.save_dir = 'Graph-DC_FedAvg_multistep_lr_' + str(lr).replace('.', '_') + '_local_update_steps_2_PAPER'
     init_cfg.train.lr = lr
 
 
@@ -61,10 +69,14 @@ def train(lr):
 
 
 if __name__ == '__main__':
-    lrs = [0.005, 0.001]
-    num_trainings = 5
+    lrs = [0.5, 0.1, 0.05, 0.01, 0.005, 0.001]
+    num_trainings = 3
+    pool = multiprocessing.Pool(6)
+    processes = []
     for lr in lrs:
         for i in range(num_trainings):
+            time.sleep(10)
             setup_seed(i)
-            print(f"training run: {i + 1}")
+            processes.append(pool.apply_async(train, args=(lr,)))
             train(lr)
+    result = [p.get() for p in processes]
