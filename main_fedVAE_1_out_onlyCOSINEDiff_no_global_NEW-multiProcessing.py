@@ -118,7 +118,7 @@ def train(lr, kld_ne_imp, diff_interm_imp, diff_local_imp, csd_imp):
 
     init_cfg.params.p = 0.
     init_cfg.params.alpha = 0.1
-    init_cfg.federate.total_round_num = 600
+    init_cfg.federate.total_round_num = 1000
     init_cfg.model.dropout = 0.5
     init_cfg.train.optimizer.lr = lr
     update_logger(init_cfg)

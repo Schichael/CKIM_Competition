@@ -37,10 +37,10 @@ def train(lr):
 
     init_cfg = global_cfg.clone()
     init_cfg.merge_from_file(cfg_file)
-
+    init_cfg.params.save_client_always = True
     # init_cfg.data.subdirectory = 'graph_dt_backup/processed'
     # init_cfg.merge_from_list(args.opts)
-    init_cfg.data.save_dir = 'Graph-DC_FedAvg_multistep_lr_' + str(lr).replace('.', '_') + '_local_update_steps_2_PAPER'
+    #init_cfg.data.save_dir = 'Graph-DC_FedAvg_multistep_lr_' + str(lr).replace('.', '_') + '_local_update_steps_1'
     init_cfg.train.lr = lr
 
 
