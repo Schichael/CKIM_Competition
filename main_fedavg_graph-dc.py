@@ -27,7 +27,7 @@ try:
 except RuntimeError:
     pass
 
-def train(lr, step):
+def train(lr):
     cfg_file = 'scripts/B-FHTL_exp_scripts/Graph-DC/fedavg.yaml'
     cfg_client = 'scripts/B-FHTL_exp_scripts/Graph-DC/cfg_per_client.yaml'
     # cfg_per_Client_ours_lr
@@ -42,7 +42,7 @@ def train(lr, step):
     init_cfg.params.save_client_always = True
     # init_cfg.data.subdirectory = 'graph_dt_backup/processed'
     # init_cfg.merge_from_list(args.opts)
-    init_cfg.data.save_dir = 'Graph-DC_FedAvg_multistep_lr_' + str(lr).replace('.', '_') + '_local_update_steps_1_step_' + str(step)
+    init_cfg.data.save_dir = 'Graph-DC_FedAvg_multistep_lr_' + str(lr).replace('.', '_') + '_local_update_steps_1'
     init_cfg.train.optimizer.lr = lr
 
 
@@ -79,6 +79,5 @@ if __name__ == '__main__':
         for i in range(num_trainings):
             time.sleep(10)
             setup_seed(i)
-            processes.append(pool.apply_async(train, args=(lr,i)))
-            train(lr)
+            processes.append(pool.apply_async(train, args=(lr)))
     result = [p.get() for p in processes]
