@@ -79,5 +79,5 @@ if __name__ == '__main__':
         for i in range(num_trainings):
             time.sleep(10)
             setup_seed(i)
-            processes.append(pool.apply_async(train, args=(lr)))
+            processes.append(pool.apply_async(train, args=(lr,)))
     result = [p.get() for p in processes]
