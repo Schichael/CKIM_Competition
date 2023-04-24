@@ -2,6 +2,7 @@ import os
 import sys
 import time
 
+import torch
 from torch import multiprocessing
 
 # sys.path = ['~/Master-Thesis/CKIM_Competition/federatedscope', '~/Master-Thesis/CKIM_Competition',] + sys.path
@@ -21,6 +22,10 @@ if os.environ.get('https_proxy'):
 if os.environ.get('http_proxy'):
     del os.environ['http_proxy']
 
+try:
+    torch.multiprocessing.set_start_method('spawn', force=True)
+except RuntimeError:
+    pass
 
 def train(lr):
     cfg_file = 'scripts/B-FHTL_exp_scripts/Graph-DC/fedprox.yaml'
