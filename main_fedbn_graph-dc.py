@@ -1,5 +1,9 @@
 import os
 import sys
+import time
+
+import torch
+from torch import multiprocessing
 
 # sys.path = ['~/Master-Thesis/CKIM_Competition/federatedscope', '~/Master-Thesis/CKIM_Competition',] + sys.path
 sys.path = ['/home/michael/Projects/CKIM_Competition/federatedscope', '/home/michael/Projects/CKIM_Competition',] + sys.path
@@ -12,6 +16,11 @@ from federatedscope.core.auxiliaries.worker_builder import get_client_cls, get_s
 from federatedscope.core.configs.config import global_cfg
 from federatedscope.core.fed_runner import FedRunner
 from yacs.config import CfgNode
+
+try:
+    torch.multiprocessing.set_start_method('spawn', force=True)
+except RuntimeError:
+    pass
 
 if os.environ.get('https_proxy'):
     del os.environ['https_proxy']
@@ -33,8 +42,8 @@ def train(lr):
     # init_cfg.data.subdirectory = 'graph_dt_backup/processed'
     # init_cfg.merge_from_list(args.opts)
     init_cfg.data.save_dir = 'Graph-DC_FedBN_lr_' + str(lr).replace('.', '_') + '_local_update_steps_1'
-    init_cfg.train.lr = lr
-
+    init_cfg.train.optimizer.lr = lr
+    init_cfg.federate.client_num = 13
 
     init_cfg.model.dropout = 0.5
     update_logger(init_cfg)
@@ -61,10 +70,13 @@ def train(lr):
 
 
 if __name__ == '__main__':
-    lrs = [0.005, 0.001]
-    num_trainings = 1
+    lrs = [0.5, 0.1, 0.05, 0.01, 0.005, 0.001]
+    num_trainings = 3
+    pool = multiprocessing.Pool(6)
+    processes = []
     for lr in lrs:
         for i in range(num_trainings):
+            time.sleep(10)
             setup_seed(i)
-            print(f"training run: {i + 1}")
-            train(lr)
+            processes.append(pool.apply_async(train, args=(lr,)))
+    result = [p.get() for p in processes]
