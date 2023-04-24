@@ -44,6 +44,7 @@ def train(lr):
     # init_cfg.merge_from_list(args.opts)
     init_cfg.data.save_dir = 'Graph-DC_FedAvg_multistep_lr_' + str(lr).replace('.', '_') + '_local_update_steps_1'
     init_cfg.train.optimizer.lr = lr
+    init_cfg.federate.client_num = 13
 
 
     init_cfg.model.dropout = 0.5
