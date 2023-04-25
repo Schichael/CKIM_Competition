@@ -4,6 +4,7 @@ import os
 from copy import deepcopy
 from typing import Callable
 
+import numpy as np
 import torch
 from torch_geometric.graphgym import optim
 from federatedscope.core.auxiliaries.utils import param2tensor
@@ -15,7 +16,7 @@ from federatedscope.gfl.trainer import GraphMiniBatchTrainer
 logger = logging.getLogger(__name__)
 
 
-class LaplacianDomainSeparation_1Out_OnlyCOSINEDiff_noGlobal_RECON_Loss_NEW_Trainer(
+class LaplacianDomainSeparationVAE_1Out_OnlyDiff_noGlobal_with_VAE_Trainer(
     GraphMiniBatchTrainer):
     def __init__(self,
                  model,
@@ -35,8 +36,9 @@ class LaplacianDomainSeparation_1Out_OnlyCOSINEDiff_noGlobal_RECON_Loss_NEW_Trai
                          only_for_eval,
                          monitor)
 
-        self.ctx.omega = self.omega
+
         self.clientID = clientID
+        self.ctx.omega = self.omega
         self.device = device
         self.config = config
         self.first_round = True
@@ -49,8 +51,7 @@ class LaplacianDomainSeparation_1Out_OnlyCOSINEDiff_noGlobal_RECON_Loss_NEW_Trai
         self.ctx.kld_loss_encoder_metric = []
         self.ctx.diff_local_interm_metric = []
         self.ctx.loss_out_local_interm_metric = []
-        self.ctx.rec_loss_metric = []
-
+        self.ctx.loss_out_interm_metric = []
         # Get all model parameters with reuqires_grad = True
         # for param in self.ctx.model.named_parameters():
         #    if param[0].startswith('fixed'):
@@ -108,8 +109,8 @@ class LaplacianDomainSeparation_1Out_OnlyCOSINEDiff_noGlobal_RECON_Loss_NEW_Trai
         # self._align_interm_parameters(self.ctx.model)
         # self._align_global_fixed_parameters(self.ctx.model)
 
-        if self.first_round:
-            self._align_interm_local_parameters(self.ctx.model)
+        # if self.first_round:
+            # self._align_interm_local_parameters(self.ctx.model)
 
         # trainable_parameters = self._param_filter(model_parameters)
         # for key in trainable_parameters:
@@ -121,14 +122,20 @@ class LaplacianDomainSeparation_1Out_OnlyCOSINEDiff_noGlobal_RECON_Loss_NEW_Trai
         ctx.acc_rec_loss = 0.
         # if not self.first_round:
         #    print(f"last round mean difference loss: {ctx.aggr_diff_loss/ctx.batchnumbers}")
+        ctx.kld_loss_encoder_metric = []
+        ctx.diff_local_global_metric = []
+        ctx.loss_out_local_interm_metric = []
+        ctx.recon_loss_metric = []
+        ctx.kld_global_metric = []
+        ctx.num_local_features_not_0_metric = []
+        ctx.avg_local_features_not_0_metric = []
+        ctx.num_global_features_not_0_metric = []
+        ctx.avg_global_features_not_0_metric = []
+        ctx.num_local_global_features_not_0_metric = []
+        ctx.avg_local_global_features_not_0_metric = []
+        ctx.num_features_global_local_metric = []
 
-        self.ctx.kld_loss_encoder_metric = []
-        self.ctx.diff_local_interm_metric = []
-        self.ctx.loss_out_local_interm_metric = []
-        self.ctx.MI_metric = []
-        self.ctx.rec_loss_metric = []
-
-        if ctx.cur_data_split == "train":
+        if ctx.cur_data_split == "train" and not self.in_finetune:
             # print("in train")
             self.round_num += 1
             self.in_finetune = True
@@ -144,7 +151,6 @@ class LaplacianDomainSeparation_1Out_OnlyCOSINEDiff_noGlobal_RECON_Loss_NEW_Trai
 
         elif ctx.cur_data_split == "train" and self.in_finetune:
             self.in_finetune = False
-
 
         ctx.log_ce_loss = 0
         ctx.log_csd_loss = 0
@@ -163,22 +169,60 @@ class LaplacianDomainSeparation_1Out_OnlyCOSINEDiff_noGlobal_RECON_Loss_NEW_Trai
         ctx.new_omega = new_omega
         ctx.new_mu = new_mu
 
+    def stats_calculator(self, local_features, global_features):
+        local_features = local_features.cpu().detach().numpy()
+        global_features = global_features.cpu().detach().numpy()
+        num_total_features_curr = local_features.shape[0] * local_features.shape[1]
+        local_global = local_features + global_features
+        mult_local_global = local_features * global_features
+        num_local_features_not_0 = np.sum(local_features != 0) / num_total_features_curr
+        avg_local_features_not_0 = local_features.sum() / np.sum(local_features != 0)
+        num_global_features_not_0 = np.sum(global_features != 0) / \
+                                    num_total_features_curr
+        avg_global_features_not_0 = global_features.sum() / np.sum(global_features != 0)
+        num_local_global_features_not_0 = np.sum(local_global != 0) / num_total_features_curr
+        avg_local_global_features_not_0 = local_global.sum() / np.sum(local_global !=
+                                                                      0)
+        num_features_global_local = np.sum(mult_local_global != 0) / num_total_features_curr
+
+        #print(f"np.sum(local_features != 0): {np.sum(local_features != 0)}")
+
+        return num_local_features_not_0, avg_local_features_not_0, \
+            num_global_features_not_0, avg_global_features_not_0, \
+            num_local_global_features_not_0, avg_local_global_features_not_0, num_features_global_local
+
     def _hook_on_batch_forward(self, ctx):
         self.tmp += 1
         batch = ctx.data_batch.to(ctx.device)
-        out_interm, kld_loss_encoder, diff_local_interm, recon_loss, x_global_pooled, \
-            x_local_pooled = ctx.model(batch, self.config.params.sim_loss)
+        out_local_interm, out_interm, kld_loss_encoder, kld_global, decoder_out, recon_loss, diff_local, \
+        diff_global, x_local, x_global = ctx.model(batch)
+
+
+        # out_local_interm, out_interm, kld_loss_encoder, kld_interm, decoder_out, recon_loss_node_features, diff_local, diff_global, x_local, x_interm
+
+        num_local_features_not_0, avg_local_features_not_0, \
+        num_global_features_not_0, avg_global_features_not_0, \
+        num_local_global_features_not_0, avg_local_global_features_not_0, num_features_global_local = \
+            self.stats_calculator(x_local, x_global)
+
 
         # ctx.sim_interm_fixed = sim_interm_fixed
 
-        # TODO: Not in metrics yet
         # ctx.sim_interm_fixed_metric = sim_interm_fixed.detach().item()
+
+        ctx.kld_global = kld_global
+        ctx.kld_global_metric.append(kld_global.detach().item())
 
         ctx.kld_loss_encoder = kld_loss_encoder
         ctx.kld_loss_encoder_metric.append(kld_loss_encoder.detach().item())
 
         ctx.recon_loss = recon_loss
-        ctx.rec_loss_metric.append(recon_loss.detach().item())
+        ctx.recon_loss_metric.append(recon_loss.detach().item())
+
+        # ctx.rec_loss_metric   ctx.kld_global_metric
+
+
+
         # ctx.kld_global = kld_global
         # ctx.kld_global_metric = kld_global.detach().item()
 
@@ -187,17 +231,20 @@ class LaplacianDomainSeparation_1Out_OnlyCOSINEDiff_noGlobal_RECON_Loss_NEW_Trai
 
         # ctx.kld_local = kld_local
         # ctx.kld_local_metric = kld_local.detach().item()
-        """
-        ctx.kld_loss_encoder_metric
-        ctx.diff_local_interm_metric
-        ctx.loss_out_local_interm_metric
-        """
+
         # ctx.rec_loss = rec_loss
         # ctx.rec_loss_metric = rec_loss.detach().item()
 
-        ctx.diff_local_interm = diff_local_interm
-        ctx.diff_local_interm_metric.append(diff_local_interm.detach().item())
+        ctx.diff_local = diff_local
+        ctx.diff_interm = diff_global
+        ctx.diff_local_global_metric.append(diff_local.detach().item())
 
+        """
+        ctx.kld_loss_encoder_metric = []
+        ctx.diff_local_interm_metric = []
+        ctx.loss_out_local_interm_metric = []
+        ctx.loss_out_interm_metric = []
+        """
         # print(f"diff_local_global: {diff_local_global}")
         # print(f"mi_global_fixed: {sim_global_fixed}")
         # print(f"rec_loss: {rec_loss}")
@@ -215,8 +262,10 @@ class LaplacianDomainSeparation_1Out_OnlyCOSINEDiff_noGlobal_RECON_Loss_NEW_Trai
 
         ctx.loss_batch = ctx.criterion(out_interm, label)
         ctx.loss_out_global = ctx.loss_batch
+        ctx.loss_out_local_interm = ctx.criterion(out_local_interm, label)
+        ctx.loss_out_local_interm_metric.append(ctx.loss_out_local_interm.detach().item())
         ctx.loss_out_interm = ctx.criterion(out_interm, label)
-        ctx.loss_out_interm_metric = ctx.loss_out_interm.detach().item()
+        ctx.loss_out_interm_metric.append(ctx.loss_out_interm.detach().item())
 
         # ctx.loss_batch_csd = self.get_csd_loss(ctx.model.state_dict(), ctx.new_mu, ctx.new_omega, ctx.cur_epoch_i + 1)
         ctx.loss_batch_csd = csd_loss(ctx.model.state_dict(), ctx.new_mu,
@@ -228,9 +277,20 @@ class LaplacianDomainSeparation_1Out_OnlyCOSINEDiff_noGlobal_RECON_Loss_NEW_Trai
         ctx.y_true = label
         ctx.y_prob = out_interm
 
-        # save outputs
+        ctx.num_local_features_not_0_metric.append(num_local_features_not_0)
+        ctx.avg_local_features_not_0_metric.append(avg_local_features_not_0)
+        ctx.num_global_features_not_0_metric.append(num_global_features_not_0)
+        ctx.avg_global_features_not_0_metric.append(avg_global_features_not_0)
+        ctx.num_local_global_features_not_0_metric.append(
+            num_local_global_features_not_0)
+        ctx.avg_local_global_features_not_0_metric.append(
+            avg_local_global_features_not_0)
+        ctx.num_features_global_local_metric.append(num_features_global_local)
 
-        if self.round_num == 498 or self.round_num == 998:
+
+
+        if self.round_num == 0 or self.round_num == 1 or self.round_num == 498 or \
+                self.round_num == 998:
             dataset_name = self.ctx.dataset_name
             cur_batch_i = self.ctx.cur_batch_i
             out_dir = self.config.outdir
@@ -243,17 +303,27 @@ class LaplacianDomainSeparation_1Out_OnlyCOSINEDiff_noGlobal_RECON_Loss_NEW_Trai
 
             # local
             file_name = path + '/local_' + dataset_name + '_' + str(cur_batch_i) + '.pt'
-            torch.save(x_local_pooled, file_name)
+            torch.save(x_local, file_name)
 
-            # interm
-            file_name = path + '/global_' + dataset_name + '_' + str(cur_batch_i) + '.pt'
-            torch.save(x_global_pooled, file_name)
+            # local_out
+            file_name = path + '/global' + dataset_name + '_' + str(cur_batch_i)\
+                        + \
+                        '.pt'
+            torch.save(x_global, file_name)
+
+            # decoder_out
+            file_name = path + '/decoder_out' + dataset_name + '_' + str(cur_batch_i) \
+                        + \
+                        '.pt'
+            torch.save(decoder_out, file_name)
+
 
             # save labels
             # local
             file_name = path + '/' + dataset_name + '_' + str(
                 cur_batch_i) + '_labels' + '.pt'
             torch.save(label, file_name)
+
 
 
         # record the index of the ${MODE} samples
@@ -288,14 +358,42 @@ class LaplacianDomainSeparation_1Out_OnlyCOSINEDiff_noGlobal_RECON_Loss_NEW_Trai
         Returns:
 
         """
-
         ctx.optimizer.zero_grad()
+        """
+        ctx.diff_local = diff_local
+        ctx.diff_interm = diff_interm
+        """
+        # backward through the local and interm branch. Only backward interm branch
+        for param in ctx.model.named_parameters():
+            if param[0].startswith("decoder_gnn"):
+                param[1].requires_grad = False
 
-        loss = ctx.loss_out_interm + self.config.params.diff_interm_imp * \
-               ctx.diff_local_interm + self.config.params.kld_ne_imp * \
-               ctx.kld_loss_encoder + ctx.recon_loss
+        loss = ctx.loss_out_interm + self.config.params.diff_imp_global * \
+               ctx.diff_interm + self.config.params.diff_imp_local * \
+               ctx.diff_local + self.config.params.kld_ne_imp * \
+               ctx.kld_loss_encoder + self.config.params.beta * ctx.kld_global + self.config.params.recon_imp * ctx.recon_loss
+        # loss = ctx.loss_out_global
 
         loss.backward(retain_graph=True)
+
+        # Reset requires_grad
+        for param in ctx.model.named_parameters():
+            if param[0] in self.grad_params:
+                param[1].requires_grad = True
+
+        for param in ctx.model.named_parameters():
+            if not (param[0].startswith("decoder_gnn") or param[0].startswith("local")):
+                param[1].requires_grad = False
+
+        loss = ctx.loss_out_local_interm + ctx.recon_loss
+        loss.backward(retain_graph=True)
+
+
+
+        # Reset requires_grad
+        for param in ctx.model.named_parameters():
+            if param[0] in self.grad_params:
+                param[1].requires_grad = True
 
         # Compute omega
         for name, param in ctx.model.named_parameters():
@@ -475,5 +573,5 @@ class CSDLoss(torch.nn.Module):
 
 def call_laplacian_trainer(trainer_type):
     if trainer_type == 'laplacian_trainer':
-        trainer_builder = LaplacianDomainSeparation_1Out_OnlyCOSINEDiff_noGlobal_RECON_Loss_NEW_Trainer
+        trainer_builder = LaplacianDomainSeparationVAE_1Out_OnlyDiff_noGlobal_with_VAE_Trainer
         return trainer_builder

@@ -40,7 +40,7 @@ eval:
   freq: 1
   # metrics: ['imp_ratio', 'acc']
   metrics: ['imp_ratio', 'acc', 'kld_loss_encoder', 'diff_local_global',
-    'loss_batch_csd', 'loss_global_clf_metric', 'num_local_features_not_0_metric',
+    'loss_batch_csd', 'loss_global_clf_metric', 'recon_loss_metric', 'kld_global_metric', 'num_local_features_not_0_metric',
             'avg_local_features_not_0_metric', 'num_global_features_not_0_metric',
   'avg_global_features_not_0_metric', 'num_local_global_features_not_0_metric',
   'avg_local_global_features_not_0_metric', 'num_features_global_local_metric',

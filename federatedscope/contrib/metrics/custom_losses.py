@@ -110,14 +110,13 @@ def call_recon_loss_metric(types):
     if "recon_loss" in types:
         return "recon_loss", recon_loss_metric
 
-
 def call_kld_loss_encoder_metric(types):
-    if "kld_loss_encoder" in types:
-        return "kld_loss_encoder", kld_loss_encoder_metric
+    if "kld_loss_encoder_metric" in types:
+        return "kld_loss_encoder_metric", kld_loss_encoder_metric
 
 def call_kld_global_metric(types):
-    if "kld_global" in types:
-        return "kld_global", kld_global_metric
+    if "kld_global_metric" in types:
+        return "kld_global_metric", kld_global_metric
 
 def call_kld_interm_metric(types):
     if "kld_interm" in types:
