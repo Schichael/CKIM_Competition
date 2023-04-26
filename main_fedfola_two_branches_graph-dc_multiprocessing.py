@@ -58,6 +58,8 @@ def train(lr, csd_imp):
     init_cfg.params.csd_importance = csd_imp
     init_cfg.params.p = 0.
     init_cfg.params.alpha = 0.1
+    init_cfg.params.save_client_always = True
+    init_cfg.federate.client_num = 13
 
     init_cfg.model.dropout = 0.5
     update_logger(init_cfg)
