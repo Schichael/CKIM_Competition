@@ -22,7 +22,7 @@ from federatedscope.gfl.model.gat import GAT_Net
 from federatedscope.gfl.model.gin import GIN_Net
 from federatedscope.gfl.model.gpr import GPR_Net
 
-# graph_level_Dom_Sep_1out_only_COSINEdiff_no_global_NEW
+# graph_level_Dom_Sep_1out_only_COSINEdiff_no_global_with_VAE
 
 EPS = 1e-15
 EMD_DIM = 200
@@ -150,23 +150,24 @@ class GNN_Net_Graph(torch.nn.Module):
                                      max_depth=max_depth,
                                      dropout=dropout)
             self.interm_gnn = GIN_Net(in_channels=hidden,
-                                     out_channels=hidden,
+                                     out_channels=hidden*2,
                                      hidden=hidden,
                                      max_depth=max_depth,
                                      dropout=dropout)
 
             """
-            self.global_gnn_mu = GIN_Net(in_channels=hidden,
+            self.interm_gnn_mu = GIN_Net(in_channels=hidden,
                                       out_channels=hidden,
                                       hidden=hidden,
                                       max_depth=1,
                                       dropout=dropout)
-            self.global_gnn_std = GIN_Net(in_channels=hidden,
+            self.interm_gnn_std = GIN_Net(in_channels=hidden,
                                          out_channels=hidden,
                                          hidden=hidden,
                                          max_depth=1,
                                          dropout=dropout)
             """
+
             self.decoder_gnn = GIN_Net(in_channels=hidden,
                                        out_channels=hidden,
                                        hidden=hidden,
@@ -197,7 +198,6 @@ class GNN_Net_Graph(torch.nn.Module):
             raise ValueError(f'Unsupported pooling type: {pooling}.')
 
         # Output layer
-        self.global_linear_out1 = Linear(hidden, hidden)
         self.interm_linear_out1 = Linear(hidden, hidden)
         self.local_linear_out1 = Linear(hidden, hidden)
 
@@ -313,8 +313,8 @@ class GNN_Net_Graph(torch.nn.Module):
         return pos_loss + neg_loss
 
 
-    def forward(self, data, sim_loss):
-
+    def forward(self, data):
+        self.eps = None
         x, edge_index, batch = data.x, data.edge_index, data.batch
 
         if x.dtype == torch.int64:
@@ -326,6 +326,11 @@ class GNN_Net_Graph(torch.nn.Module):
 
         x_local_enc = self.local_gnn((x.detach(), edge_index))
         x_interm_enc = self.interm_gnn((x, edge_index))
+
+        x_interm_enc, kld_interm = self.reparametrize_from_x(x_interm_enc, return_mu=True)
+
+        decoder_out = self.decoder_gnn((x_interm_enc, edge_index))
+        recon_loss_node_features = self.node_recon_loss(decoder_out, x.detach())
 
         x_local_pooled = self.pooling(x_local_enc, batch)
         x_interm_pooled = self.pooling(x_interm_enc, batch)
@@ -351,7 +356,7 @@ class GNN_Net_Graph(torch.nn.Module):
         # return x, mi
         # return out_global, torch.Tensor([[0.1, 0.9]]*out_global.size(0)).float().to('cuda:0'), torch.Tensor([[0.1, 0.9]]*out_global.size(0)).float().to('cuda:0'), kld_loss_encoder, kld_global, torch.Tensor([0.]).float().to('cuda:0'), torch.Tensor([0.]).float().to('cuda:0'), torch.Tensor([0.]).float().to('cuda:0'), torch.Tensor([0.]).float().to('cuda:0'), torch.Tensor([0.]).float().to('cuda:0')
 
-        return out_local_interm, out_interm, kld_loss_encoder, diff_local, diff_global, x_local, x_interm
+        return out_local_interm, out_interm, kld_loss_encoder, kld_interm, decoder_out, recon_loss_node_features, diff_local, diff_global, x_local, x_interm
 
 
 def dot_product_decode(Z):

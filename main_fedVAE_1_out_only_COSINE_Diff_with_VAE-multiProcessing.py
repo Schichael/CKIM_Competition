@@ -64,7 +64,6 @@ metrics = [
     ('kld_loss_encoder', call_kld_loss_encoder_metric),
     ('diff_local_global', call_diff_local_global_metric),
     ('loss_batch_csd', call_loss_batch_csd_metric),
-    ('loss_out_local_interm_metric', call_loss_out_local_interm_metric),
     ('recon_loss_metric', call_recon_loss_metric),
     ('kld_global_metric', call_kld_global_metric),
 

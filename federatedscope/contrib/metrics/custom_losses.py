@@ -1,6 +1,6 @@
 import numpy as np
 def recon_loss_metric(ctx, **kwargs):
-    return np.mean(ctx.rec_loss_metric)
+    return np.mean(ctx.recon_loss_metric)
 
 def kld_loss_encoder_metric(ctx, **kwargs):
     return np.mean(ctx.kld_loss_encoder_metric)
@@ -107,8 +107,8 @@ def call_prox_loss_metric(types):
         return "prox_loss_metric", prox_loss_metric
 
 def call_recon_loss_metric(types):
-    if "recon_loss" in types:
-        return "recon_loss", recon_loss_metric
+    if "recon_loss_metric" in types:
+        return "recon_loss_metric", recon_loss_metric
 
 def call_kld_loss_encoder_metric(types):
     if "kld_loss_encoder_metric" in types:
