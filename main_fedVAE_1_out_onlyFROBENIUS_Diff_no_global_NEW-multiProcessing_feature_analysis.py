@@ -84,7 +84,7 @@ def train(lr, kld_ne_imp, diff_interm_imp, diff_local_imp, csd_imp):
     # init_cfg.merge_from_list(args.opts)
     init_cfg.data.save_dir = \
         'FeatureAnalysis_Graph' \
-        '-DC_FedVAE_1_out_only_CLUBDiff_no_global_NEW_sim_loss_lr_' + str(
+        '-DC_FedVAE_1_out_only_FROBENIUS_Diff_no_global_NEW_sim_loss_lr_' + str(
             lr).replace('.', '_') + '_A'+ str(kld_ne_imp).replace('.', '_') + \
     '_F' + str(diff_interm_imp).replace('.', '_') + \
     '_G' + str(diff_local_imp).replace('.', '_') + '_H' + str(csd_imp).replace('.', '_')
@@ -111,7 +111,7 @@ def train(lr, kld_ne_imp, diff_interm_imp, diff_local_imp, csd_imp):
     init_cfg.params.eps = 1e-15
     init_cfg.params.save_client_always = True
     init_cfg.federate.total_round_num = 1
-    init_cfg.params.model_path = '/home/michael/Dropbox/Master thesis/results_graph_dc_new_lr_0_5/1_out/simple/club/multistep/Graph-DC_Fed_1_out_only_CLUBDiff_multistep_lr_0_05_A0_F0_06_G0_06_H10/FedDomSep_GraphDC_gin_on_fs_contest_data_lr0.05_lstep1_'
+    init_cfg.params.model_path = '/home/michael/Dropbox/Master thesis/results_graph_dc_new_lr_0_5/1_out/simple/frobenius/multi-runs/balanced/Graph-DC_FedVAE_1_out_only_FrobeniusDiff_no_global_NEW_sim_loss_lr_0_05_A0_F0_05_G0_05_H10/FedDomSep_GraphDC_gin_on_fs_contest_data_lr0.05_lstep1_/sub_exp_20230410184715'
 
     init_cfg.params.p = 0.
     init_cfg.params.alpha = 0.1
@@ -149,8 +149,8 @@ if __name__ == '__main__':
     num_trainings = 1
     kld_ne_imps = [0] #A
     #diff_imps = [0, 0.1, 0.01, 0.001]  # [0.001, 0.0001, 0.00001]
-    diff_interm_imps = [0.06] #F    HERE  [0.0001, 0.001]
-    diff_local_imps = [0.06] #G
+    diff_interm_imps = [0.05] #F    HERE  [0.0001, 0.001]
+    diff_local_imps = [0.05] #G
     csd_imp = 10 #H
     #sim_losses = ["mse", "cosine"]
 

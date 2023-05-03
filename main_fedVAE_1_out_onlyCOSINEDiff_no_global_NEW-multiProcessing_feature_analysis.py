@@ -111,7 +111,7 @@ def train(lr, kld_ne_imp, diff_interm_imp, diff_local_imp, csd_imp):
     init_cfg.params.eps = 1e-15
     init_cfg.params.save_client_always = True
     init_cfg.federate.total_round_num = 1
-    init_cfg.params.model_path = '/home/michael/Dropbox/Master thesis/results_graph_dc_new_lr_0_5/1_out/simple/cosine/multi-runs/corrected/Graph-DC_FedVAE_1_out_only_COSINEDiff_no_global_correct_lr_0_05_A0_F0_07_G0_07_H10/FedDomSep_GraphDC_gin_on_fs_contest_data_lr0.05_lstep1_'
+    init_cfg.params.model_path = '/home/michael/Dropbox/Master thesis/results_graph_dc_new_lr_0_5/1_out/simple/cosine/corrected/multi_runs/TGraph-DC_FedVAE_1_out_only_COSINEDiff_no_global_multi_run_lr_0_05_A0_F0_5_G0_5_H10/FedDomSep_GraphDC_gin_on_fs_contest_data_lr0.05_lstep1_'
 
     init_cfg.params.p = 0.
     init_cfg.params.alpha = 0.1
@@ -149,8 +149,8 @@ if __name__ == '__main__':
     num_trainings = 1
     kld_ne_imps = [0] #A
     #diff_imps = [0, 0.1, 0.01, 0.001]  # [0.001, 0.0001, 0.00001]
-    diff_interm_imps = [0.07] #F    HERE  [0.0001, 0.001]
-    diff_local_imps = [0.07] #G
+    diff_interm_imps = [0.5] #F    HERE  [0.0001, 0.001]
+    diff_local_imps = [0.5] #G
     csd_imp = 10 #H
     #sim_losses = ["mse", "cosine"]
 

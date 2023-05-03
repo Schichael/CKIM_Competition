@@ -197,7 +197,7 @@ if __name__ == '__main__':
     kld_ne_imps = [0] #A
     diff_imps = [0]  # Now 0.0001
     betas = [0.1, 1]
-    recon_imps = [0.1, 1]
+    recon_imps = [0.01, 0.1, 1]
     #diff_imps = [0.005, 0.05]  # Now 0.0001
     #betas = [0.1, 1, 5]
     #recon_imps = [0.01, 0.1, 1]
