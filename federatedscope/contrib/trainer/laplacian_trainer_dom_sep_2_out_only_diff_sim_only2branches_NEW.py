@@ -276,7 +276,10 @@ class LaplacianDomainSeparationVAE_2Out_OnlyDiffSim_only2branches_NEW_Trainer(Gr
         #ctx.loss_batch_csd = self.get_csd_loss(ctx.model.state_dict(), ctx.new_mu, ctx.new_omega, ctx.cur_epoch_i + 1)
         ctx.loss_batch_csd = csd_loss(ctx.model.state_dict(), ctx.new_mu,
                                       ctx.new_omega, self.round_num)
-        ctx.loss_batch_csd_metric.append(ctx.loss_batch_csd.detach().item())
+        try:
+            ctx.loss_batch_csd_metric.append(ctx.loss_batch_csd.detach().item())
+        except:
+            ctx.loss_batch_csd_metric.append(0)
         #print(f"loss_batch_csd: {ctx.loss_batch_csd}")
 
         ctx.batch_size = len(label)
