@@ -38,7 +38,11 @@ eval:
   freq: 1
   # metrics: ['imp_ratio', 'acc']
   metrics: ['imp_ratio', 'acc', 'recon_loss', 'diff_local_interm', 'sim_global_interm',
-    'loss_out_local_interm', 'loss_out_interm', 'prox_loss', 'loss_batch_csd']
+    'loss_out_local_interm', 'loss_out_interm', 'prox_loss', 'loss_batch_csd',
+  'num_local_features_not_0_metric', 'avg_local_features_not_0_metric',
+  'num_global_features_not_0_metric', 'avg_global_features_not_0_metric',
+  'num_local_global_features_not_0_metric', 'avg_local_global_features_not_0_metric',
+  'num_features_global_local_metric']
   best_res_update_round_wise_key: val_imp_ratio
   count_flops: False
   base: 0.

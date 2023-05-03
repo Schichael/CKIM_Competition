@@ -1,5 +1,6 @@
 import copy
 import logging
+import os
 from copy import deepcopy
 from typing import Callable
 
@@ -23,6 +24,7 @@ class LaplacianDomainSeparationVAE_1Out_OnlyDiff_noGlobal_NEW_Trainer(
                  data,
                  device,
                  config,
+                 clientID,
                  only_for_eval=False,
                  monitor=None):
 
@@ -34,6 +36,7 @@ class LaplacianDomainSeparationVAE_1Out_OnlyDiff_noGlobal_NEW_Trainer(
                          only_for_eval,
                          monitor)
 
+        self.clientID = clientID
         self.ctx.omega = self.omega
         self.device = device
         self.config = config
@@ -122,6 +125,13 @@ class LaplacianDomainSeparationVAE_1Out_OnlyDiff_noGlobal_NEW_Trainer(
         ctx.diff_local_interm_metric = []
         ctx.loss_out_local_interm_metric = []
         ctx.loss_out_interm_metric = []
+        ctx.num_local_features_not_0_metric = []
+        ctx.avg_local_features_not_0_metric = []
+        ctx.num_global_features_not_0_metric = []
+        ctx.avg_global_features_not_0_metric = []
+        ctx.num_local_global_features_not_0_metric = []
+        ctx.avg_local_global_features_not_0_metric = []
+        ctx.num_features_global_local_metric = []
         if ctx.cur_data_split == "train" and not self.in_finetune:
             # print("in train")
             self.round_num += 1
@@ -163,12 +173,21 @@ class LaplacianDomainSeparationVAE_1Out_OnlyDiff_noGlobal_NEW_Trainer(
         local_global = local_features + global_features
         mult_local_global = local_features * global_features
         num_local_features_not_0 = np.sum(local_features != 0) / num_total_features_curr
-        avg_local_features_not_0 = local_features.sum() / np.sum(local_features != 0)
+        if np.sum(local_features != 0) == 0:
+            avg_local_features_not_0 = 0
+        else:
+            avg_local_features_not_0 = local_features.sum() / np.sum(local_features != 0)
         num_global_features_not_0 = np.sum(global_features != 0) / \
                                     num_total_features_curr
-        avg_global_features_not_0 = global_features.sum() / np.sum(global_features != 0)
+        if np.sum(global_features != 0) == 0:
+            avg_global_features_not_0 = 0
+        else:
+            avg_global_features_not_0 = global_features.sum() / np.sum(global_features != 0)
         num_local_global_features_not_0 = np.sum(local_global != 0) / num_total_features_curr
-        avg_local_global_features_not_0 = local_global.sum() / np.sum(local_global !=
+        if np.sum(local_global !=0) == 0:
+            avg_local_global_features_not_0 = 0
+        else:
+            avg_local_global_features_not_0 = local_global.sum() / np.sum(local_global !=
                                                                       0)
         num_features_global_local = np.sum(mult_local_global != 0) / num_total_features_curr
 
@@ -189,6 +208,13 @@ class LaplacianDomainSeparationVAE_1Out_OnlyDiff_noGlobal_NEW_Trainer(
         num_local_global_features_not_0, avg_local_global_features_not_0, num_features_global_local = \
             self.stats_calculator(x_local, x_global)
 
+        ctx.num_local_features_not_0_metric.append(num_local_features_not_0)
+        ctx.avg_local_features_not_0_metric.append(avg_local_features_not_0)
+        ctx.num_global_features_not_0_metric.append(num_global_features_not_0)
+        ctx.avg_global_features_not_0_metric.append(avg_global_features_not_0)
+        ctx.num_local_global_features_not_0_metric.append(num_local_global_features_not_0)
+        ctx.avg_local_global_features_not_0_metric.append(avg_local_global_features_not_0)
+        ctx.num_features_global_local_metric.append(num_features_global_local)
 
         # ctx.sim_interm_fixed = sim_interm_fixed
 
@@ -250,6 +276,31 @@ class LaplacianDomainSeparationVAE_1Out_OnlyDiff_noGlobal_NEW_Trainer(
         ctx.batch_size = len(label)
         ctx.y_true = label
         ctx.y_prob = out_interm
+
+        if self.round_num == 498 or self.round_num == 998:
+            dataset_name = self.ctx.dataset_name
+            cur_batch_i = self.ctx.cur_batch_i
+            out_dir = self.config.outdir
+
+            path = out_dir + '/features/client_' + str(self.clientID)
+
+            if not os.path.exists(path):
+                os.makedirs(path)
+
+
+            # local
+            file_name = path + '/local_' + dataset_name + '_' + str(cur_batch_i) + '.pt'
+            torch.save(x_local, file_name)
+
+            # interm
+            file_name = path + '/global_' + dataset_name + '_' + str(cur_batch_i) + '.pt'
+            torch.save(x_global, file_name)
+
+            # save labels
+            # local
+            file_name = path + '/' + dataset_name + '_' + str(
+                cur_batch_i) + '_labels' + '.pt'
+            torch.save(label, file_name)
 
 
 
