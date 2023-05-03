@@ -224,7 +224,6 @@ class LaplacianDomainSeparationVAE_2Out_OnlyDiffSim_only2branches_NEW_Trainer(Gr
         ctx.batch_size = len(label)
         ctx.y_true = label
         ctx.y_prob = out_global_local
-        print(f"self.round_num: {self.round_num}")
 
         if self.round_num == 1 or self.round_num == 2 or self.round_num == 498 or self.round_num == 998:
             dataset_name = self.ctx.dataset_name

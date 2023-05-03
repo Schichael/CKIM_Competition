@@ -49,6 +49,7 @@ class LaplacianDomainSeparationVAE_1_out_onlyDiff_noGlobal_NEW_Client(Client):
             data=data,
             device=device,
             config=config,
+            clientID=ID,
             only_for_eval=False,
             monitor=None
         )

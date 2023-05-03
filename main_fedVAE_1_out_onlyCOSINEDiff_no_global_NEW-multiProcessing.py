@@ -35,7 +35,10 @@ from federatedscope.register import register_metric
 from federatedscope.contrib.metrics.custom_losses import call_recon_loss_metric, \
     call_kld_loss_encoder_metric, call_kld_global_metric, call_kld_interm_metric, call_kld_local_metric, \
     call_diff_local_interm_metric, call_sim_global_interm_metric, call_loss_out_interm_metric, \
-    call_loss_out_local_interm_metric, call_loss_batch_csd_metric, call_prox_loss_metric
+    call_loss_out_local_interm_metric, call_loss_batch_csd_metric, call_prox_loss_metric, \
+    call_num_local_features_not_0_metric, call_avg_local_features_not_0_metric, call_num_global_features_not_0_metric, \
+    call_avg_global_features_not_0_metric, call_num_local_global_features_not_0_metric, \
+    call_avg_local_global_features_not_0_metric, call_num_features_global_local_metric
 
 try:
     torch.multiprocessing.set_start_method('spawn', force=True)
@@ -47,7 +50,14 @@ metrics = [
     ('kld_loss_encoder', call_kld_loss_encoder_metric),
     ('diff_local_interm', call_diff_local_interm_metric),
     ('loss_out_local_interm', call_loss_out_local_interm_metric), ('loss_out_interm', call_loss_out_interm_metric),
-    ('loss_batch_csd', call_loss_batch_csd_metric)
+    ('loss_batch_csd', call_loss_batch_csd_metric),
+    ('num_local_features_not_0_metric', call_num_local_features_not_0_metric),
+    ('avg_local_features_not_0_metric', call_avg_local_features_not_0_metric),
+    ('num_global_features_not_0_metric', call_num_global_features_not_0_metric),
+    ('avg_global_features_not_0_metric', call_avg_global_features_not_0_metric),
+    ('num_local_global_features_not_0_metric', call_num_local_global_features_not_0_metric),
+    ('avg_local_global_features_not_0_metric', call_avg_local_global_features_not_0_metric),
+        ('num_features_global_local_metric', call_num_features_global_local_metric),
            ]
 for metric in metrics:
     register_metric(metric[0], metric[1])
@@ -151,7 +161,7 @@ if __name__ == '__main__':
 
     num_trainings = 3
     kld_ne_imps = [0] #A
-    diff_imps = [0.005, 0.01, 0.05]  # [0.001, 0.0001, 0.00001]
+    diff_imps = [0]  # [0.001, 0.0001, 0.00001]
     #diff_interm_imps = [0.07] #F    HERE  [0.0001, 0.001]
     #diff_local_imps = [0, 0.07] #G
     csd_imp = 10 #H
@@ -159,7 +169,7 @@ if __name__ == '__main__':
 
     # lrs = [0.001, 0.005, 0.01, 0.05, 0.1, 0.5]
     lrs = [0.05]
-    pool = multiprocessing.Pool(6)
+    pool = multiprocessing.Pool(3)
     processes = []
     for lr in lrs:
             for diff_imp in diff_imps:
