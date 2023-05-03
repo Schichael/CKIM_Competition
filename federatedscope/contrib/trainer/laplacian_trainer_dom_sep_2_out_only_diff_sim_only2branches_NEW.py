@@ -4,6 +4,7 @@ import os
 from copy import deepcopy
 from typing import Callable
 
+import numpy as np
 import torch
 from torch_geometric.graphgym import optim
 from federatedscope.core.auxiliaries.utils import param2tensor
@@ -90,6 +91,8 @@ class LaplacianDomainSeparationVAE_2Out_OnlyDiffSim_only2branches_NEW_Trainer(Gr
         # print(f"trainable_parameters: \n{trainable_parameters.keys()}")
         # print(f"omega keys: \n{self.ctx.omega.keys()}")
         share_rate = 1.
+
+
         for key in trainable_parameters:
 
             # self.ctx.model.state_dict()[key].data.copy_(new_model_params[key])
@@ -128,6 +131,13 @@ class LaplacianDomainSeparationVAE_2Out_OnlyDiffSim_only2branches_NEW_Trainer(Gr
         ctx.kld_loss_encoder_metric = []
         ctx.loss_batch_csd_metric = []
         ctx.diff_local_global_metric = []
+        ctx.num_local_features_not_0_metric = []
+        ctx.avg_local_features_not_0_metric = []
+        ctx.num_global_features_not_0_metric = []
+        ctx.avg_global_features_not_0_metric = []
+        ctx.num_local_global_features_not_0_metric = []
+        ctx.avg_local_global_features_not_0_metric = []
+        ctx.num_features_global_local_metric = []
         if ctx.cur_data_split == "train":
             #print("in train")
             self.round_num += 1
@@ -163,6 +173,39 @@ class LaplacianDomainSeparationVAE_2Out_OnlyDiffSim_only2branches_NEW_Trainer(Gr
             new_mu[name] = deepcopy(server_model_state_dict[name])
         ctx.new_omega = new_omega
         ctx.new_mu = new_mu
+
+
+    def stats_calculator(self, local_features, global_features):
+        local_features = local_features.cpu().detach().numpy()
+        global_features = global_features.cpu().detach().numpy()
+        num_total_features_curr = local_features.shape[0] * local_features.shape[1]
+        local_global = local_features + global_features
+        mult_local_global = local_features * global_features
+        num_local_features_not_0 = np.sum(local_features != 0) / num_total_features_curr
+        if np.sum(local_features != 0) == 0:
+            avg_local_features_not_0 = 0
+        else:
+            avg_local_features_not_0 = local_features.sum() / np.sum(local_features != 0)
+        num_global_features_not_0 = np.sum(global_features != 0) / \
+                                    num_total_features_curr
+        if np.sum(global_features != 0) == 0:
+            avg_global_features_not_0 = 0
+        else:
+            avg_global_features_not_0 = global_features.sum() / np.sum(global_features != 0)
+        num_local_global_features_not_0 = np.sum(local_global != 0) / num_total_features_curr
+        if np.sum(local_global !=0) == 0:
+            avg_local_global_features_not_0 = 0
+        else:
+            avg_local_global_features_not_0 = local_global.sum() / np.sum(local_global !=
+                                                                      0)
+        num_features_global_local = np.sum(mult_local_global != 0) / num_total_features_curr
+
+        #print(f"np.sum(local_features != 0): {np.sum(local_features != 0)}")
+
+        return num_local_features_not_0, avg_local_features_not_0, \
+            num_global_features_not_0, avg_global_features_not_0, \
+            num_local_global_features_not_0, avg_local_global_features_not_0, num_features_global_local
+
 
     def _hook_on_batch_forward(self, ctx):
         self.tmp += 1
@@ -201,6 +244,21 @@ class LaplacianDomainSeparationVAE_2Out_OnlyDiffSim_only2branches_NEW_Trainer(Gr
         #print(f"mi_global_fixed: {sim_global_fixed}")
         #print(f"rec_loss: {rec_loss}")
         #print(f"kld_loss: {kld_loss}")
+
+        num_local_features_not_0, avg_local_features_not_0, \
+            num_global_features_not_0, avg_global_features_not_0, \
+            num_local_global_features_not_0, avg_local_global_features_not_0, num_features_global_local = \
+            self.stats_calculator(x_local, x_global)
+
+        ctx.num_local_features_not_0_metric.append(num_local_features_not_0)
+        ctx.avg_local_features_not_0_metric.append(avg_local_features_not_0)
+        ctx.num_global_features_not_0_metric.append(num_global_features_not_0)
+        ctx.avg_global_features_not_0_metric.append(avg_global_features_not_0)
+        ctx.num_local_global_features_not_0_metric.append(
+            num_local_global_features_not_0)
+        ctx.avg_local_global_features_not_0_metric.append(
+            avg_local_global_features_not_0)
+        ctx.num_features_global_local_metric.append(num_features_global_local)
 
         # print(f"negative mi: {-ctx.mi}")
         csd_loss = CSDLoss(self._param_filter, ctx)
