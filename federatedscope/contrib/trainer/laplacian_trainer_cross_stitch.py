@@ -47,6 +47,7 @@ class \
         self.tmp = 0
         self.kld_imp = 0.
         self.routine_steps = 3
+        self.cos_sim = torch.nn.CosineSimilarity()
         # Get all model parameters with reuqires_grad = True
         #for param in self.ctx.model.named_parameters():
         #    if param[0].startswith('fixed'):
@@ -124,13 +125,48 @@ class \
         ctx.diff_local_global_metric = []
         ctx.diff_local_local_out_metric = []
         ctx.loss_global_clf_metric = []
-        ctx.num_local_features_not_0_metric = []
-        ctx.avg_local_features_not_0_metric = []
-        ctx.num_global_features_not_0_metric = []
-        ctx.avg_global_features_not_0_metric = []
-        ctx.num_local_global_features_not_0_metric = []
-        ctx.avg_local_global_features_not_0_metric = []
-        ctx.num_features_global_local_metric = []
+
+
+        ##################################################################################
+        ctx.num_local_features_not_0_1_metric = []
+        ctx.avg_local_features_not_0_1_metric = []
+        ctx.num_global_features_not_0_1_metric = []
+        ctx.avg_global_features_not_0_1_metric = []
+        ctx.num_global_combined_features_not_0_1_metric = []
+        ctx.avg_global_combined_features_not_0_1_metric = []
+        ctx.num_features_global_local_1_metric = []
+        ctx.cos_sim_local_global_combined_1_metric = []
+        ctx.cos_sim_global_global_combined_1_metric = []
+        ctx.cos_sim_local_local_combined_1_metric = []
+        ctx.cos_sim_global_local_combined_1_metric = []
+
+
+        ctx.num_local_features_not_0_2_metric = []
+        ctx.avg_local_features_not_0_2_metric = []
+        ctx.num_global_features_not_0_2_metric = []
+        ctx.avg_global_features_not_0_2_metric = []
+        ctx.num_global_combined_features_not_0_2_metric = []
+        ctx.avg_global_combined_features_not_0_2_metric = []
+        ctx.num_features_global_local_2_metric = []
+        ctx.cos_sim_local_global_combined_2_metric = []
+        ctx.cos_sim_global_global_combined_2_metric = []
+        ctx.cos_sim_local_local_combined_2_metric = []
+        ctx.cos_sim_global_local_combined_2_metric = []
+
+        ctx.num_local_features_not_0_3_metric = []
+        ctx.avg_local_features_not_0_3_metric = []
+        ctx.num_global_features_not_0_3_metric = []
+        ctx.avg_global_features_not_0_3_metric = []
+        ctx.num_global_combined_features_not_0_3_metric = []
+        ctx.avg_global_combined_features_not_0_3_metric = []
+        ctx.num_features_global_local_3_metric = []
+        ctx.cos_sim_local_global_combined_3_metric = []
+        ctx.cos_sim_global_global_combined_3_metric = []
+        ctx.cos_sim_local_local_combined_3_metric = []
+        ctx.cos_sim_global_local_combined_3_metric = []
+
+
+        ###################################################################################
 
 
         ctx.diff_1_metric = []
@@ -177,12 +213,14 @@ class \
         ctx.new_mu = new_mu
 
 
-    def stats_calculator(self, local_features, global_features):
-        local_features = local_features.cpu().detach().numpy()
-        global_features = global_features.cpu().detach().numpy()
+    def stats_calculator(self, local_features_orig, global_features_orig,
+                         global_combined_features_orig, local_combined_features_orig):
+        local_features = local_features_orig.cpu().detach().numpy()
+        global_features = global_features_orig.cpu().detach().numpy()
+        global_combined_features = global_combined_features_orig.cpu().detach().numpy()
+        local_combined_features = local_combined_features_orig.cpu().detach().numpy()
 
         num_total_features_curr = local_features.shape[0] * local_features.shape[1]
-        local_global = local_features + global_features
 
         mult_local_global = local_features * global_features
 
@@ -199,23 +237,41 @@ class \
         #if x == 0:
             #print("sum of global features is 0")
         avg_global_features_not_0 = global_features.sum() / np.sum(global_features != 0)
-        num_local_global_features_not_0 = np.sum(local_global != 0) / num_total_features_curr
-        avg_local_global_features_not_0 = local_global.sum() / np.sum(local_global !=
-                                                                      0)
+        num_global_combined_features_not_0 = np.sum(global_combined_features != 0) / \
+                                      num_total_features_curr
+        avg_global_combined_features_not_0 = global_combined_features.sum() / np.sum(
+            global_combined_features != 0)
+
+        num_local_combined_features_not_0 = np.sum(local_combined_features != 0) / \
+                                      num_total_features_curr
+        avg_local_combined_features_not_0 = local_combined_features.sum() / np.sum(
+            local_combined_features != 0)
 
         num_features_global_local = np.sum(mult_local_global != 0) / num_total_features_curr
-
+        with torch.no_grad():
+            cos_sim_local_global_combined = self.cos_sim(local_features_orig,
+                                                         global_combined_features_orig).mean()
+            cos_sim_global_global_combined = self.cos_sim(global_features_orig,
+                                                          global_combined_features_orig).mean()
+            cos_sim_local_local_combined = self.cos_sim(local_features_orig,
+                                                         local_combined_features_orig).mean()
+            cos_sim_global_local_combined = self.cos_sim(global_features_orig,
+                                                          local_combined_features_orig).mean()
 
         return num_local_features_not_0, avg_local_features_not_0, \
             num_global_features_not_0, avg_global_features_not_0, \
-            num_local_global_features_not_0, avg_local_global_features_not_0, \
-            num_features_global_local,
+            num_global_combined_features_not_0, avg_global_combined_features_not_0, \
+            num_features_global_local, cos_sim_local_global_combined.cpu().detach(), \
+            cos_sim_global_global_combined.cpu().detach(), cos_sim_local_local_combined.cpu().detach(), \
+            cos_sim_global_local_combined.cpu().detach()
 
     def _hook_on_batch_forward(self, ctx):
         self.tmp += 1
         batch = ctx.data_batch.to(ctx.device)
         x_out, local_alpha_1, local_alpha_2, local_alpha_3, diff_1, \
-            diff_2, diff_3, x_local, x_global, x_global_cs = \
+            diff_2, diff_3, x_local_1, x_local_2, x_local_3, x_global_1, \
+            x_global_2, x_global_3, x_global_1_cs, x_global_2_cs, x_global_3_cs, \
+            x_local_1_cs, x_local_2_cs, x_local_3_cs = \
             ctx.model(batch)
 
         #out_global_local, out_local_interm, diff_local_interm, diff_local_local_out, sim_local_out_interm, x_local, \
@@ -241,9 +297,11 @@ class \
         ctx.diff_3_metric.append(diff_3.detach().item())
 
 
-        ctx.x_local = x_local
-        ctx.x_global = x_global
-        ctx.x_global_cs = x_global_cs
+        ctx.x_local_1 = x_local_1
+        ctx.x_global_1 = x_global_1
+        ctx.x_global_1_cs = x_global_1_cs
+
+
 
         #ctx.sim_interm_fixed = sim_interm_fixed
 
@@ -310,22 +368,79 @@ class \
         # stats calc
         num_local_features_not_0, avg_local_features_not_0, \
             num_global_features_not_0, avg_global_features_not_0, \
-            num_local_global_features_not_0, avg_local_global_features_not_0, \
-            num_features_global_local, = \
-            self.stats_calculator(x_local, x_global)
+            num_global_combined_features_not_0, avg_global_combined_features_not_0, \
+            num_features_global_local, cos_sim_local_global_combined, \
+            cos_sim_global_global_combined, cos_sim_local_local_combined, \
+            cos_sim_global_local_combined = \
+            self.stats_calculator(x_local_1, x_global_1, x_global_1_cs, x_local_1_cs)
 
 
 
 
-        ctx.num_local_features_not_0_metric.append(num_local_features_not_0)
-        ctx.avg_local_features_not_0_metric.append(avg_local_features_not_0)
-        ctx.num_global_features_not_0_metric.append(num_global_features_not_0)
-        ctx.avg_global_features_not_0_metric.append(avg_global_features_not_0)
-        ctx.num_local_global_features_not_0_metric.append(
-            num_local_global_features_not_0)
-        ctx.avg_local_global_features_not_0_metric.append(
-            avg_local_global_features_not_0)
-        ctx.num_features_global_local_metric.append(num_features_global_local)
+        ctx.num_local_features_not_0_1_metric.append(num_local_features_not_0)
+        ctx.avg_local_features_not_0_1_metric.append(avg_local_features_not_0)
+        ctx.num_global_features_not_0_1_metric.append(num_global_features_not_0)
+        ctx.avg_global_features_not_0_1_metric.append(avg_global_features_not_0)
+        ctx.num_global_combined_features_not_0_1_metric.append(num_global_combined_features_not_0)
+        ctx.avg_global_combined_features_not_0_1_metric.append(avg_global_combined_features_not_0)
+        ctx.num_features_global_local_1_metric.append(num_features_global_local)
+        ctx.cos_sim_local_global_combined_1_metric.append(cos_sim_local_global_combined)
+        ctx.cos_sim_global_global_combined_1_metric.append(
+            cos_sim_global_global_combined)
+        ctx.cos_sim_local_local_combined_1_metric.append(
+            cos_sim_local_local_combined)
+        ctx.cos_sim_global_local_combined_1_metric.append(
+            cos_sim_global_local_combined)
+
+        num_local_features_not_0, avg_local_features_not_0, \
+            num_global_features_not_0, avg_global_features_not_0, \
+            num_global_combined_features_not_0, avg_global_combined_features_not_0, \
+            num_features_global_local, cos_sim_local_global_combined, \
+            cos_sim_global_global_combined, cos_sim_local_local_combined, \
+            cos_sim_global_local_combined = \
+            self.stats_calculator(x_local_2, x_global_2, x_global_2_cs, x_local_2_cs)
+
+        ctx.num_local_features_not_0_2_metric.append(num_local_features_not_0)
+        ctx.avg_local_features_not_0_2_metric.append(avg_local_features_not_0)
+        ctx.num_global_features_not_0_2_metric.append(num_global_features_not_0)
+        ctx.avg_global_features_not_0_2_metric.append(avg_global_features_not_0)
+        ctx.num_global_combined_features_not_0_2_metric.append(
+            num_global_combined_features_not_0)
+        ctx.avg_global_combined_features_not_0_2_metric.append(
+            avg_global_combined_features_not_0)
+        ctx.num_features_global_local_2_metric.append(num_features_global_local)
+        ctx.cos_sim_local_global_combined_2_metric.append(cos_sim_local_global_combined)
+        ctx.cos_sim_global_global_combined_2_metric.append(
+            cos_sim_global_global_combined)
+        ctx.cos_sim_local_local_combined_2_metric.append(
+            cos_sim_local_local_combined)
+        ctx.cos_sim_global_local_combined_2_metric.append(
+            cos_sim_global_local_combined)
+
+        num_local_features_not_0, avg_local_features_not_0, \
+            num_global_features_not_0, avg_global_features_not_0, \
+            num_global_combined_features_not_0, avg_global_combined_features_not_0, \
+            num_features_global_local, cos_sim_local_global_combined, \
+            cos_sim_global_global_combined, cos_sim_local_local_combined, \
+            cos_sim_global_local_combined = \
+            self.stats_calculator(x_local_3, x_global_3, x_global_3_cs, x_local_3_cs)
+
+        ctx.num_local_features_not_0_3_metric.append(num_local_features_not_0)
+        ctx.avg_local_features_not_0_3_metric.append(avg_local_features_not_0)
+        ctx.num_global_features_not_0_3_metric.append(num_global_features_not_0)
+        ctx.avg_global_features_not_0_3_metric.append(avg_global_features_not_0)
+        ctx.num_global_combined_features_not_0_3_metric.append(
+            num_global_combined_features_not_0)
+        ctx.avg_global_combined_features_not_0_3_metric.append(
+            avg_global_combined_features_not_0)
+        ctx.num_features_global_local_3_metric.append(num_features_global_local)
+        ctx.cos_sim_local_global_combined_3_metric.append(cos_sim_local_global_combined)
+        ctx.cos_sim_global_global_combined_3_metric.append(
+            cos_sim_global_global_combined)
+        ctx.cos_sim_local_local_combined_3_metric.append(
+            cos_sim_local_local_combined)
+        ctx.cos_sim_global_local_combined_3_metric.append(
+            cos_sim_global_local_combined)
 
 
         if self.round_num == 0 or self.round_num == 1 or self.round_num == 498 or \
@@ -341,18 +456,60 @@ class \
 
 
             # local
-            file_name = path + '/local_' + dataset_name + '_' + str(cur_batch_i) + '.pt'
-            torch.save(x_local, file_name)
+                # local
+                file_name = path + '/local_1' + dataset_name + '_' + str(cur_batch_i) + \
+                            '.pt'
+                torch.save(x_local_1, file_name)
 
-            # global
-            file_name = path + '/global_' + dataset_name + '_' + str(
-                cur_batch_i) + '.pt'
-            torch.save(x_global, file_name)
+                # global
+                file_name = path + '/global_1' + dataset_name + '_' + str(
+                    cur_batch_i) + '.pt'
+                torch.save(x_global_1, file_name)
 
-            # global_cs
-            file_name = path + '/global_cs_' + dataset_name + '_' + str(
-                cur_batch_i) + '.pt'
-            torch.save(x_global_cs, file_name)
+                # global_cs
+                file_name = path + '/global_1_cs_' + dataset_name + '_' + str(
+                    cur_batch_i) + '.pt'
+                torch.save(x_global_1_cs, file_name)
+
+                file_name = path + '/local_1_cs_' + dataset_name + '_' + str(
+                    cur_batch_i) + '.pt'
+                torch.save(x_local_1_cs, file_name)
+
+
+                file_name = path + '/local_2' + dataset_name + '_' + str(cur_batch_i) + \
+                            '.pt'
+                torch.save(x_local_2, file_name)
+
+                # global
+                file_name = path + '/global_2' + dataset_name + '_' + str(
+                    cur_batch_i) + '.pt'
+                torch.save(x_global_2, file_name)
+
+                file_name = path + '/global_2_cs_' + dataset_name + '_' + str(
+                    cur_batch_i) + '.pt'
+                torch.save(x_global_2_cs, file_name)
+
+                file_name = path + '/local_2_cs_' + dataset_name + '_' + str(
+                    cur_batch_i) + '.pt'
+                torch.save(x_local_2_cs, file_name)
+
+
+                file_name = path + '/local_3' + dataset_name + '_' + str(cur_batch_i) + \
+                            '.pt'
+                torch.save(x_local_3, file_name)
+
+                # global
+                file_name = path + '/global_3' + dataset_name + '_' + str(
+                    cur_batch_i) + '.pt'
+                torch.save(x_global_3, file_name)
+
+                file_name = path + '/global_3_cs_' + dataset_name + '_' + str(
+                    cur_batch_i) + '.pt'
+                torch.save(x_global_3_cs, file_name)
+
+                file_name = path + '/local_3_cs_' + dataset_name + '_' + str(
+                    cur_batch_i) + '.pt'
+                torch.save(x_local_3_cs, file_name)
 
 
             # alphas

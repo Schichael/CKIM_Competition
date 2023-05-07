@@ -171,6 +171,10 @@ class GNN_Net_Graph(torch.nn.Module):
         x_global_2 = self.global_gnn_2((x_global_1, edge_index))
         x_local_2 = self.local_gnn_2((x_local_1, edge_index))
 
+        x_global_2 = self.pooling(x_global_2, batch)
+
+        x_local_2 = self.pooling(x_local_2, batch)
+
         diff_2 = self.cosine_diff_loss(x_local_2, x_global_2)
 
         x_global_2_cs = self.local_alpha_2[0][0] * x_global_2 + self.local_alpha_2[0][
@@ -179,9 +183,7 @@ class GNN_Net_Graph(torch.nn.Module):
         x_local_2_cs = self.local_alpha_2[1][0] * x_global_2 + \
                     self.local_alpha_2[1][1] * x_local_2
 
-        x_global_2_cs = self.pooling(x_global_2_cs, batch)
 
-        x_local_2_cs = self.pooling(x_local_2_cs, batch)
 
         x_global_3 = self.linear(x_global_2_cs)
         x_local_3 = self.local_linear(x_local_2_cs)
@@ -194,4 +196,6 @@ class GNN_Net_Graph(torch.nn.Module):
         x = F.dropout(x_global_3_cs, self.dropout, training=self.training)
         x = self.clf(x)
         return x, self.local_alpha_1, self.local_alpha_2, self.local_alpha_3, diff_1,\
-            diff_2, diff_3, x_local_3, x_global_3, x_global_3_cs # only use diff_3
+            diff_2, diff_3, x_local_1, x_local_2, x_local_3, x_global_1, \
+            x_global_2, x_global_3, x_global_1_cs, x_global_2_cs, x_global_3_cs, x_local_1_cs, x_local_2_cs, x_global_3_cs # only
+        # use diff_3

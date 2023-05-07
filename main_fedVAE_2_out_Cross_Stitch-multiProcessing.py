@@ -61,7 +61,33 @@ from federatedscope.contrib.metrics.custom_losses import call_recon_loss_metric,
     call_local_alpha_1_global_metric, call_local_alpha_1_local_metric, \
     call_local_alpha_2_global_metric, call_local_alpha_2_local_metric, \
     call_local_alpha_3_global_metric, call_local_alpha_3_local_metric, \
-    call_local_alpha_1_metric, call_local_alpha_2_metric, call_local_alpha_3_metric
+    call_local_alpha_1_metric, call_local_alpha_2_metric, call_local_alpha_3_metric, \
+    call_num_local_features_not_0_1_metric, call_avg_local_features_not_0_1_metric, \
+    call_num_global_features_not_0_1_metric, call_avg_global_features_not_0_1_metric, \
+    call_num_global_combined_features_not_0_1_metric, \
+    call_avg_global_combined_features_not_0_1_metric, \
+    call_num_features_global_local_1_metric, \
+    call_cos_sim_local_global_combined_1_metric, \
+    call_cos_sim_global_local_combined_1_metric, \
+    call_cos_sim_global_global_combined_1_metric, \
+    call_cos_sim_local_local_combined_1_metric, call_num_local_features_not_0_2_metric, \
+    call_avg_local_features_not_0_2_metric, call_num_global_features_not_0_2_metric, \
+    call_avg_global_features_not_0_2_metric, \
+    call_num_global_combined_features_not_0_2_metric, \
+    call_avg_global_combined_features_not_0_2_metric, \
+    call_num_features_global_local_2_metric, \
+    call_cos_sim_local_global_combined_2_metric, \
+    call_cos_sim_global_local_combined_2_metric, \
+    call_cos_sim_global_global_combined_2_metric, \
+    call_cos_sim_local_local_combined_2_metric, call_num_local_features_not_0_3_metric, \
+    call_avg_local_features_not_0_3_metric, call_num_global_features_not_0_3_metric, \
+    call_num_global_combined_features_not_0_3_metric, \
+    call_avg_global_combined_features_not_0_3_metric, \
+    call_avg_global_features_not_0_3_metric, call_num_features_global_local_3_metric, \
+    call_cos_sim_local_global_combined_3_metric, \
+    call_cos_sim_global_local_combined_3_metric, \
+    call_cos_sim_global_global_combined_3_metric, \
+    call_cos_sim_local_local_combined_3_metric
 
 try:
     torch.multiprocessing.set_start_method('spawn', force=True)
@@ -75,13 +101,42 @@ metrics = [
     ('diff_local_global', call_diff_local_global_metric),
     ('loss_batch_csd', call_loss_batch_csd_metric),
     ('loss_global_clf_metric', call_loss_global_clf_metric),
-('num_local_features_not_0_metric', call_num_local_features_not_0_metric),
-('avg_local_features_not_0_metric', call_avg_local_features_not_0_metric),
-('num_global_features_not_0_metric', call_num_global_features_not_0_metric),
-('avg_global_features_not_0_metric', call_avg_global_features_not_0_metric),
-('num_local_global_features_not_0_metric', call_num_local_global_features_not_0_metric),
-('avg_local_global_features_not_0_metric', call_avg_local_global_features_not_0_metric),
-    ('num_features_global_local_metric', call_num_features_global_local_metric),
+('num_local_features_not_0_1_metric', call_num_local_features_not_0_1_metric),
+('avg_local_features_not_0_1_metric', call_avg_local_features_not_0_1_metric),
+('num_global_features_not_0_1_metric', call_num_global_features_not_0_1_metric),
+('avg_global_features_not_0_1_metric', call_avg_global_features_not_0_1_metric),
+('num_global_combined_features_not_0_1_metric', call_num_global_combined_features_not_0_1_metric),
+('avg_global_combined_features_not_0_1_metric', call_avg_global_combined_features_not_0_1_metric),
+    ('num_features_global_local_1_metric', call_num_features_global_local_1_metric),
+('cos_sim_local_global_combined_1_metric', call_cos_sim_local_global_combined_1_metric),
+('cos_sim_global_local_combined_1_metric', call_cos_sim_global_local_combined_1_metric),
+('cos_sim_global_global_combined_1_metric', call_cos_sim_global_global_combined_1_metric),
+('cos_sim_local_local_combined_1_metric', call_cos_sim_local_local_combined_1_metric),
+
+('num_local_features_not_0_2_metric', call_num_local_features_not_0_2_metric),
+('avg_local_features_not_0_2_metric', call_avg_local_features_not_0_2_metric),
+('num_global_features_not_0_2_metric', call_num_global_features_not_0_2_metric),
+('avg_global_features_not_0_2_metric', call_avg_global_features_not_0_2_metric),
+('num_global_combined_features_not_0_2_metric', call_num_global_combined_features_not_0_2_metric),
+('avg_global_combined_features_not_0_2_metric', call_avg_global_combined_features_not_0_2_metric),
+    ('num_features_global_local_2_metric', call_num_features_global_local_2_metric),
+('cos_sim_local_global_combined_2_metric', call_cos_sim_local_global_combined_2_metric),
+('cos_sim_global_local_combined_2_metric', call_cos_sim_global_local_combined_2_metric),
+('cos_sim_global_global_combined_2_metric', call_cos_sim_global_global_combined_2_metric),
+('cos_sim_local_local_combined_2_metric', call_cos_sim_local_local_combined_2_metric),
+
+('num_local_features_not_0_3_metric', call_num_local_features_not_0_3_metric),
+('avg_local_features_not_0_3_metric', call_avg_local_features_not_0_3_metric),
+('num_global_features_not_0_3_metric', call_num_global_features_not_0_3_metric),
+('avg_global_features_not_0_3_metric', call_avg_global_features_not_0_3_metric),
+('num_global_combined_features_not_0_3_metric', call_num_global_combined_features_not_0_3_metric),
+('avg_global_combined_features_not_0_3_metric', call_avg_global_combined_features_not_0_3_metric),
+('num_features_global_local_3_metric', call_num_features_global_local_3_metric),
+('cos_sim_local_global_combined_3_metric', call_cos_sim_local_global_combined_3_metric),
+('cos_sim_global_local_combined_3_metric', call_cos_sim_global_local_combined_3_metric),
+('cos_sim_global_global_combined_3_metric', call_cos_sim_global_global_combined_3_metric),
+('cos_sim_local_local_combined_3_metric', call_cos_sim_local_local_combined_3_metric),
+
 
 ('diff_1_metric', call_diff_1_metric),
 ('diff_2_metric', call_diff_2_metric),
@@ -150,7 +205,8 @@ def train(lr, diff_imp, csd_imp):
     # init_cfg.data.subdirectory = 'graph_dt_backup/processed'
     # init_cfg.merge_from_list(args.opts)
     init_cfg.data.save_dir = \
-        'Graph-DC_2_out_Cross_Stitch_multi_runs_init_0_5_0_5_lr_' + str(lr).replace(
+        'Graph-DC_2_out_Cross_Stitch_multi_runs_init_0_5global_0_5local_lr_' + \
+        str(lr).replace(
             '.', '_') + \
     '_F' + str(diff_imp).replace('.', '_') + '_F' + '_H' + str(csd_imp).replace(
         '.', '_')
@@ -211,7 +267,7 @@ if __name__ == '__main__':
 
     num_trainings = 3
     kld_ne_imps = [0] #A
-    diff_imps = [0.5, 0.1, 0.05, 0.01, 0.005, 0]
+    diff_imps = [0.5, 0.05, 0.005, 0]
     #diff_imps = [0.05]
     #diff_imps = [0.1]
     #diff_global_imps = [0] #F    HERE  [0.0001, 0.001]
@@ -222,7 +278,7 @@ if __name__ == '__main__':
 
     # lrs = [0.001, 0.005, 0.01, 0.05, 0.1, 0.5]
     lrs = [0.05]
-    pool = multiprocessing.Pool(6)
+    pool = multiprocessing.Pool(3)
     processes = []
     for lr in lrs:
         for diff_imp in diff_imps:

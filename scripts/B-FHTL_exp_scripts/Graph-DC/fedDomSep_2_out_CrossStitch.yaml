@@ -55,7 +55,41 @@ eval:
             'local_alpha_1_local_metric', 'local_alpha_2_global_metric',
             'local_alpha_2_local_metric', 'local_alpha_3_global_metric',
             'local_alpha_3_local_metric', 'local_alpha_1_metric',
-            'local_alpha_2_metric', 'local_alpha_3_metric' ]
+            'local_alpha_2_metric', 'local_alpha_3_metric',
+            'num_local_features_not_0_1_metric', 'avg_local_features_not_0_1_metric',
+            'num_global_features_not_0_1_metric',
+            'num_global_features_not_0_1_metric',
+            'avg_global_features_not_0_1_metric',
+            'num_global_combined_features_not_0_1_metric',
+            'avg_global_combined_features_not_0_1_metric',
+            'num_features_global_local_1_metric',
+            'cos_sim_local_global_combined_1_metric',
+            'cos_sim_global_local_combined_1_metric',
+            'cos_sim_global_global_combined_1_metric',
+            'cos_sim_local_local_combined_1_metric',             'num_local_features_not_0_2_metric', 'avg_local_features_not_0_2_metric',
+            'num_global_features_not_0_2_metric',
+            'num_global_features_not_0_2_metric',
+            'avg_global_features_not_0_2_metric',
+            'num_global_combined_features_not_0_2_metric',
+            'avg_global_combined_features_not_0_2_metric',
+            'num_features_global_local_2_metric',
+            'cos_sim_local_global_combined_2_metric',
+            'cos_sim_global_local_combined_2_metric',
+            'cos_sim_global_global_combined_2_metric',
+            'cos_sim_local_local_combined_2_metric',
+            'num_local_features_not_0_3_metric', 'avg_local_features_not_0_3_metric',
+            'num_global_features_not_0_3_metric',
+            'num_global_features_not_0_3_metric',
+            'avg_global_features_not_0_3_metric',
+            'num_global_combined_features_not_0_3_metric',
+            'avg_global_combined_features_not_0_3_metric',
+            'num_features_global_local_3_metric',
+            'cos_sim_local_global_combined_3_metric',
+            'cos_sim_global_local_combined_3_metric',
+            'cos_sim_global_global_combined_3_metric', 'cos_sim_local_local_combined_3_metric'
+  ]
   best_res_update_round_wise_key: val_imp_ratio
   count_flops: False
   base: 0.
+
+

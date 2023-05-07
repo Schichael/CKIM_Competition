@@ -313,3 +313,274 @@ def call_local_alpha_3_metric(types):
     if "local_alpha_3_metric" in types:
         return "local_alpha_3_metric", local_alpha_3_metric
 
+
+
+def call_num_local_features_not_0_1_metric(types):
+    if "num_local_features_not_0_1_metric" in types:
+        return "num_local_features_not_0_1_metric", num_local_features_not_0_1_metric
+
+def call_avg_local_features_not_0_1_metric(types):
+    if "avg_local_features_not_0_1_metric" in types:
+        return "avg_local_features_not_0_1_metric", avg_local_features_not_0_1_metric
+
+def call_num_global_features_not_0_1_metric(types):
+    if "num_global_features_not_0_1_metric" in types:
+        return "num_global_features_not_0_1_metric", num_global_features_not_0_1_metric
+
+def call_avg_global_features_not_0_1_metric(types):
+    if "avg_global_features_not_0_1_metric" in types:
+        return "avg_global_features_not_0_1_metric", avg_global_features_not_0_1_metric
+
+def call_num_global_combined_features_not_0_1_metric(types):
+    if "num_global_combined_features_not_0_1_metric" in types:
+        return "num_global_combined_features_not_0_1_metric", num_global_combined_features_not_0_1_metric
+
+def call_avg_global_combined_features_not_0_1_metric(types):
+    if "avg_global_combined_features_not_0_1_metric" in types:
+        return "avg_global_combined_features_not_0_1_metric", avg_global_combined_features_not_0_1_metric
+
+def call_num_features_global_local_1_metric(types):
+    if "num_features_global_local_1_metric" in types:
+        return "num_features_global_local_1_metric", num_features_global_local_1_metric
+
+def call_cos_sim_local_global_combined_1_metric(types):
+    if "cos_sim_local_global_combined_1_metric" in types:
+        return "cos_sim_local_global_combined_1_metric", cos_sim_local_global_combined_1_metric
+
+def call_cos_sim_global_local_combined_1_metric(types):
+    if "cos_sim_global_local_combined_1_metric" in types:
+        return "cos_sim_global_local_combined_1_metric", cos_sim_global_local_combined_1_metric
+
+def call_cos_sim_global_global_combined_1_metric(types):
+    if "cos_sim_global_global_combined_1_metric" in types:
+        return "cos_sim_global_global_combined_1_metric", cos_sim_global_global_combined_1_metric
+
+def call_cos_sim_local_local_combined_1_metric(types):
+    if "cos_sim_local_local_combined_1_metric" in types:
+        return "cos_sim_local_local_combined_1_metric", cos_sim_local_local_combined_1_metric
+
+
+def cos_sim_local_local_combined_1_metric(ctx, **kwargs):
+    return np.mean(ctx.cos_sim_local_local_combined_1_metric)
+
+def cos_sim_global_global_combined_1_metric(ctx, **kwargs):
+    return np.mean(ctx.cos_sim_global_global_combined_1_metric)
+
+def cos_sim_global_local_combined_1_metric(ctx, **kwargs):
+    return np.mean(ctx.cos_sim_global_local_combined_1_metric)
+def cos_sim_local_global_combined_1_metric(ctx, **kwargs):
+    return np.mean(ctx.cos_sim_local_global_combined_1_metric)
+def num_features_global_local_1_metric(ctx, **kwargs):
+    return np.mean(ctx.num_features_global_local_1_metric)
+def avg_global_combined_features_not_0_1_metric(ctx, **kwargs):
+    return np.mean(ctx.avg_global_combined_features_not_0_1_metric)
+def num_global_combined_features_not_0_1_metric(ctx, **kwargs):
+    return np.mean(ctx.num_global_combined_features_not_0_1_metric)
+def avg_global_features_not_0_1_metric(ctx, **kwargs):
+    return np.mean(ctx.avg_global_features_not_0_1_metric)
+def num_global_features_not_0_1_metric(ctx, **kwargs):
+    return np.mean(ctx.num_global_features_not_0_1_metric)
+
+def avg_local_features_not_0_1_metric(ctx, **kwargs):
+    return np.mean(ctx.avg_local_features_not_0_1_metric)
+
+def num_local_features_not_0_1_metric(ctx, **kwargs):
+    return np.mean(ctx.num_local_features_not_0_1_metric)
+
+
+def call_num_local_features_not_0_2_metric(types):
+    if "num_local_features_not_0_2_metric" in types:
+        return "num_local_features_not_0_2_metric", num_local_features_not_0_2_metric
+
+
+def call_avg_local_features_not_0_2_metric(types):
+    if "avg_local_features_not_0_2_metric" in types:
+        return "avg_local_features_not_0_2_metric", avg_local_features_not_0_2_metric
+
+
+def call_num_global_features_not_0_2_metric(types):
+    if "num_global_features_not_0_2_metric" in types:
+        return "num_global_features_not_0_2_metric", num_global_features_not_0_2_metric
+
+
+def call_avg_global_features_not_0_2_metric(types):
+    if "avg_global_features_not_0_2_metric" in types:
+        return "avg_global_features_not_0_2_metric", avg_global_features_not_0_2_metric
+
+
+def call_num_global_combined_features_not_0_2_metric(types):
+    if "num_global_combined_features_not_0_2_metric" in types:
+        return "num_global_combined_features_not_0_2_metric", num_global_combined_features_not_0_2_metric
+
+
+def call_avg_global_combined_features_not_0_2_metric(types):
+    if "avg_global_combined_features_not_0_2_metric" in types:
+        return "avg_global_combined_features_not_0_2_metric", avg_global_combined_features_not_0_2_metric
+
+
+def call_num_features_global_local_2_metric(types):
+    if "num_features_global_local_2_metric" in types:
+        return "num_features_global_local_2_metric", num_features_global_local_2_metric
+
+
+def call_cos_sim_local_global_combined_2_metric(types):
+    if "cos_sim_local_global_combined_2_metric" in types:
+        return "cos_sim_local_global_combined_2_metric", cos_sim_local_global_combined_2_metric
+
+
+def call_cos_sim_global_local_combined_2_metric(types):
+    if "cos_sim_global_local_combined_2_metric" in types:
+        return "cos_sim_global_local_combined_2_metric", cos_sim_global_local_combined_2_metric
+
+
+def call_cos_sim_global_global_combined_2_metric(types):
+    if "cos_sim_global_global_combined_2_metric" in types:
+        return "cos_sim_global_global_combined_2_metric", cos_sim_global_global_combined_2_metric
+
+
+def call_cos_sim_local_local_combined_2_metric(types):
+    if "cos_sim_local_local_combined_2_metric" in types:
+        return "cos_sim_local_local_combined_2_metric", cos_sim_local_local_combined_2_metric
+
+
+def cos_sim_local_local_combined_2_metric(ctx, **kwargs):
+    return np.mean(ctx.cos_sim_local_local_combined_2_metric)
+
+
+def cos_sim_global_global_combined_2_metric(ctx, **kwargs):
+    return np.mean(ctx.cos_sim_global_global_combined_2_metric)
+
+
+def cos_sim_global_local_combined_2_metric(ctx, **kwargs):
+    return np.mean(ctx.cos_sim_global_local_combined_2_metric)
+
+
+def cos_sim_local_global_combined_2_metric(ctx, **kwargs):
+    return np.mean(ctx.cos_sim_local_global_combined_2_metric)
+
+
+def num_features_global_local_2_metric(ctx, **kwargs):
+    return np.mean(ctx.num_features_global_local_2_metric)
+
+
+def avg_global_combined_features_not_0_2_metric(ctx, **kwargs):
+    return np.mean(ctx.avg_global_combined_features_not_0_2_metric)
+
+
+def num_global_combined_features_not_0_2_metric(ctx, **kwargs):
+    return np.mean(ctx.num_global_combined_features_not_0_2_metric)
+
+
+def avg_global_features_not_0_2_metric(ctx, **kwargs):
+    return np.mean(ctx.avg_global_features_not_0_2_metric)
+
+
+def num_global_features_not_0_2_metric(ctx, **kwargs):
+    return np.mean(ctx.num_global_features_not_0_2_metric)
+
+
+def avg_local_features_not_0_2_metric(ctx, **kwargs):
+    return np.mean(ctx.avg_local_features_not_0_2_metric)
+
+
+def num_local_features_not_0_2_metric(ctx, **kwargs):
+    return np.mean(ctx.num_local_features_not_0_2_metric)
+
+
+def call_num_local_features_not_0_3_metric(types):
+    if "num_local_features_not_0_3_metric" in types:
+        return "num_local_features_not_0_3_metric", num_local_features_not_0_3_metric
+
+
+def call_avg_local_features_not_0_3_metric(types):
+    if "avg_local_features_not_0_3_metric" in types:
+        return "avg_local_features_not_0_3_metric", avg_local_features_not_0_3_metric
+
+
+def call_num_global_features_not_0_3_metric(types):
+    if "num_global_features_not_0_3_metric" in types:
+        return "num_global_features_not_0_3_metric", num_global_features_not_0_3_metric
+
+
+def call_avg_global_features_not_0_3_metric(types):
+    if "avg_global_features_not_0_3_metric" in types:
+        return "avg_global_features_not_0_3_metric", avg_global_features_not_0_3_metric
+
+
+def call_num_global_combined_features_not_0_3_metric(types):
+    if "num_global_combined_features_not_0_3_metric" in types:
+        return "num_global_combined_features_not_0_3_metric", num_global_combined_features_not_0_3_metric
+
+
+def call_avg_global_combined_features_not_0_3_metric(types):
+    if "avg_global_combined_features_not_0_3_metric" in types:
+        return "avg_global_combined_features_not_0_3_metric", avg_global_combined_features_not_0_3_metric
+
+
+def call_num_features_global_local_3_metric(types):
+    if "num_features_global_local_3_metric" in types:
+        return "num_features_global_local_3_metric", num_features_global_local_3_metric
+
+
+def call_cos_sim_local_global_combined_3_metric(types):
+    if "cos_sim_local_global_combined_3_metric" in types:
+        return "cos_sim_local_global_combined_3_metric", cos_sim_local_global_combined_3_metric
+
+
+def call_cos_sim_global_local_combined_3_metric(types):
+    if "cos_sim_global_local_combined_3_metric" in types:
+        return "cos_sim_global_local_combined_3_metric", cos_sim_global_local_combined_3_metric
+
+
+def call_cos_sim_global_global_combined_3_metric(types):
+    if "cos_sim_global_global_combined_3_metric" in types:
+        return "cos_sim_global_global_combined_3_metric", cos_sim_global_global_combined_3_metric
+
+
+def call_cos_sim_local_local_combined_3_metric(types):
+    if "cos_sim_local_local_combined_3_metric" in types:
+        return "cos_sim_local_local_combined_3_metric", cos_sim_local_local_combined_3_metric
+
+
+def cos_sim_local_local_combined_3_metric(ctx, **kwargs):
+    return np.mean(ctx.cos_sim_local_local_combined_3_metric)
+
+
+def cos_sim_global_global_combined_3_metric(ctx, **kwargs):
+    return np.mean(ctx.cos_sim_global_global_combined_3_metric)
+
+
+def cos_sim_global_local_combined_3_metric(ctx, **kwargs):
+    return np.mean(ctx.cos_sim_global_local_combined_3_metric)
+
+
+def cos_sim_local_global_combined_3_metric(ctx, **kwargs):
+    return np.mean(ctx.cos_sim_local_global_combined_3_metric)
+
+
+def num_features_global_local_3_metric(ctx, **kwargs):
+    return np.mean(ctx.num_features_global_local_3_metric)
+
+
+def avg_global_combined_features_not_0_3_metric(ctx, **kwargs):
+    return np.mean(ctx.avg_global_combined_features_not_0_3_metric)
+
+
+def num_global_combined_features_not_0_3_metric(ctx, **kwargs):
+    return np.mean(ctx.num_global_combined_features_not_0_3_metric)
+
+
+def avg_global_features_not_0_3_metric(ctx, **kwargs):
+    return np.mean(ctx.avg_global_features_not_0_3_metric)
+
+
+def num_global_features_not_0_3_metric(ctx, **kwargs):
+    return np.mean(ctx.num_global_features_not_0_3_metric)
+
+
+def avg_local_features_not_0_3_metric(ctx, **kwargs):
+    return np.mean(ctx.avg_local_features_not_0_3_metric)
+
+
+def num_local_features_not_0_3_metric(ctx, **kwargs):
+    return np.mean(ctx.num_local_features_not_0_3_metric)
