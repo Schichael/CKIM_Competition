@@ -37,4 +37,4 @@ trainer:
 eval:
   report: ['avg']
   freq: 1
-  metrics: ['imp_ratio', 'acc', 'kld_loss_encoder']
+  metrics: ['imp_ratio', 'acc', 'kld_loss_encoder_metric']

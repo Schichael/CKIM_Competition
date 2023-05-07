@@ -75,6 +75,43 @@ def avg_global_features_not_0_metric(ctx, **kwargs):
 def num_local_global_features_not_0_metric(ctx, **kwargs):
     return np.mean(ctx.num_local_global_features_not_0_metric)
 
+
+def diff_1_metric(ctx, **kwargs):
+    return np.mean(ctx.diff_1_metric)
+
+def diff_2_metric(ctx, **kwargs):
+    return np.mean(ctx.diff_2_metric)
+
+def diff_3_metric(ctx, **kwargs):
+    return np.mean(ctx.diff_3_metric)
+
+def local_alpha_1_global_metric(ctx, **kwargs):
+    return np.mean(ctx.local_alpha_1_global_metric)
+
+def local_alpha_1_local_metric(ctx, **kwargs):
+    return np.mean(ctx.local_alpha_1_local_metric)
+
+def local_alpha_2_global_metric(ctx, **kwargs):
+    return np.mean(ctx.local_alpha_2_global_metric)
+
+def local_alpha_1_metric(ctx, **kwargs):
+    return ctx.local_alpha_1_metric
+
+def local_alpha_2_metric(ctx, **kwargs):
+    return ctx.local_alpha_2_metric
+
+def local_alpha_3_metric(ctx, **kwargs):
+    return ctx.local_alpha_1_metric
+
+def local_alpha_2_local_metric(ctx, **kwargs):
+    return np.mean(ctx.local_alpha_2_local_metric)
+
+def local_alpha_3_global_metric(ctx, **kwargs):
+    return np.mean(ctx.local_alpha_3_global_metric)
+
+def local_alpha_3_local_metric(ctx, **kwargs):
+    return np.mean(ctx.local_alpha_3_local_metric)
+
 def avg_local_global_features_not_0_metric(ctx, **kwargs):
     return np.mean(ctx.avg_local_global_features_not_0_metric)
 
@@ -226,3 +263,53 @@ def call_diff_local_local_out_metric(types):
 def call_sim_interm_local_out_metric(types):
     if "sim_interm_local_out_metric" in types:
         return "sim_interm_local_out_metric", sim_interm_local_out_metric
+
+
+def call_diff_1_metric(types):
+    if "diff_1_metric" in types:
+        return "diff_1_metric", diff_1_metric
+
+def call_diff_2_metric(types):
+    if "diff_2_metric" in types:
+        return "diff_2_metric", diff_2_metric
+
+def call_diff_3_metric(types):
+    if "diff_3_metric" in types:
+        return "diff_3_metric", diff_3_metric
+
+def call_local_alpha_1_global_metric(types):
+    if "local_alpha_1_global_metric" in types:
+        return "local_alpha_1_global_metric", local_alpha_1_global_metric
+
+def call_local_alpha_1_local_metric(types):
+    if "local_alpha_1_local_metric" in types:
+        return "local_alpha_1_local_metric", local_alpha_1_local_metric
+
+def call_local_alpha_2_global_metric(types):
+    if "local_alpha_2_global_metric" in types:
+        return "local_alpha_2_global_metric", local_alpha_2_global_metric
+
+def call_local_alpha_2_local_metric(types):
+    if "local_alpha_2_local_metric" in types:
+        return "local_alpha_2_local_metric", local_alpha_2_local_metric
+
+def call_local_alpha_3_global_metric(types):
+    if "local_alpha_3_global_metric" in types:
+        return "local_alpha_3_global_metric", local_alpha_3_global_metric
+
+def call_local_alpha_3_local_metric(types):
+    if "local_alpha_3_local_metric" in types:
+        return "local_alpha_3_local_metric", local_alpha_3_local_metric
+
+def call_local_alpha_1_metric(types):
+    if "local_alpha_1_metric" in types:
+        return "local_alpha_1_metric", local_alpha_1_metric
+
+def call_local_alpha_2_metric(types):
+    if "local_alpha_2_metric" in types:
+        return "local_alpha_2_metric", local_alpha_2_metric
+
+def call_local_alpha_3_metric(types):
+    if "local_alpha_3_metric" in types:
+        return "local_alpha_3_metric", local_alpha_3_metric
+

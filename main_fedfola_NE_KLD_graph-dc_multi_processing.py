@@ -38,7 +38,7 @@ except RuntimeError:
     pass
 
 metrics = [
-    ('kld_loss_encoder', call_kld_loss_encoder_metric),
+    ('kld_loss_encoder_metric', call_kld_loss_encoder_metric),
     ]
 for metric in metrics:
     register_metric(metric[0], metric[1])
@@ -97,16 +97,16 @@ def train(lr, csd_imp, kld_imp):
 if __name__ == '__main__':
     num_trainings = 3
     csd_imps = [10]
-    kld_imps = [1, 0.1, 0.01]
+    kld_imps = [0, 0.001]
     # lrs = [0.001, 0.005, 0.01, 0.05, 0.1, 0.5]
     lrs = [0.05]
-    pool = multiprocessing.Pool(3)
+    pool = multiprocessing.Pool(6)
     processes = []
     for lr in lrs:
         for csd_imp in csd_imps:
             for kld_imp in kld_imps:
                 for i in range(num_trainings):
-                    time.sleep(1)
+                    time.sleep(10)
                     setup_seed(i)
                     processes.append(pool.apply_async(train, args=(lr, csd_imp,
                                                                    kld_imp)))
