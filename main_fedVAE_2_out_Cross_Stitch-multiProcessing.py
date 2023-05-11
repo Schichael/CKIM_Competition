@@ -205,7 +205,7 @@ def train(lr, diff_imp, csd_imp):
     # init_cfg.data.subdirectory = 'graph_dt_backup/processed'
     # init_cfg.merge_from_list(args.opts)
     init_cfg.data.save_dir = \
-        'Graph-DC_2_out_Cross_Stitch_multi_runs_init_0_5global_0_5local_lr_' + \
+        'Graph-DC_2_out_Cross_Stitch_multi_runs_alpha_non_trainable_init_0_9global_0_1local_lr_' + \
         str(lr).replace(
             '.', '_') + \
     '_F' + str(diff_imp).replace('.', '_') + '_F' + '_H' + str(csd_imp).replace(

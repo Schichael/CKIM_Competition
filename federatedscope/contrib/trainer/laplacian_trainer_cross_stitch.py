@@ -580,11 +580,12 @@ class \
         loss = ctx.loss_out + self.config.params.diff_imp * \
                ctx.diff_3
         loss.backward(retain_graph=True)
-
-        ctx.model.local_alpha_3.grad = ctx.model.local_alpha_3.grad * 10
-        ctx.model.local_alpha_2.grad = ctx.model.local_alpha_2.grad * 10
-        ctx.model.local_alpha_1.grad = ctx.model.local_alpha_1.grad * 100
-
+        try:
+            ctx.model.local_alpha_3.grad = ctx.model.local_alpha_3.grad * 10
+            ctx.model.local_alpha_2.grad = ctx.model.local_alpha_2.grad * 10
+            ctx.model.local_alpha_1.grad = ctx.model.local_alpha_1.grad * 100
+        except:
+            pass
 
         # Reset requires_grad
         for param in ctx.model.named_parameters():

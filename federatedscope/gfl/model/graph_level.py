@@ -123,12 +123,12 @@ class GNN_Net_Graph(torch.nn.Module):
         self.clf = Linear(hidden, out_channels)
 
         # cross_stitch_units
-        self.local_alpha_1 = Parameter(torch.Tensor([[0.5, 0.5], [0.5, 0.5]]),
-                                      requires_grad=True)
-        self.local_alpha_2 = Parameter(torch.Tensor([[0.5, 0.5], [0.5, 0.5]]),
-                                      requires_grad=True)
-        self.local_alpha_3 = Parameter(torch.Tensor([[0.5, 0.5], [0.5, 0.5]]),
-                                      requires_grad=True)
+        self.local_alpha_1 = Parameter(torch.Tensor([[0.9, 0.1], [0.9, 0.1]]),
+                                      requires_grad=False)
+        self.local_alpha_2 = Parameter(torch.Tensor([[0.9, 0.1], [0.9, 0.1]]),
+                                      requires_grad=False)
+        self.local_alpha_3 = Parameter(torch.Tensor([[0.9, 0.1], [0.9, 0.1]]),
+                                      requires_grad=False)
 
 
     def cosine_diff_loss(self, x1, x2):
