@@ -136,6 +136,49 @@ def diff_local_local_out_metric(ctx, **kwargs):
 def sim_interm_local_out_metric(ctx, **kwargs):
     return np.mean(ctx.sim_interm_local_out_metric)
 
+def cos_sim_local_local_combined_3_metric(ctx, **kwargs):
+    return np.mean(ctx.cos_sim_local_local_combined_3_metric)
+
+
+def cos_sim_global_global_combined_3_metric(ctx, **kwargs):
+    return np.mean(ctx.cos_sim_global_global_combined_3_metric)
+
+
+def cos_sim_global_local_combined_3_metric(ctx, **kwargs):
+    return np.mean(ctx.cos_sim_global_local_combined_3_metric)
+
+
+def cos_sim_local_global_combined_3_metric(ctx, **kwargs):
+    return np.mean(ctx.cos_sim_local_global_combined_3_metric)
+
+
+def num_features_global_local_3_metric(ctx, **kwargs):
+    return np.mean(ctx.num_features_global_local_3_metric)
+
+
+def avg_global_combined_features_not_0_3_metric(ctx, **kwargs):
+    return np.mean(ctx.avg_global_combined_features_not_0_3_metric)
+
+
+def num_global_combined_features_not_0_3_metric(ctx, **kwargs):
+    return np.mean(ctx.num_global_combined_features_not_0_3_metric)
+
+
+def avg_global_features_not_0_3_metric(ctx, **kwargs):
+    return np.mean(ctx.avg_global_features_not_0_3_metric)
+
+
+def num_global_features_not_0_3_metric(ctx, **kwargs):
+    return np.mean(ctx.num_global_features_not_0_3_metric)
+
+
+def avg_local_features_not_0_3_metric(ctx, **kwargs):
+    return np.mean(ctx.avg_local_features_not_0_3_metric)
+
+
+def num_local_features_not_0_3_metric(ctx, **kwargs):
+    return np.mean(ctx.num_local_features_not_0_3_metric)
+
 def call_mi_estimation_metric(types):
     if "MI_estimation" in types:
         return "MI_estimation", mi_estimation_metric
@@ -542,45 +585,58 @@ def call_cos_sim_local_local_combined_3_metric(types):
         return "cos_sim_local_local_combined_3_metric", cos_sim_local_local_combined_3_metric
 
 
-def cos_sim_local_local_combined_3_metric(ctx, **kwargs):
-    return np.mean(ctx.cos_sim_local_local_combined_3_metric)
+def call_num_fixed_features_not_0_metric(types):
+    if "num_fixed_features_not_0_metric" in types:
+        return "num_fixed_features_not_0_metric", num_fixed_features_not_0_metric
 
+def call_avg_fixed_features_not_0_metric(types):
+    if "avg_fixed_features_not_0_metric" in types:
+        return "avg_fixed_features_not_0_metric", avg_fixed_features_not_0_metric
 
-def cos_sim_global_global_combined_3_metric(ctx, **kwargs):
-    return np.mean(ctx.cos_sim_global_global_combined_3_metric)
+def call_num_features_local_fixed_metric(types):
+    if "num_features_local_fixed_metric" in types:
+        return "num_features_local_fixed_metric", num_features_local_fixed_metric
 
+def call_cos_sim_local_global_metric(types):
+    if "cos_sim_local_global_metric" in types:
+        return "cos_sim_local_global_metric", cos_sim_local_global_metric
 
-def cos_sim_global_local_combined_3_metric(ctx, **kwargs):
-    return np.mean(ctx.cos_sim_global_local_combined_3_metric)
+def call_cos_sim_global_combined_metric(types):
+    if "cos_sim_global_combined_metric" in types:
+        return "cos_sim_global_combined_metric", cos_sim_global_combined_metric
 
+def call_cos_sim_local_combined_metric(types):
+    if "cos_sim_local_combined_metric" in types:
+        return "cos_sim_local_combined_metric", cos_sim_local_combined_metric
 
-def cos_sim_local_global_combined_3_metric(ctx, **kwargs):
-    return np.mean(ctx.cos_sim_local_global_combined_3_metric)
+def call_cos_sim_global_fixed_metric(types):
+    if "cos_sim_global_fixed_metric" in types:
+        return "cos_sim_global_fixed_metric", cos_sim_global_fixed_metric
 
+def call_cos_sim_local_fixed_metric(types):
+    if "cos_sim_local_fixed_metric" in types:
+        return "cos_sim_local_fixed_metric", cos_sim_local_fixed_metric
 
-def num_features_global_local_3_metric(ctx, **kwargs):
-    return np.mean(ctx.num_features_global_local_3_metric)
+def num_fixed_features_not_0_metric(ctx, **kwargs):
+    return np.mean(ctx.num_fixed_features_not_0_metric)
 
+def avg_fixed_features_not_0_metric(ctx, **kwargs):
+    return np.mean(ctx.avg_fixed_features_not_0_metric)
 
-def avg_global_combined_features_not_0_3_metric(ctx, **kwargs):
-    return np.mean(ctx.avg_global_combined_features_not_0_3_metric)
+def num_features_local_fixed_metric(ctx, **kwargs):
+    return np.mean(ctx.num_features_local_fixed_metric)
 
+def cos_sim_local_global_metric(ctx, **kwargs):
+    return np.mean(ctx.cos_sim_local_global_metric)
 
-def num_global_combined_features_not_0_3_metric(ctx, **kwargs):
-    return np.mean(ctx.num_global_combined_features_not_0_3_metric)
+def cos_sim_global_combined_metric(ctx, **kwargs):
+    return np.mean(ctx.cos_sim_global_combined_metric)
 
+def cos_sim_local_combined_metric(ctx, **kwargs):
+    return np.mean(ctx.cos_sim_local_combined_metric)
 
-def avg_global_features_not_0_3_metric(ctx, **kwargs):
-    return np.mean(ctx.avg_global_features_not_0_3_metric)
+def cos_sim_global_fixed_metric(ctx, **kwargs):
+    return np.mean(ctx.cos_sim_global_fixed_metric)
 
-
-def num_global_features_not_0_3_metric(ctx, **kwargs):
-    return np.mean(ctx.num_global_features_not_0_3_metric)
-
-
-def avg_local_features_not_0_3_metric(ctx, **kwargs):
-    return np.mean(ctx.avg_local_features_not_0_3_metric)
-
-
-def num_local_features_not_0_3_metric(ctx, **kwargs):
-    return np.mean(ctx.num_local_features_not_0_3_metric)
+def cos_sim_local_fixed_metric(ctx, **kwargs):
+    return np.mean(ctx.cos_sim_local_fixed_metric)

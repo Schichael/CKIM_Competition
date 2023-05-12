@@ -48,7 +48,13 @@ eval:
             'avg_local_out_features_not_0_metric',
             'num_features_global_local_out_metric',
             'num_features_local_out_local_metric', 'diff_local_local_out_metric',
-            'sim_interm_local_out_metric', 'prox_loss_metric']
+            'sim_interm_local_out_metric', 'prox_loss_metric',
+            'num_local_features_not_0_metric', 'avg_local_features_not_0_metric',
+            'num_global_features_not_0_metric', 'avg_global_features_not_0_metric',
+            'num_fixed_features_not_0_metric', 'avg_fixed_features_not_0_metric',
+            'num_features_local_fixed_metric', 'cos_sim_local_global_metric',
+            'cos_sim_global_combined_metric', 'cos_sim_local_combined_metric',
+            'cos_sim_global_fixed_metric', 'cos_sim_local_fixed_metric']
   best_res_update_round_wise_key: val_imp_ratio
   count_flops: False
   base: 0.
