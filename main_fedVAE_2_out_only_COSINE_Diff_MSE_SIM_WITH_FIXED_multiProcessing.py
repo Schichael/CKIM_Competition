@@ -213,7 +213,7 @@ if __name__ == '__main__':
     num_trainings = 3
     kld_ne_imps = [0] #A
     #diff_imps = [0.0001]
-    diff_imps = [0.003, 0.01, 0.1]
+    diff_imps = [0.05, 0.5]
     sim_imps = [0.01, 0.1, 0.5]  # noch [1, 10]
     #sim_imps=[1]
     #diff_global_imps = [0] #F    HERE  [0.0001, 0.001]

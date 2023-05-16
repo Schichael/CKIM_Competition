@@ -123,11 +123,11 @@ class GNN_Net_Graph(torch.nn.Module):
         self.clf = Linear(hidden, out_channels)
 
         # cross_stitch_units
-        self.local_alpha_1 = Parameter(torch.Tensor([[0.1, 0.9], [0.1, 0.9]]),
+        self.local_alpha_1 = Parameter(torch.Tensor([[0.95, 0.05], [0.95, 0.05]]),
                                       requires_grad=False)
-        self.local_alpha_2 = Parameter(torch.Tensor([[0.1, 0.9], [0.1, 0.9]]),
+        self.local_alpha_2 = Parameter(torch.Tensor([[0.95, 0.05], [0.95, 0.05]]),
                                       requires_grad=False)
-        self.local_alpha_3 = Parameter(torch.Tensor([[0.1, 0.9], [0.1, 0.9]]),
+        self.local_alpha_3 = Parameter(torch.Tensor([[0.95, 0.05], [0.95, 0.05]]),
                                       requires_grad=False)
 
 
