@@ -197,7 +197,7 @@ if __name__ == '__main__':
     kld_ne_imps = [0] #A
     #diff_imps = [0.003, 0.01, 0.1]
     diff_imps = [0.003]
-    sim_imps = [0.001, 0.01, 0.1, 1]
+    sim_imps = [0.01, 0.1, 1]
 
     #diff_imps = [0.1]
     #diff_global_imps = [0] #F    HERE  [0.0001, 0.001]
