@@ -1,5 +1,6 @@
 import copy
 import logging
+import os
 import time
 from copy import deepcopy
 
@@ -20,6 +21,7 @@ class LaplacianTrainer_NE_KLD(GraphMiniBatchTrainer):
                  data,
                  device,
                  config,
+                 clientID,
                  only_for_eval=False,
                  monitor=None):
 
@@ -31,6 +33,7 @@ class LaplacianTrainer_NE_KLD(GraphMiniBatchTrainer):
                  only_for_eval,
                  monitor)
 
+        self.clientID = clientID
         self.ctx.omega = self.omega
         self.device = device
         self.config=config
@@ -108,7 +111,7 @@ class LaplacianTrainer_NE_KLD(GraphMiniBatchTrainer):
     def _hook_on_batch_forward(self, ctx):
 
         batch = ctx.data_batch.to(ctx.device)
-        pred, kld_loss = ctx.model(batch)
+        pred, kld_loss, mu, log_var = ctx.model(batch)
         csd_loss = CSDLoss(self._param_filter, ctx)
         # TODO: deal with the type of data within the dataloader or dataset
         if 'regression' in ctx.cfg.model.task.lower():
@@ -126,6 +129,30 @@ class LaplacianTrainer_NE_KLD(GraphMiniBatchTrainer):
         ctx.batch_size = len(label)
         ctx.y_true = label
         ctx.y_prob = pred
+
+
+        if self.round_num == 0 or self.round_num == 1 or self.round_num == 498 or \
+                self.round_num == 998:
+            dataset_name = self.ctx.dataset_name
+            cur_batch_i = self.ctx.cur_batch_i
+            out_dir = self.config.outdir
+
+            path = out_dir + '/features/client_' + str(self.clientID)
+
+            if not os.path.exists(path):
+                os.makedirs(path)
+
+
+            # local
+            file_name = path + '/mu_' + dataset_name + '_' + str(cur_batch_i) + '.pt'
+            torch.save(mu, file_name)
+
+            # local_out
+            file_name = path + '/std' + dataset_name + '_' + str(cur_batch_i)\
+                        + \
+                        '.pt'
+            torch.save(log_var, file_name)
+
 
         # record the index of the ${MODE} samples
         if hasattr(ctx.data_batch, 'data_index'):

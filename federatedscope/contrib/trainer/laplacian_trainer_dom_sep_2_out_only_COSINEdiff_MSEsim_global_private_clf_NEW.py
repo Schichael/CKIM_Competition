@@ -510,7 +510,7 @@ class \
         loss.backward(retain_graph=True)
 
         for param in ctx.model.named_parameters():
-          if param[0].startswith("clf"):
+          if param[0].startswith("clf") or param[0].startswith("encoder"):
               param[1].requires_grad = False
 
         loss = ctx.loss_out_local_interm

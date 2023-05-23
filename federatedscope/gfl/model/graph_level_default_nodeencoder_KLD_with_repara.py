@@ -131,7 +131,6 @@ class GNN_Net_Graph(torch.nn.Module):
         kld_loss = -0.5 * torch.mean(1 + log_var - mu ** 2 - log_var.exp())
         # In https://github.com/AntixK/PyTorch-VAE/blob/master/models/vanilla_vae.py
         # the number of minibatch samples is multiplied with the loss
-        print(kld_loss)
         return kld_loss
 
     def reparametrize(self, mu, log_var):
@@ -139,8 +138,7 @@ class GNN_Net_Graph(torch.nn.Module):
             std = log_var.mul(0.5).exp_()
             #eps = torch.randn_like(std)
             vector_size = log_var.size()
-            eps = Variable(torch.FloatTensor(vector_size).normal_(std=0.1)).to('cuda:0')
-            tmp = eps.mul(std).add_(mu)
+            eps = Variable(torch.FloatTensor(vector_size).normal_()).to('cuda:0')
             return eps.mul(std).add_(mu)
         else:
             return mu
@@ -177,4 +175,4 @@ class GNN_Net_Graph(torch.nn.Module):
         x = self.linear(x)
         x = F.dropout(x, self.dropout, training=self.training)
         x = self.clf(x)
-        return x, kld_loss
+        return x, kld_loss, mu, log_var

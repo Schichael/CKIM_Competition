@@ -22,7 +22,7 @@ from federatedscope.gfl.model.gat import GAT_Net
 from federatedscope.gfl.model.gin import GIN_Net
 from federatedscope.gfl.model.gpr import GPR_Net
 
-# graph_level_Dom_Sep_2out_only_cosine_diff_MSE_sim_NEW
+# graph_level_Dom_Sep_2out_only_diff_sim_with_fixed_NEW
 
 EPS = 1e-15
 EMD_DIM = 200
@@ -115,7 +115,6 @@ class GNN_Net_Graph(torch.nn.Module):
         if edge_dim is None or edge_dim == 0:
             edge_dim = 1
         super(GNN_Net_Graph, self).__init__()
-        self.diff_loss = DiffLoss()
         self.dropout = dropout
         # Embedding (pre) layer
         self.encoder_atom = AtomEncoder(in_channels, hidden)
@@ -149,13 +148,13 @@ class GNN_Net_Graph(torch.nn.Module):
                                      hidden=hidden,
                                      max_depth=max_depth,
                                      dropout=dropout)
-            self.interm_gnn = GIN_Net(in_channels=hidden,
+            self.fixed_gnn = GIN_Net(in_channels=hidden,
                                      out_channels=hidden,
                                      hidden=hidden,
                                      max_depth=max_depth,
                                      dropout=dropout)
 
-            self.llocal_out_gnn = GIN_Net(in_channels=hidden,
+            self.global_gnn = GIN_Net(in_channels=hidden,
                                       out_channels=hidden,
                                       hidden=hidden,
                                       max_depth=max_depth,
@@ -172,11 +171,13 @@ class GNN_Net_Graph(torch.nn.Module):
                                          max_depth=1,
                                          dropout=dropout)
             """
+            """
             self.decoder_gnn = GIN_Net(in_channels=hidden,
                                        out_channels=hidden,
                                        hidden=hidden,
                                        max_depth=max_depth,
                                        dropout=dropout)
+            """
 
 
         elif gnn == 'gpr':
@@ -202,8 +203,8 @@ class GNN_Net_Graph(torch.nn.Module):
             raise ValueError(f'Unsupported pooling type: {pooling}.')
 
         # Output layer
-        self.llocal_out_linear_out1 = Linear(hidden, hidden)
-        self.interm_linear_out1 = Linear(hidden, hidden)
+        self.global_linear_out1 = Linear(hidden, hidden)
+        self.fixed_linear_out1 = Linear(hidden, hidden)
         self.local_linear_out1 = Linear(hidden, hidden)
 
 
@@ -212,6 +213,12 @@ class GNN_Net_Graph(torch.nn.Module):
         self.emb = Linear(edge_dim, hidden)
         self.vae_decoder = VAE_Decoder(hidden, hidden)
         # torch.nn.init.xavier_normal_(self.emb.weight.data)
+
+        for param in self.fixed_gnn.named_parameters():
+            param[1].requires_grad = False
+
+        for param in self.fixed_linear_out1.named_parameters():
+            param[1].requires_grad = False
 
     def kld_loss(self, x):
         mu = torch.mean(x, dim=-2)
@@ -268,13 +275,6 @@ class GNN_Net_Graph(torch.nn.Module):
         recon_loss = self.cos_loss(x1, x2, y)
         return recon_loss
 
-    def cosine_diff_loss(self, x1, x2):
-        # cosine embedding loss: 1-cos(x1, x2). The 1 defines this loss function.
-        y = torch.ones(x1.size(0)).to('cuda:0')
-        y = -y
-        diff_loss = self.cos_loss(x1, x2, y)
-        return diff_loss
-
     def mse_loss(self, x1, x2):
         return torch.nn.functional.mse_loss(x1, x2, reduction='mean')
 
@@ -283,6 +283,13 @@ class GNN_Net_Graph(torch.nn.Module):
         y = torch.ones(x_decoded.size(0)).to('cuda:0')
         recon_loss = self.cos_loss(x_decoded, x_orig, y)
         return recon_loss
+
+    def cosine_diff_loss(self, x1, x2):
+        # cosine embedding loss: 1-cos(x1, x2). The 1 defines this loss function.
+        y = torch.ones(x1.size(0)).to('cuda:0')
+        y = -y
+        diff_loss = self.cos_loss(x1, x2, y)
+        return diff_loss
 
     def recon_loss_adj(self, z, num_nodes, pos_edge_index, neg_edge_index=None):
         r"""Given latent variables :obj:`z`, computes the binary cross
@@ -327,30 +334,27 @@ class GNN_Net_Graph(torch.nn.Module):
         kld_loss_encoder = self.kld_loss(x)
 
         x_local_enc = self.local_gnn((x, edge_index))
-        x_interm_enc = self.interm_gnn((x.detach(), edge_index))
-        x_local_out_enc = self.llocal_out_gnn((x, edge_index))
+        x_fixed_enc = self.fixed_gnn((x.detach(), edge_index))
+        x_global_enc = self.global_gnn((x, edge_index))
 
         x_local_pooled = self.pooling(x_local_enc, batch)
-        x_interm_pooled = self.pooling(x_interm_enc, batch)
-        x_local_out_enc_pooled = self.pooling(x_local_out_enc, batch)
+        x_fixed_pooled = self.pooling(x_fixed_enc, batch)
+        x_global_enc_pooled = self.pooling(x_global_enc, batch)
 
         x_local = self.local_linear_out1(x_local_pooled).relu()
-        x_interm = self.interm_linear_out1(x_interm_pooled).relu()
-        x_local_out = self.llocal_out_linear_out1(x_local_out_enc_pooled).relu()
+        x_fixed = self.fixed_linear_out1(x_fixed_pooled).relu()
+        x_global = self.global_linear_out1(x_global_enc_pooled).relu()
 
-        diff_local_interm = self.cosine_diff_loss(x_local, x_interm)
-        diff_local_local_out = self.cosine_diff_loss(x_local, x_local_out)
+        diff_local_fixed = self.cosine_diff_loss(x_local, x_fixed.detach())
+        diff_local_global = self.cosine_diff_loss(x_local, x_global.detach())
 
-        sim_local_out_interm = self.mse_loss(x_interm.detach(), x_local_out)
+        sim_global_fixed = self.mse_loss(x_fixed.detach(), x_global)
 
-        x_local_interm = x_local.detach() + x_interm
-        x_local_out_local = x_local_out + x_local
+        x_global_local = x_global + x_local
 
-        x_local_interm = F.dropout(x_local_interm, self.dropout, training=self.training)
-        x_local_out_local = F.dropout(x_local_out_local, self.dropout, training=self.training)
+        x_global_local = F.dropout(x_global_local, self.dropout, training=self.training)
 
-        out_local_interm = self.clf(x_local_interm)
-        out_local_out_local = self.clf(x_local_out_local)
+        out_global_local = self.clf(x_global_local)
 
 
         # recon loss adjacency matrix
@@ -358,8 +362,8 @@ class GNN_Net_Graph(torch.nn.Module):
         # return x, mi
         # return out_global, torch.Tensor([[0.1, 0.9]]*out_global.size(0)).float().to('cuda:0'), torch.Tensor([[0.1, 0.9]]*out_global.size(0)).float().to('cuda:0'), kld_loss_encoder, kld_global, torch.Tensor([0.]).float().to('cuda:0'), torch.Tensor([0.]).float().to('cuda:0'), torch.Tensor([0.]).float().to('cuda:0'), torch.Tensor([0.]).float().to('cuda:0'), torch.Tensor([0.]).float().to('cuda:0')
 
-        return out_local_out_local, out_local_interm, kld_loss_encoder, diff_local_interm, diff_local_local_out, sim_local_out_interm, x_local, \
-            x_interm, x_local_out
+        return out_global_local, kld_loss_encoder, diff_local_fixed, diff_local_global,\
+            sim_global_fixed, x_local, x_global, x_fixed
 
 
 def dot_product_decode(Z):

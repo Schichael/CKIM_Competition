@@ -515,6 +515,9 @@ class \
                self.config.params.sim_imp * ctx.sim_interm_local_out
         loss.backward(retain_graph=True)
 
+        loss = self.config.params.sim_imp * ctx.sim_interm_local_out
+        loss.backward(retain_graph=True)
+
         for param in ctx.model.named_parameters():
           if param[0].startswith("clf"):
               param[1].requires_grad = False

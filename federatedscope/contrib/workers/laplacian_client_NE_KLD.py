@@ -33,6 +33,7 @@ class LaplacianClient_NE_KLD(Client):
             data=data,
             device=device,
             config=config,
+            clientID = ID,
             only_for_eval=False,
             monitor=None
         )

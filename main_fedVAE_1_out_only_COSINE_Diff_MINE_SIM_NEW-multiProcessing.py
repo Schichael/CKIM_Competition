@@ -127,7 +127,7 @@ def train(lr, kld_ne_imp, diff_imp_global, diff_imp_local, sim_imp, csd_imp):
     # init_cfg.data.subdirectory = 'graph_dt_backup/processed'
     # init_cfg.merge_from_list(args.opts)
     init_cfg.data.save_dir = \
-        'Graph-DC_1_out_only_COSINE_Diff_global_private_MINE_SIM_NEW_global_clf_multi_runs_loss_lr_' + str(lr).replace(
+        'TEST_Graph-DC_1_out_only_COSINE_Diff_global_private_MINE_SIM_NEW_global_clf_multi_runs_loss_lr_' + str(lr).replace(
             '.', '_') + '_A'+ str(kld_ne_imp).replace('.', '_') + \
     '_F' + str(diff_imp_global).replace('.', '_') + '_F' + str(diff_imp_local).replace(
         '.', '_') + '_H' + str(csd_imp).replace(
@@ -153,9 +153,9 @@ def train(lr, kld_ne_imp, diff_imp_global, diff_imp_local, sim_imp, csd_imp):
     init_cfg.params.sim_imp = sim_imp
 
 
-    init_cfg.federate.client_num = 13
+    init_cfg.federate.client_num = 1
     init_cfg.params.eps = 1e-15
-    # init_cfg.federate.total_round_num = 1000
+    init_cfg.federate.total_round_num = 1000
 
     init_cfg.params.save_client_always = True
     init_cfg.params.p = 0.
@@ -191,10 +191,10 @@ def tmp(a):
 
 if __name__ == '__main__':
 
-    num_trainings = 3
+    num_trainings = 1
     kld_ne_imps = [0] #A
-    diff_imps = [0.005, 0.05]  # Now 0.0001
-    sim_imps = [0.5]# noch mit 1 und etwas anderem, vielleicht 05
+    diff_imps = [0.05]  # Now 0.0001
+    sim_imps = [10]# noch mit 1 und etwas anderem, vielleicht 05
 
 
     #diff_imps = [0.1]
@@ -206,7 +206,7 @@ if __name__ == '__main__':
 
     # lrs = [0.001, 0.005, 0.01, 0.05, 0.1, 0.5]
     lrs = [0.05]
-    pool = multiprocessing.Pool(6)
+    pool = multiprocessing.Pool(1)
     processes = []
     for lr in lrs:
         for diff_imp in diff_imps:
