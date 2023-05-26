@@ -195,8 +195,8 @@ if __name__ == '__main__':
 
     num_trainings = 3
     kld_ne_imps = [0] #A
-    #diff_imps = [0.003, 0.01, 0.1]
-    diff_imps = [0.003]
+    #diff_imps = [0.003]
+    diff_imps = [0.01, 0.1]
     sim_imps = [0.01, 0.1, 1]
 
     #diff_imps = [0.1]
@@ -208,21 +208,23 @@ if __name__ == '__main__':
 
     # lrs = [0.001, 0.005, 0.01, 0.05, 0.1, 0.5]
     lrs = [0.05]
-    pool = multiprocessing.Pool(3)
+    pool = multiprocessing.Pool(6)
     processes = []
     for lr in lrs:
         for diff_imp in diff_imps:
             for sim_imp in sim_imps:
                 for kld_ne_imp in kld_ne_imps:
-                        for i in range(num_trainings):
-                            time.sleep(10)
-                            setup_seed(i)
-                            processes.append(pool.apply_async(train, args=(lr,
-                                                                           kld_ne_imp,
-                                                                           diff_imp,
-                                                                           diff_imp,
-                                                                           sim_imp,
-                                                                           csd_imp)))
+                    if diff_imp == 0.01 and sim_imp in [0.1, 0.01]:
+                        continue
+                    for i in range(num_trainings):
+                        time.sleep(10)
+                        setup_seed(i)
+                        processes.append(pool.apply_async(train, args=(lr,
+                                                                       kld_ne_imp,
+                                                                       diff_imp,
+                                                                       diff_imp,
+                                                                       sim_imp,
+                                                                       csd_imp)))
     result = [p.get() for p in processes]
 
     #kld=0 mit repara: ~1.00 - 1.05

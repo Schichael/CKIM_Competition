@@ -172,6 +172,8 @@ class GNN_Net_Graph(torch.nn.Module):
         else:
             x = self.encoder(x_in)
 
+        mu = torch.mean(x, dim=-2)
+        std = torch.std(x, dim=-2)
 
         kld_loss = self.kld_loss(x)
         x = self.gnn((x, edge_index))
@@ -179,4 +181,4 @@ class GNN_Net_Graph(torch.nn.Module):
         x = self.linear(x)
         x = F.dropout(x, self.dropout, training=self.training)
         x = self.clf(x)
-        return x, kld_loss
+        return x, kld_loss, mu, std

@@ -55,7 +55,8 @@ def train(lr, csd_imp, kld_imp):
 
     # init_cfg.data.subdirectory = 'graph_dt_backup/processed'
     # init_cfg.merge_from_list(args.opts)
-    init_cfg.data.save_dir = 'Graph-DC_FedFOLA_NE_KLD_WITH_repara_multistep_lr_' + str(
+    init_cfg.data.save_dir = 'Graph-DC_FedFOLA_NE_KLD_WITHOUT_repara_singlestep_lr_' + \
+                             str(
         lr).replace(
         '.',
                                                                             '_') + \
@@ -96,12 +97,12 @@ def train(lr, csd_imp, kld_imp):
 
 
 if __name__ == '__main__':
-    num_trainings = 3
+    num_trainings = 1
     csd_imps = [10]
     kld_imps = [0, 0.001, 0.005, 0.01, 0.05, 0.1, 0.5, 1]
     # lrs = [0.001, 0.005, 0.01, 0.05, 0.1, 0.5]
     lrs = [0.05]
-    pool = multiprocessing.Pool(6)
+    pool = multiprocessing.Pool(2)
     processes = []
     for lr in lrs:
         for csd_imp in csd_imps:
