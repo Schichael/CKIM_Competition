@@ -125,7 +125,7 @@ def train(lr, kld_ne_imp, diff_imp_global, diff_imp_local, sim_imp, csd_imp):
     # init_cfg.data.subdirectory = 'graph_dt_backup/processed'
     # init_cfg.merge_from_list(args.opts)
     init_cfg.data.save_dir = \
-        'Graph-DC_1_out_only_COSINE_Diff_global_private_MSE_SIM_NEW_global_clf_loss_lr_' + str(lr).replace(
+        'Graph-DC_1_out_only_COSINE_Diff_global_private_MSE_SIM_NEW_global_additional_runs_lr_' + str(lr).replace(
             '.', '_') + '_A'+ str(kld_ne_imp).replace('.', '_') + \
     '_F' + str(diff_imp_global).replace('.', '_') + '_F' + str(diff_imp_local).replace(
         '.', '_') + '_H' + str(csd_imp).replace(
@@ -189,7 +189,7 @@ def tmp(a):
 
 if __name__ == '__main__':
 
-    num_trainings = 3
+    num_trainings = 7
     kld_ne_imps = [0] #A
     diff_imps = [0]  # Now 0.0001
     sim_imps = [0]
@@ -203,7 +203,7 @@ if __name__ == '__main__':
 
     # lrs = [0.001, 0.005, 0.01, 0.05, 0.1, 0.5]
     lrs = [0.05]
-    pool = multiprocessing.Pool(3)
+    pool = multiprocessing.Pool(7)
     processes = []
     for lr in lrs:
         for diff_imp in diff_imps:
@@ -211,7 +211,7 @@ if __name__ == '__main__':
                 for kld_ne_imp in kld_ne_imps:
                         for i in range(num_trainings):
                             time.sleep(10)
-                            setup_seed(i)
+                            setup_seed(i+3)
                             processes.append(pool.apply_async(train, args=(lr,
                                                                            kld_ne_imp,
                                                                            diff_imp,

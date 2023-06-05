@@ -42,9 +42,11 @@ def train(lr):
     init_cfg.params.save_client_always = True
     # init_cfg.data.subdirectory = 'graph_dt_backup/processed'
     # init_cfg.merge_from_list(args.opts)
-    init_cfg.data.save_dir = 'Graph-DC_FedAvg_multistep_lr_' + str(lr).replace('.', '_') + '_local_update_steps_1'
+    init_cfg.data.save_dir = 'Graph-DC_FedAvg_multistep_lr_' + str(lr).replace('.',
+                                                                               '_') + '_local_update_steps_2'
     init_cfg.train.optimizer.lr = lr
     init_cfg.federate.client_num = 13
+    init_cfg.train.local_update_steps = 2
 
 
     init_cfg.model.dropout = 0.5
@@ -72,7 +74,7 @@ def train(lr):
 
 
 if __name__ == '__main__':
-    lrs = [0.5, 0.1, 0.05, 0.01, 0.005, 0.001]
+    lrs = [0.5]
     num_trainings = 3
     pool = multiprocessing.Pool(6)
     processes = []

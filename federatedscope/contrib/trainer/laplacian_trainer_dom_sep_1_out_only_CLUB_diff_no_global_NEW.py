@@ -1,5 +1,6 @@
 import copy
 import logging
+import os
 from copy import deepcopy
 from typing import Callable
 
@@ -22,6 +23,7 @@ class LaplacianDomainSeparation_1Out_OnlyCLUBDiff_noGlobal_NEW_Trainer(
                  data,
                  device,
                  config,
+                 clientID,
                  only_for_eval=False,
                  monitor=None):
 
@@ -34,6 +36,7 @@ class LaplacianDomainSeparation_1Out_OnlyCLUBDiff_noGlobal_NEW_Trainer(
                          monitor)
 
         self.ctx.omega = self.omega
+        self.clientID = clientID
         self.device = device
         self.config = config
         self.first_round = True
@@ -125,10 +128,9 @@ class LaplacianDomainSeparation_1Out_OnlyCLUBDiff_noGlobal_NEW_Trainer(
         self.ctx.MI_metric = []
         self.ctx.loss_out_interm_metric = []
 
-        if ctx.cur_data_split == "train" and not self.in_finetune:
+        if ctx.cur_data_split == "train":
             # print("in train")
             self.round_num += 1
-            self.in_finetune = True
             """
             self.kld_imp = self.config.params.kld_importance
             if self.round_num > 30 and self.round_num <= 39:
@@ -139,8 +141,7 @@ class LaplacianDomainSeparation_1Out_OnlyCLUBDiff_noGlobal_NEW_Trainer(
             """
 
 
-        elif ctx.cur_data_split == "train" and self.in_finetune:
-            self.in_finetune = False
+
 
         ctx.log_ce_loss = 0
         ctx.log_csd_loss = 0
@@ -162,8 +163,9 @@ class LaplacianDomainSeparation_1Out_OnlyCLUBDiff_noGlobal_NEW_Trainer(
     def _hook_on_batch_forward(self, ctx):
         self.tmp += 1
         batch = ctx.data_batch.to(ctx.device)
-        out_local_interm, out_interm, kld_loss_encoder, diff_loss_local, diff_loss_interm, diff_loss_club_net, MI = ctx.model(batch,
-                                                                                                               self.config.params.sim_loss)
+        out_local_interm, out_interm, kld_loss_encoder, diff_loss_local, \
+            diff_loss_interm, diff_loss_club_net, MI, x_local, x_global = ctx.model(
+            batch, self.config.params.sim_loss)
 
         # ctx.sim_interm_fixed = sim_interm_fixed
 
@@ -235,6 +237,32 @@ class LaplacianDomainSeparation_1Out_OnlyCLUBDiff_noGlobal_NEW_Trainer(
                 f'{ctx.cur_data_split}_y_inds',
                 ctx.get(f'{ctx.cur_data_split}_y_inds') + [batch[_].data_index.item() for _ in range(len(label))]
             )
+
+        if self.round_num == 0 or self.round_num == 1 or self.round_num == 498 or \
+                self.round_num == 998:
+            dataset_name = self.ctx.dataset_name
+            cur_batch_i = self.ctx.cur_batch_i
+            out_dir = self.config.outdir
+
+            path = out_dir + '/features/client_' + str(self.clientID)
+
+            if not os.path.exists(path):
+                os.makedirs(path)
+
+
+            # local
+            file_name = path + '/local_' + dataset_name + '_' + str(cur_batch_i) + '.pt'
+            torch.save(x_local, file_name)
+
+            # interm
+            file_name = path + '/global_' + dataset_name + '_' + str(cur_batch_i) + '.pt'
+            torch.save(x_global, file_name)
+
+            # save labels
+            # local
+            file_name = path + '/' + dataset_name + '_' + str(
+                cur_batch_i) + '_labels' + '.pt'
+            torch.save(label, file_name)
 
     def get_csd_loss(self, model_params, mu, omega, round_num):
         loss_set = []

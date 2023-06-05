@@ -51,6 +51,7 @@ class LaplacianDomainSeparationVAE_1_out_onlyCLUB_Diff_noGlobal_NEW_Client(Clien
             data=data,
             device=device,
             config=config,
+            clientID=ID,
             only_for_eval=False,
             monitor=None
         )

@@ -150,10 +150,10 @@ def tmp(a):
 
 if __name__ == '__main__':
 
-    num_trainings = 3
+    num_trainings = 7
     kld_ne_imps = [0] #A
     diff_imps_1 = [0]   #Now 0.0001
-    diff_imps_2 = [0.0005, 0.001, 0.005] #F    HERE  [0.0001, 0.001]
+    diff_imps_2 = [0.005] #F    HERE  [0.0001, 0.001]
     #diff_local_imain_FedRes_graph-dc_multistep.pymps = [0.1, 0.01, 0.001] #G
     csd_imp = 10 #H
     #sim_losses = ["mse", "cosine"]
@@ -168,7 +168,7 @@ if __name__ == '__main__':
                 for kld_ne_imp in kld_ne_imps:
                     for i in range(num_trainings):
                         time.sleep(10)
-                        setup_seed(i)
+                        setup_seed(i+3)
                         processes.append(pool.apply_async(train, args=(lr,
                                                                        kld_ne_imp,
                                                                        diff_imp_1, diff_imp_2, csd_imp)))

@@ -319,7 +319,7 @@ class GNN_Net_Graph(torch.nn.Module):
 
         kld_loss_encoder = self.kld_loss(x)
 
-        x_local_enc = self.local_gnn((x, edge_index))
+        x_local_enc = self.local_gnn((x.detach(), edge_index))
         x_global_enc = self.global_gnn((x, edge_index))
 
         x_local_pooled = self.pooling(x_local_enc, batch)
