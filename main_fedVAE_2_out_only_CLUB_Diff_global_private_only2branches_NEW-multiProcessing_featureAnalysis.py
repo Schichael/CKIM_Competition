@@ -116,7 +116,7 @@ def train(lr, kld_ne_imp, diff_imp_global, diff_imp_local, csd_imp):
     init_cfg.params.p = 0.
     init_cfg.params.alpha = 0.1
     init_cfg.federate.total_round_num = 1
-    init_cfg.params.model_path = '/home/michael/Dropbox/Master thesis/results_graph-dc/FedDomSep_simple_2_branches_correct_multistep/CLUB/Graph-DC_2_out_only_CLUB_Diff_global_private_only_2_branches_NEW_sim_loss_lr_0_1_A0_F0_005_F0_005_H10_multistep/FedDomSep_GraphDC_gin_on_fs_contest_data_lr0.1_lstep1_'
+    init_cfg.params.model_path = '/home/michael/Dropbox/Master thesis/results_graph_dc_new_lr_0_5/2_out/simple/club_new/Graph-DC_2_out_only_CLUB_Diff_global_private_only_2_branches_multi_lr_0_05_A0_F0_0005_F0_0005_H10/FedDomSep_GraphDC_gin_on_fs_contest_data_lr0.05_lstep1_'
 
 
     init_cfg.model.dropout = 0.5
@@ -151,7 +151,7 @@ if __name__ == '__main__':
 
     num_trainings = 1
     kld_ne_imps = [0] #A
-    diff_imps = [0.005]   #Now 0.0001
+    diff_imps = [0.0005]   #Now 0.0001
     #diff_global_imps = [0] #F    HERE  [0.0001, 0.001]
     #diff_local_imps = [0.1, 0.01, 0.001] #G
     csd_imp = 10 #H
@@ -159,7 +159,7 @@ if __name__ == '__main__':
     #sim_losses = ["mse", "cosine"]
 
     # lrs = [0.001, 0.005, 0.01, 0.05, 0.1, 0.5]
-    lrs = [0.1]
+    lrs = [0.]
     pool = multiprocessing.Pool(1)
     processes = []
     for lr in lrs:

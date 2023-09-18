@@ -121,7 +121,7 @@ class GNN_Net_Graph(torch.nn.Module):
         # Embedding (pre) layer
         self.encoder_atom = AtomEncoder(in_channels, hidden)
         self.encoder = Linear(in_channels, hidden)
-        self.club_diff = VarUB(hidden, hidden, hidden)
+        self.club_diff = CLUB(hidden, hidden, hidden)
         self.decoder = InnerProductDecoder()
         self.eps = None
 
