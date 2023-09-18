@@ -121,9 +121,9 @@ def tmp(a):
     return a
 
 if __name__ == '__main__':
-    num_trainings = 4
-    lrs = [0.1]
-    pool = multiprocessing.Pool(4)
+    num_trainings = 7
+    lrs = [0.05]
+    pool = multiprocessing.Pool(7)
     processes = []
     for lr in lrs:
         for i in range(num_trainings):

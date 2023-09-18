@@ -50,6 +50,7 @@ class FeatureAnalysisLaplacianDomainSeparationVAE_2Out_OnlyCLUBDiffSim_only2bran
         #for param in self.ctx.model.named_parameters():
         #    if param[0].startswith('fixed'):
         #        param[1].requires_grad = False
+                #for diff_local_imp in diff_local_imps:
 
         self.grad_params = [param[0] for param in self.ctx.model.named_parameters() if param[1].requires_grad]
 

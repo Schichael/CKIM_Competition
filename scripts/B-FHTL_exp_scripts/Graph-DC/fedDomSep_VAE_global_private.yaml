@@ -19,6 +19,7 @@ train:
     type: SGD
 data:
   root: data/
+  batch_size: 1
   type: fs_contest_data
   splitter: ooxx
 model:

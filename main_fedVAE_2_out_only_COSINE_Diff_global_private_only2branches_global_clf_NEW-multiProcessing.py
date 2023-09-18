@@ -140,7 +140,7 @@ def train(lr, kld_ne_imp, diff_imp_global, diff_imp_local, csd_imp, global_clf_i
 
     init_cfg.federate.client_num = 13
     init_cfg.params.eps = 1e-15
-    # init_cfg.federate.total_round_num = 600
+    init_cfg.federate.total_round_num = 500
 
     init_cfg.params.save_client_always = True
     init_cfg.params.global_clf_imp = global_clf_imp
@@ -177,20 +177,20 @@ def tmp(a):
 
 if __name__ == '__main__':
 
-    num_trainings = 3
+    num_trainings = 1
     kld_ne_imps = [0] #A
-    diff_imps = [0.003, 0.01]   #Now 0.0001
+    diff_imps = [0,0.001,0.005,0.01,0.1]   #Now 0.0001
     #diff_imps = [0.1]
     #diff_global_imps = [0] #F    HERE  [0.0001, 0.001]
     #diff_local_imps = [0] #G
     csd_imp = 10 #H
-    global_clf_imps = [1, 0.1, 0.03]
+    global_clf_imps = [0.03]
     #global_clf_imps = [0.1]
     #sim_losses = ["mse", "cosine"]
 
     # lrs = [0.001, 0.005, 0.01, 0.05, 0.1, 0.5]
     lrs = [0.05]
-    pool = multiprocessing.Pool(6)
+    pool = multiprocessing.Pool(7)
     processes = []
     for lr in lrs:
         for diff_imp in diff_imps:
