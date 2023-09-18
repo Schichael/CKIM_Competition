@@ -97,19 +97,19 @@ def train(lr, csd_imp, kld_imp):
 
 
 if __name__ == '__main__':
-    num_trainings = 7
-    csd_imps = [10]
+    num_trainings = 3
+    csd_imps = [1000]
     kld_imps = [0]
     # lrs = [0.001, 0.005, 0.01, 0.05, 0.1, 0.5]
     lrs = [0.05]
-    pool = multiprocessing.Pool(7)
+    pool = multiprocessing.Pool(3)
     processes = []
     for lr in lrs:
         for csd_imp in csd_imps:
             for kld_imp in kld_imps:
                 for i in range(num_trainings):
                     time.sleep(10)
-                    setup_seed(i+3)
+                    setup_seed(i)
                     processes.append(pool.apply_async(train, args=(lr, csd_imp,
                                                                    kld_imp)))
     result = [p.get() for p in processes]
